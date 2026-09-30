@@ -2,7 +2,7 @@
 
 > Fonte de verdade funcional: `docs/Pintor_Pro_Documento_Mestre_v1.0.pdf`.
 > Este arquivo é o documento vivo do projeto (arquitetura, decisões, banco, regras, pendências, changelog).
-> Última atualização: 2026-09-30 · Fase atual: **0 — Planejamento**
+> Última atualização: 2026-09-30 · Fase atual: **0 — Fundação**
 
 ---
 
@@ -41,7 +41,9 @@ Núcleo (fases 1–6 abaixo) — os 20 itens da sua lista:
 
 ## 3. Ambiguidades e decisões pendentes
 
-### 3.1 Decisões que alteram arquitetura/custo/segurança — **preciso da sua resposta**
+### 3.1 Decisões que alteram arquitetura/custo/segurança — **APROVADAS em 2026-09-30 (seguir recomendações)**
+
+D-01…D-07 aceitas conforme a coluna "Minha recomendação". Em D-04, o modo padrão de preço (preço-base × custo+margem) será fechado na Fase 1, ao implementar o motor; ambos ficam suportados por configuração.
 
 | # | Pergunta | Minha recomendação |
 |---|---|---|
@@ -262,9 +264,9 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 
 | Status | Item |
 |---|---|
-| **IMPLEMENTADO** | Leitura do Documento Mestre; este plano técnico |
-| **EM DESENVOLVIMENTO** | — (aguardando aprovação do plano e decisões D-01…D-07) |
-| **PENDENTE** | Fases 0–9 acima; decisões D-01…D-07; validação de regras do PDF §23 |
+| **IMPLEMENTADO** | Leitura do Documento Mestre; este plano técnico; Fase 0 parcial: Next.js+TS+Tailwind, ESLint com fronteiras de camada, Vitest, CI, manifest PWA, util de dinheiro |
+| **EM DESENVOLVIMENTO** | Fase 0 (falta: Supabase local + migração inicial, Playwright, service worker/ícones PWA) |
+| **PENDENTE** | Fases 1–9 acima; validação de regras do PDF §23 |
 | **FUTURO** | V2 (orçado×realizado analítico, portal do cliente, aprovação digital, indicação); V3 (preço regional, marketplace, NF-e, integrações); expansão a outras categorias |
 
 ## 11. Regras de negócio registradas (do PDF)
@@ -281,3 +283,4 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 ## 12. Changelog
 
 - 2026-09-30 — Documento Mestre v1.0 analisado; plano técnico criado (Fase 0 — Planejamento).
+- 2026-09-30 — Decisões D-01…D-07 aprovadas. Fase 0: scaffold Next 16 / React 19 / Tailwind 4 / Vitest, ESLint com fronteiras de camada (engine puro, UI sem motor/dados), CI. Fixados TypeScript 5 e ESLint 9 por incompatibilidade de plugins com TS 7/ESLint 10.

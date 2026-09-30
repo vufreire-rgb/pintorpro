@@ -1,0 +1,9 @@
+{
+  "name": "Pintor Pro",
+  "short_name": "Pintor Pro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "lang": "pt-BR"
+}
