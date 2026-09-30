@@ -2,7 +2,7 @@
 
 > Fonte de verdade funcional: `docs/Pintor_Pro_Documento_Mestre_v1.0.pdf`.
 > Este arquivo é o documento vivo do projeto (arquitetura, decisões, banco, regras, pendências, changelog).
-> Última atualização: 2026-09-30 · Fase atual: **0 — Fundação**
+> Última atualização: 2026-09-30 · Fase atual: **MVP navegável (dados locais)**
 
 ---
 
@@ -264,10 +264,10 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 
 | Status | Item |
 |---|---|
-| **IMPLEMENTADO** | Leitura do Documento Mestre; este plano técnico; Fase 0 parcial: Next.js+TS+Tailwind, ESLint com fronteiras de camada, Vitest, CI, manifest PWA, util de dinheiro |
-| **EM DESENVOLVIMENTO** | Fase 0 (falta: Supabase local + migração inicial, Playwright, service worker/ícones PWA) |
-| **PENDENTE** | Fases 1–9 acima; validação de regras do PDF §23 |
-| **FUTURO** | V2 (orçado×realizado analítico, portal do cliente, aprovação digital, indicação); V3 (preço regional, marketplace, NF-e, integrações); expansão a outras categorias |
+| **IMPLEMENTADO** | Motor de orçamento puro + 11 testes (medidas, vãos, materiais, embalagem, rendimento editável, preço-base e custo+margem, margem × markup, desconto/acréscimo, prazo); onboarding de 10 telas; painel; clientes; assistente de orçamento (cliente → ambientes → serviços → materiais → preço → revisão); PDF sem dados internos; compartilhamento (Web Share / WhatsApp); status Aberto/Fechado/Perdido com validade de 7 dias; Fechado → Obra; lista/status de obras; configurações (serviços, preços, produtividade, materiais, rendimento, perdas); teste de fluxo completo `tests/smoke.mjs` |
+| **EM DESENVOLVIMENTO** | — |
+| **PENDENTE** | Login/conta real e Supabase (hoje os dados ficam só no navegador do aparelho); migrações SQL; service worker/ícones PWA; agenda com conflitos; equipe; despesas e recebimentos/parcelas; fotos; lembretes; assinatura/trial; colaborador com login; validar regras do PDF §23 (valores atuais são de DEMONSTRAÇÃO) |
+| **FUTURO** | V2 (orçado×realizado analítico, portal do cliente, aprovação digital, indicação); V3 (preço regional, marketplace, NF-e, integrações); outras categorias |
 
 ## 11. Regras de negócio registradas (do PDF)
 
@@ -284,3 +284,4 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 
 - 2026-09-30 — Documento Mestre v1.0 analisado; plano técnico criado (Fase 0 — Planejamento).
 - 2026-09-30 — Decisões D-01…D-07 aprovadas. Fase 0: scaffold Next 16 / React 19 / Tailwind 4 / Vitest, ESLint com fronteiras de camada (engine puro, UI sem motor/dados), CI. Fixados TypeScript 5 e ESLint 9 por incompatibilidade de plugins com TS 7/ESLint 10.
+- 2026-09-30 — MVP navegável: motor + testes, telas mobile, PDF, WhatsApp, CRM, obra, painel. Decisão de curto prazo (reversível): dados em `localStorage` via `src/repositories/localStore.ts` até existir projeto Supabase; trocar apenas esse arquivo + criar auth. Preço dos serviços NÃO é multiplicado por demãos (demãos afetam material e horas) — a confirmar.

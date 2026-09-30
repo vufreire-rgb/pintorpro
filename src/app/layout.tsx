@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Pintor Pro",
   description: "Orçamentos profissionais para pintores, direto do celular.",
   manifest: "/manifest.webmanifest",
+  icons: { icon: "data:," },
 };
 
 export const viewport: Viewport = { themeColor: "#1d4ed8", width: "device-width", initialScale: 1 };
