@@ -1,5 +1,6 @@
 "use client";
-import { Card, Chip, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
+import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
+import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
 import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
@@ -7,6 +8,7 @@ import { UNIT_LABEL } from "@/shared/format";
 
 export default function Configuracoes() {
   const db = useAppDb();
+  const auth = useAuthState();
   if (!db) return <Loading />;
   const c = db.company!;
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
@@ -74,6 +76,13 @@ export default function Configuracoes() {
         ))}
         <p className="text-sm text-slate-500">&quot;Rende&quot; = quantos m² (ou metros/unidades) 1 unidade do material cobre.</p>
       </Card>
+      {cloudEnabled && auth.status === "ready" ? (
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-lg font-bold">Conta</h2>
+          <p className="text-slate-600">{auth.email}</p>
+          <Button variant="ghost" onClick={() => logout()}>Sair</Button>
+        </Card>
+      ) : null}
     </Screen>
   );
 }
