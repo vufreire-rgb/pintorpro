@@ -1,0 +1,32 @@
+"use client";
+import { dismissInstall, promptInstall, useInstallState } from "@/modules/pwa";
+import { Button } from "./ui";
+
+/** Ensina (ou faz) a instalação do app no celular. `always`: ignora o "agora não" (usado em Ajustes). */
+export function InstallBanner({ always = false }: { always?: boolean }) {
+  const state = useInstallState(always);
+  if (state === "hidden") return null;
+  return (
+    <section className="flex flex-col gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+      <h2 className="text-lg font-bold">📲 Instale o Pintor Pro no celular</h2>
+      {state === "can-prompt" ? (
+        <>
+          <p>Abre em tela cheia, como um aplicativo, direto da tela inicial.</p>
+          <Button onClick={() => promptInstall()}>Instalar app</Button>
+        </>
+      ) : state === "ios" ? (
+        <ol className="list-decimal pl-5">
+          <li>Toque no botão <b>Compartilhar</b> (o quadrado com a seta ↑), na barra do Safari.</li>
+          <li>Role e toque em <b>Adicionar à Tela de Início</b>.</li>
+          <li>Toque em <b>Adicionar</b>.</li>
+        </ol>
+      ) : (
+        <ol className="list-decimal pl-5">
+          <li>Toque nos <b>três pontinhos ⋮</b> do Chrome.</li>
+          <li>Toque em <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).</li>
+        </ol>
+      )}
+      {!always ? <Button variant="ghost" className="min-h-12 text-base" onClick={dismissInstall}>Agora não</Button> : null}
+    </section>
+  );
+}

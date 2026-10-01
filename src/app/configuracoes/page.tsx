@@ -1,4 +1,5 @@
 "use client";
+import { InstallBanner } from "@/components/InstallBanner";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
 import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
@@ -14,6 +15,7 @@ export default function Configuracoes() {
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
+      <InstallBanner always />
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Seu negócio</h2>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>

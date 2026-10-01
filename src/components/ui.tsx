@@ -30,7 +30,7 @@ const NAV = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white">
+    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
       {NAV.map(([href, label]) => (
         <Link key={href} href={href} className="flex-1 py-4 text-center text-sm font-medium text-slate-700 active:bg-slate-100">
           {label}

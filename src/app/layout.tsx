@@ -1,15 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { AuthGate } from "@/components/AuthGate";
+import "@/modules/pwa";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Pintor Pro",
   description: "Orçamentos profissionais para pintores, direto do celular.",
-  manifest: "/manifest.webmanifest",
-  icons: { icon: "data:," },
+  appleWebApp: { capable: true, title: "Pintor Pro", statusBarStyle: "default" },
 };
 
-export const viewport: Viewport = { themeColor: "#1d4ed8", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#1d4ed8", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

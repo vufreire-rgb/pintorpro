@@ -1,1 +1,5 @@
 @import "tailwindcss";
+
+/* Comportamento de app: sem "pulo" ao puxar a tela e sem seleção acidental de botões. */
+html { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
