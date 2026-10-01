@@ -1,5 +1,5 @@
 "use client";
-import { fmtClock } from "@/modules/audio";
+import { audioExt, fmtClock } from "@/modules/audio";
 import { useFileUrl } from "@/modules/photos";
 import type { AudioNote } from "@/modules/types";
 
@@ -8,7 +8,12 @@ function Item({ note, index }: { note: AudioNote; index: number }) {
   return (
     <div className="mt-2">
       <div className="text-sm">Áudio {index + 1} · {fmtClock(note.seconds)}</div>
-      {url ? <audio controls src={url} className="w-full" /> : <span className="text-sm text-slate-500">Áudio não está neste aparelho</span>}
+      {url ? (
+        <>
+          <audio controls src={url} className="w-full" />
+          <a href={url} download={`audio-${index + 1}.${audioExt(note.mime)}`} className="text-sm text-blue-700 underline">Baixar áudio</a>
+        </>
+      ) : <span className="text-sm text-slate-500">Carregando áudio…</span>}
     </div>
   );
 }

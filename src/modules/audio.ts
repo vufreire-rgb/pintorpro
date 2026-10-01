@@ -3,9 +3,58 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type RecorderState = "idle" | "recording" | "denied" | "unsupported";
 
-const PREFERRED = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/ogg"];
+// MP4/AAC toca em iPhone e Android. WebM/Ogg só tocam em parte dos aparelhos, então ficam como último recurso.
+const PREFERRED = ["audio/mp4;codecs=mp4a.40.2", "audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg"];
 const pickMime = (): string | undefined =>
   typeof MediaRecorder === "undefined" ? undefined : PREFERRED.find((m) => MediaRecorder.isTypeSupported(m));
+
+// MP4 só vale se for AAC: o Chrome do Android às vezes grava MP4 com Opus, que o iPhone pode não tocar.
+const isUniversal = (type: string) => /wav|mpeg|aac|mp4a/i.test(type) || (/mp4/i.test(type) && !/opus/i.test(type));
+
+/** Converte qualquer áudio que este aparelho consiga ouvir para WAV mono 16 kHz, que toca em todos os aparelhos. */
+export async function toWav(blob: Blob): Promise<Blob> {
+  const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  const ctx = new AudioCtx();
+  try {
+    const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
+    const rate = 16000;
+    const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+    const src = off.createBufferSource();
+    src.buffer = decoded;
+    src.connect(off.destination);
+    src.start();
+    const pcm = (await off.startRendering()).getChannelData(0);
+
+    const out = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+    const text = (o: number, t: string) => [...t].forEach((c, i) => out.setUint8(o + i, c.charCodeAt(0)));
+    text(0, "RIFF");
+    out.setUint32(4, 36 + pcm.length * 2, true);
+    text(8, "WAVEfmt ");
+    out.setUint32(16, 16, true);
+    out.setUint16(20, 1, true); // PCM
+    out.setUint16(22, 1, true); // mono
+    out.setUint32(24, rate, true);
+    out.setUint32(28, rate * 2, true);
+    out.setUint16(32, 2, true);
+    out.setUint16(34, 16, true);
+    text(36, "data");
+    out.setUint32(40, pcm.length * 2, true);
+    pcm.forEach((v, i) => out.setInt16(44 + i * 2, Math.max(-1, Math.min(1, v)) * 0x7fff, true));
+    return new Blob([out], { type: "audio/wav" });
+  } finally {
+    void ctx.close();
+  }
+}
+
+/** Garante um formato que toque em qualquer celular; se a conversão falhar, mantém o original. */
+export async function normalizeAudio(blob: Blob): Promise<Blob> {
+  if (isUniversal(blob.type)) return blob;
+  try {
+    return await toWav(blob);
+  } catch {
+    return blob;
+  }
+}
 
 /** Gravador de áudio do navegador (microfone do celular). */
 export function useRecorder() {
@@ -58,7 +107,7 @@ export function useRecorder() {
           const secs = Math.max(1, Math.round((Date.now() - startedAt.current) / 1000));
           cleanup();
           setState("idle");
-          resolve({ blob: new Blob(chunks.current, { type }), seconds: secs });
+          void normalizeAudio(new Blob(chunks.current, { type })).then((blob) => resolve({ blob, seconds: secs }));
         };
         r.stop();
       }),
@@ -69,3 +118,6 @@ export function useRecorder() {
 }
 
 export const fmtClock = (s: number): string => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+/** Extensão do arquivo para download, conforme o formato gravado. */
+export const audioExt = (mime: string): string => (/wav/i.test(mime) ? "wav" : /mp4|aac/i.test(mime) ? "m4a" : /ogg/i.test(mime) ? "ogg" : "webm");

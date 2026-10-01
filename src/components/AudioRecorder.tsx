@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { fmtClock, useRecorder } from "@/modules/audio";
+import { audioExt, fmtClock, useRecorder } from "@/modules/audio";
 import { useFileUrl } from "@/modules/photos";
 import { addVisitAudio, removeVisitAudio } from "@/modules/visits";
 import type { AudioNote } from "@/modules/types";
@@ -9,13 +9,20 @@ import { Button } from "./ui";
 
 function Player({ note, index, onRemove }: { note: AudioNote; index: number; onRemove: () => void }) {
   const url = useFileUrl(note.id);
+  const [failed, setFailed] = useState(false);
   return (
     <div className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
       <div className="flex items-center justify-between">
         <span className="font-medium">Áudio {index + 1} · {fmtClock(note.seconds)} · {fmtDate(note.createdAt)}</span>
         <button onClick={onRemove} aria-label="Apagar áudio" className="h-10 w-10 rounded-full bg-slate-200">✕</button>
       </div>
-      {url ? <audio controls src={url} className="w-full" /> : <span className="text-sm text-slate-500">Áudio não está neste aparelho</span>}
+      {url ? (
+        <>
+          <audio controls src={url} className="w-full" onError={() => setFailed(true)} />
+          {failed ? <p className="text-sm text-amber-800">Este aparelho não consegue tocar este áudio (gravado em outro formato). Toque em Baixar.</p> : null}
+          <a href={url} download={`audio-${index + 1}.${audioExt(note.mime)}`} className="grid min-h-12 place-items-center rounded-xl bg-slate-200 font-medium">⬇ Baixar áudio</a>
+        </>
+      ) : <span className="text-sm text-slate-500">Carregando áudio… (se não aparecer, ele não está neste aparelho)</span>}
     </div>
   );
 }
