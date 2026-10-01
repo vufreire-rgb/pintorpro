@@ -1,7 +1,8 @@
 import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// O Supabase novo chama a chave de "publishable"; aceitamos os dois nomes.
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 /** false = modo local (sem login), como antes. Liga sozinho quando as chaves existem. */
 export const cloudConfigured = Boolean(url && anonKey);
@@ -31,4 +32,21 @@ export async function push(userId: string, raw: string): Promise<string> {
   const { error } = await c().from("user_data").upsert({ user_id: userId, data: JSON.parse(raw), updated_at: updatedAt });
   if (error) throw error;
   return updatedAt;
+}
+
+const BUCKET = "visit-files";
+const path = (userId: string, id: string) => `${userId}/${id}`;
+
+export async function uploadFile(userId: string, id: string, blob: Blob): Promise<void> {
+  const { error } = await c().storage.from(BUCKET).upload(path(userId, id), blob, { upsert: true, contentType: blob.type || undefined });
+  if (error) throw error;
+}
+
+export async function downloadFile(userId: string, id: string): Promise<Blob | null> {
+  const { data, error } = await c().storage.from(BUCKET).download(path(userId, id));
+  return error ? null : data;
+}
+
+export async function removeCloudFile(userId: string, id: string): Promise<void> {
+  await c().storage.from(BUCKET).remove([path(userId, id)]);
 }

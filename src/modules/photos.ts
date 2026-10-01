@@ -1,8 +1,47 @@
 "use client";
 import { useEffect, useState } from "react";
+import { cloudConfigured, downloadFile, removeCloudFile, uploadFile } from "@/repositories/cloudStore";
 import { deleteFile, getFile, putFile } from "@/repositories/fileStore";
+import { getUserId } from "./session";
 
 const MAX_SIDE = 1600;
+const PENDING_KEY = "pintorpro:pending-uploads";
+
+const readPending = (): string[] => {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) ?? "[]") as string[];
+  } catch {
+    return [];
+  }
+};
+const writePending = (ids: string[]) => {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify([...new Set(ids)]));
+  } catch {
+    /* ignora */
+  }
+};
+
+/** Envia o arquivo para a nuvem; se falhar (sem internet), fica na fila para tentar de novo. */
+async function pushToCloud(id: string, blob: Blob): Promise<void> {
+  const uid = getUserId();
+  if (!cloudConfigured || !uid) return;
+  try {
+    await uploadFile(uid, id, blob);
+    writePending(readPending().filter((x) => x !== id));
+  } catch {
+    writePending([...readPending(), id]);
+  }
+}
+
+/** Reenvia o que ficou pendente (chamado após o login e quando a internet volta). */
+export async function flushPendingUploads(): Promise<void> {
+  for (const id of readPending()) {
+    const blob = await getFile(id).catch(() => undefined);
+    if (blob) await pushToCloud(id, blob);
+    else writePending(readPending().filter((x) => x !== id));
+  }
+}
 
 /** Reduz a foto (lado maior 1600 px, JPEG) para não encher a memória do celular. */
 async function compress(file: File): Promise<Blob> {
@@ -24,7 +63,9 @@ export async function storePhotos(files: File[]): Promise<string[]> {
   const ids: string[] = [];
   for (const f of files) {
     const id = crypto.randomUUID();
-    await putFile(id, await compress(f));
+    const blob = await compress(f);
+    await putFile(id, blob);
+    void pushToCloud(id, blob);
     ids.push(id);
   }
   return ids;
@@ -33,10 +74,15 @@ export async function storePhotos(files: File[]): Promise<string[]> {
 export async function saveAudioFile(blob: Blob): Promise<string> {
   const id = crypto.randomUUID();
   await putFile(id, blob);
+  void pushToCloud(id, blob);
   return id;
 }
 
-export const removePhotoFile = (id: string) => deleteFile(id).catch(() => undefined);
+export async function removePhotoFile(id: string): Promise<void> {
+  await deleteFile(id).catch(() => undefined);
+  const uid = getUserId();
+  if (cloudConfigured && uid) await removeCloudFile(uid, id).catch(() => undefined);
+}
 
 /** URL temporária para exibir um arquivo (foto ou áudio); null enquanto carrega ou se não existe neste aparelho. */
 export function useFileUrl(id: string): string | null {
@@ -45,6 +91,14 @@ export function useFileUrl(id: string): string | null {
     let revoke: string | null = null;
     let alive = true;
     getFile(id)
+      .then(async (local) => {
+        if (local) return local;
+        // Não está neste aparelho: tenta baixar da nuvem e guarda aqui para a próxima vez.
+        const uid = getUserId();
+        const remote = cloudConfigured && uid ? await downloadFile(uid, id) : null;
+        if (remote) await putFile(id, remote).catch(() => undefined);
+        return remote ?? undefined;
+      })
       .then((blob) => {
         if (!alive || !blob) return;
         revoke = URL.createObjectURL(blob);

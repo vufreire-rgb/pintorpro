@@ -1,5 +1,6 @@
 import { clearCurrent, clearLegacy, onWrite, readLegacy, readRaw, setNamespace, writeRaw } from "@/repositories/localStore";
 import { pull, push } from "@/repositories/cloudStore";
+import { setUserId } from "./session";
 
 export type SyncStatus = "idle" | "saving" | "error";
 let status: SyncStatus = "idle";
@@ -40,6 +41,7 @@ const schedule = () => {
 /** Chamado após o login: a nuvem manda; se a conta é nova, sobe o que já existia neste aparelho. */
 export async function startSync(uid: string): Promise<void> {
   userId = uid;
+  setUserId(uid);
   setNamespace(uid);
   const remote = await pull(uid);
   if (remote) {
@@ -63,6 +65,7 @@ export async function stopSync(): Promise<void> {
   stopWatching = null;
   if (userId) await flush();
   userId = null;
+  setUserId(null);
   clearCurrent();
   setNamespace(null);
   setStatus("idle");

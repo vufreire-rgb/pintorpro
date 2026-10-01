@@ -1,6 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 import { cloudConfigured, getSession, onAuthChange, signIn, signOut, signUp } from "@/repositories/cloudStore";
+import { flushPendingUploads } from "./photos";
 import { getSyncStatus, startSync, stopSync, subscribeSync } from "./sync";
 
 export type AuthState =
@@ -26,6 +27,7 @@ export const useAuthState = (): AuthState =>
 export const useSyncStatus = () => useSyncExternalStore(subscribeSync, getSyncStatus, () => "idle" as const);
 
 let started = false;
+if (typeof window !== "undefined") window.addEventListener("online", () => void flushPendingUploads());
 /** Idempotente: chamar uma vez na raiz do app. */
 export function initAuth(): void {
   if (started || !cloudConfigured) return;
@@ -42,6 +44,7 @@ export function initAuth(): void {
       /* sem internet: segue com o cache local deste aparelho */
     }
     set({ status: "ready", email: session.user.email ?? "" });
+    void flushPendingUploads();
   };
   getSession().then(apply).catch(() => set({ status: "signedOut" }));
   let last: string | null = null;
