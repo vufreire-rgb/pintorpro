@@ -2,6 +2,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
+import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
 import { addClient } from "@/modules/clients";
 import { suggestServices, WALL_CONDITIONS } from "@/modules/catalog";
@@ -95,11 +96,12 @@ function NovoOrcamento() {
   const t = result?.totals;
   return (
     <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back="/orcamentos">
-      {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0) ? (
+      {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
         <details className="rounded-2xl border border-blue-200 bg-blue-50 p-3" open={step === 1}>
           <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
           {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
           <div className="mt-2"><PhotoGrid ids={visit.photoIds} /></div>
+          <AudioList audios={visit.audios ?? []} />
         </details>
       ) : null}
 

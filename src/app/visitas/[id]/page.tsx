@@ -1,6 +1,7 @@
 "use client";
 import { use, useRef, useState } from "react";
 import { Button, Card, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
+import { AudioRecorder } from "@/components/AudioRecorder";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { addVisitPhotos, removeVisitPhoto, setVisitAddress, setVisitNotes } from "@/modules/visits";
 import { useAppDb } from "@/modules/useApp";
@@ -35,6 +36,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <Button variant="ghost" disabled={busy} onClick={() => input.current?.click()}>{busy ? "Guardando…" : "📷 Tirar / escolher fotos"}</Button>
         <p className="text-sm text-slate-500">As fotos ficam guardadas neste aparelho.</p>
       </Card>
+
+      <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} /></Card>
 
       <Field label="Observações" hint="O que o cliente pediu, medidas que lembrar, problemas que viu…">
         <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Sala 4x5, parede com mofo perto da janela, cliente quer cor branca gelo…" />

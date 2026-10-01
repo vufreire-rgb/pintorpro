@@ -1,5 +1,5 @@
 /**
- * Fotos ficam no aparelho (IndexedDB), pois são arquivos pesados demais para o cache de texto.
+ * Fotos e áudios ficam no aparelho (IndexedDB), pois são arquivos pesados demais para o cache de texto.
  * Quando o armazenamento em nuvem (Supabase Storage) for ligado, só este arquivo muda.
  */
 const DB_NAME = "pintorpro-files";
@@ -22,6 +22,6 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   });
 }
 
-export const putPhoto = (id: string, blob: Blob) => run("readwrite", (s) => s.put(blob, id)).then(() => undefined);
-export const getPhoto = (id: string) => run<Blob | undefined>("readonly", (s) => s.get(id));
-export const deletePhoto = (id: string) => run("readwrite", (s) => s.delete(id)).then(() => undefined);
+export const putFile = (id: string, blob: Blob) => run("readwrite", (s) => s.put(blob, id)).then(() => undefined);
+export const getFile = (id: string) => run<Blob | undefined>("readonly", (s) => s.get(id));
+export const deleteFile = (id: string) => run("readwrite", (s) => s.delete(id)).then(() => undefined);

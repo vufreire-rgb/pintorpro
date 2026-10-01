@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { deletePhoto, getPhoto, putPhoto } from "@/repositories/photoStore";
+import { deleteFile, getFile, putFile } from "@/repositories/fileStore";
 
 const MAX_SIDE = 1600;
 
@@ -24,21 +24,27 @@ export async function storePhotos(files: File[]): Promise<string[]> {
   const ids: string[] = [];
   for (const f of files) {
     const id = crypto.randomUUID();
-    await putPhoto(id, await compress(f));
+    await putFile(id, await compress(f));
     ids.push(id);
   }
   return ids;
 }
 
-export const removePhotoFile = (id: string) => deletePhoto(id).catch(() => undefined);
+export async function saveAudioFile(blob: Blob): Promise<string> {
+  const id = crypto.randomUUID();
+  await putFile(id, blob);
+  return id;
+}
 
-/** URL temporária para exibir uma foto; null enquanto carrega ou se não existe neste aparelho. */
-export function usePhotoUrl(id: string): string | null {
+export const removePhotoFile = (id: string) => deleteFile(id).catch(() => undefined);
+
+/** URL temporária para exibir um arquivo (foto ou áudio); null enquanto carrega ou se não existe neste aparelho. */
+export function useFileUrl(id: string): string | null {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let revoke: string | null = null;
     let alive = true;
-    getPhoto(id)
+    getFile(id)
       .then((blob) => {
         if (!alive || !blob) return;
         revoke = URL.createObjectURL(blob);
@@ -52,3 +58,5 @@ export function usePhotoUrl(id: string): string | null {
   }, [id]);
   return url;
 }
+
+export const usePhotoUrl = useFileUrl;

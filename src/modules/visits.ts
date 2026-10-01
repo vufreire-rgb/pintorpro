@@ -1,5 +1,5 @@
 import { uid, updateDb } from "./db";
-import { removePhotoFile, storePhotos } from "./photos";
+import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
 import type { Db, Visit } from "./types";
 
@@ -33,4 +33,14 @@ export async function addVisitPhotos(id: string, files: File[]): Promise<void> {
 export async function removeVisitPhoto(id: string, photoId: string): Promise<void> {
   patch(id, (v) => ({ ...v, photoIds: v.photoIds.filter((p) => p !== photoId) }));
   await removePhotoFile(photoId);
+}
+
+export async function addVisitAudio(id: string, blob: Blob, seconds: number): Promise<void> {
+  const note = { id: await saveAudioFile(blob), seconds, createdAt: new Date().toISOString(), mime: blob.type };
+  patch(id, (v) => ({ ...v, audios: [...(v.audios ?? []), note] }));
+}
+
+export async function removeVisitAudio(id: string, audioId: string): Promise<void> {
+  patch(id, (v) => ({ ...v, audios: (v.audios ?? []).filter((a) => a.id !== audioId) }));
+  await removePhotoFile(audioId);
 }

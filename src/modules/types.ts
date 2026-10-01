@@ -61,6 +61,13 @@ export interface Work {
   actual?: { hours?: number; costCents?: number; endDate?: string };
 }
 
+export interface AudioNote {
+  id: string;
+  seconds: number;
+  createdAt: string;
+  mime: string;
+}
+
 export interface Visit {
   id: string;
   clientId: string;
@@ -68,6 +75,8 @@ export interface Visit {
   notes: string;
   /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */
   photoIds: string[];
+  /** Gravações de áudio (arquivos ficam no aparelho). */
+  audios?: AudioNote[];
   createdAt: string;
   quoteId?: string;
 }

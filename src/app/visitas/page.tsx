@@ -18,7 +18,7 @@ export default function Visitas() {
               <b>{db.clients.find((c) => c.id === v.clientId)?.name}</b>
               <span className={v.quoteId ? "text-emerald-700" : "text-amber-700"}>{v.quoteId ? "Orçamento feito" : "Falta orçar"}</span>
             </div>
-            <div className="text-sm text-slate-600">{fmtDate(v.createdAt)} · {v.photoIds.length} foto(s)</div>
+            <div className="text-sm text-slate-600">{fmtDate(v.createdAt)} · {v.photoIds.length} foto(s) · {(v.audios ?? []).length} áudio(s)</div>
             {v.notes ? <div className="mt-1 line-clamp-2 text-slate-700">{v.notes}</div> : null}
           </Card>
         </Link>
