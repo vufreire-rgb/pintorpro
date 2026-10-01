@@ -44,3 +44,11 @@ export async function removeVisitAudio(id: string, audioId: string): Promise<voi
   patch(id, (v) => ({ ...v, audios: (v.audios ?? []).filter((a) => a.id !== audioId) }));
   await removePhotoFile(audioId);
 }
+
+/** Apaga a visita e seus arquivos (fotos e áudios), no aparelho e na nuvem. */
+export async function deleteVisit(id: string, visits: Visit[]): Promise<void> {
+  const v = visits.find((x) => x.id === id);
+  updateDb((d) => ({ ...d, visits: d.visits.filter((x) => x.id !== id) }));
+  if (!v) return;
+  await Promise.all([...v.photoIds, ...(v.audios ?? []).map((a) => a.id)].map((fid) => removePhotoFile(fid)));
+}

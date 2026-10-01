@@ -6,9 +6,9 @@ import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
 import { addClient } from "@/modules/clients";
 import { suggestServices, WALL_CONDITIONS } from "@/modules/catalog";
-import { previewQuote, saveQuote } from "@/modules/quotes";
+import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
-import type { Adjustment, Opening, QuoteInput, Room } from "@/modules/types";
+import type { Adjustment, Db, Opening, Quote, QuoteInput, Room, Visit } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtNum, UNIT_LABEL } from "@/shared/format";
 
@@ -30,28 +30,34 @@ export default function NovoOrcamentoPage() {
 
 function NovoOrcamento() {
   const db = useAppDb();
+  const params = useSearchParams();
+  if (!db) return <Loading />;
+  const quote = db.quotes.find((q) => q.id === params.get("editar"));
+  const visit = db.visits.find((v) => v.id === (params.get("visita") ?? quote?.visitId));
+  return <Wizard key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
+}
+
+/** Monta ou edita um orçamento. Com `quote`, abre os dados dele para alterar. */
+function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) {
   const router = useRouter();
-  const visitId = useSearchParams().get("visita");
-  const visit = db?.visits.find((v) => v.id === visitId);
-  const [step, setStep] = useState(visitId ? 1 : 0);
+  const [step, setStep] = useState(quote || visit ? 1 : 0);
   const [pickedClient, setClientId] = useState("");
-  const clientId = pickedClient || visit?.clientId || "";
+  const clientId = pickedClient || quote?.clientId || visit?.clientId || "";
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
-  const [site, setSite] = useState("");
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [site, setSite] = useState(quote?.siteAddress ?? "");
+  const [rooms, setRooms] = useState<Room[]>(quote?.input.rooms ?? []);
   const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
-  const [included, setIncluded] = useState<Record<string, boolean>>({});
-  const [yields, setYields] = useState<Record<string, number>>({});
-  const [adj, setAdj] = useState<Adjustment>({ type: "discount", mode: "percent", value: 0 });
-  const [payment, setPayment] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
+  const [included, setIncluded] = useState<Record<string, boolean>>(quote?.input.materialsIncluded ?? {});
+  const [yields, setYields] = useState<Record<string, number>>(quote?.input.yieldOverrides ?? {});
+  const [adj, setAdj] = useState<Adjustment>(quote?.input.adjustment ?? { type: "discount", mode: "percent", value: 0 });
+  const [payment, setPayment] = useState<string | null>(quote?.paymentTerms ?? null);
+  const [notes, setNotes] = useState(quote?.notes ?? "");
 
   const input: QuoteInput = useMemo(
     () => ({ rooms, extras: [], materialsIncluded: included, yieldOverrides: yields, adjustment: adj }),
     [rooms, included, yields, adj],
   );
-  const result = useMemo(() => (db && rooms.length ? previewQuote(input, db) : null), [db, input, rooms.length]);
-  if (!db) return <Loading />;
+  const result = useMemo(() => (rooms.length ? previewQuote(input, db) : null), [db, input, rooms.length]);
   const enabled = db.enabledServiceIds;
 
   const addRoom = () => {
@@ -89,13 +95,24 @@ function NovoOrcamento() {
   };
 
   const save = () => {
-    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms: payment ?? db.company!.paymentTerms, notes });
+    const paymentTerms = payment ?? db.company!.paymentTerms;
+    if (quote) {
+      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms, notes });
+      router.replace(`/orcamentos/${quote.id}`);
+      return;
+    }
+    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes });
     router.replace(`/orcamentos/${id}`);
   };
 
   const t = result?.totals;
   return (
-    <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back="/orcamentos">
+    <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back={quote ? `/orcamentos/${quote.id}` : "/orcamentos"}>
+      {quote ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm">
+          <b>Editando o orçamento nº {quote.number}.</b> Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
+        </div>
+      ) : null}
       {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
         <details className="rounded-2xl border border-blue-200 bg-blue-50 p-3" open={step === 1}>
           <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
@@ -248,13 +265,13 @@ function NovoOrcamento() {
               <Link2 />
             </Card>
           )}
-          <Button variant="success" onClick={save}>Salvar orçamento</Button>
+          <Button variant="success" onClick={save}>{quote ? "Salvar alterações" : "Salvar orçamento"}</Button>
         </>
       )}
 
       {step < 5 && (
         <div className="mt-auto flex gap-3 pt-4">
-          {step > 0 && <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button>}
+          {step > (quote ? 1 : 0) && <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button>}
           <Button disabled={!canNext} onClick={goNext}>Continuar</Button>
         </div>
       )}

@@ -19,7 +19,7 @@ export function buildPdfData(db: Db, q: Quote) {
     companyWhatsapp: db.company?.whatsapp ?? "",
     companyCity: db.company?.city ?? "",
     number: q.number,
-    date: fmtDate(q.createdAt),
+    date: fmtDate(q.revisedAt ?? q.createdAt),
     validUntil: fmtDate(q.validUntil),
     clientName: client?.name ?? "",
     siteAddress: q.siteAddress,

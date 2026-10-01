@@ -63,6 +63,28 @@ await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);
 await page.getByText("Enviar pelo WhatsApp").waitFor();
 await shot("08-detalhe");
 
+// ---- Duplicar, editar e apagar ----
+const quoteUrl = page.url();
+await page.getByRole("button", { name: /Duplicar orçamento/ }).click();
+await page.getByText("Orçamento nº 2").waitFor();
+await page.getByRole("link", { name: /Editar orçamento/ }).click();
+await page.getByText("Editando o orçamento nº 2").waitFor();
+await shot("08a-editar");
+await page.getByText("Sala", { exact: true }).first().waitFor();       // dados do orçamento vieram preenchidos
+for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Continuar" }).click(); // até a revisão
+await page.getByRole("button", { name: "Salvar alterações" }).click();
+await page.getByText(/Orçamento nº 2 · rev\. 2/).waitFor();
+await page.getByRole("button", { name: /Apagar orçamento/ }).click();
+await shot("08b-confirmar-apagar");
+await page.getByRole("button", { name: "Cancelar" }).click();
+await page.getByText(/Orçamento nº 2 · rev\. 2/).waitFor();            // cancelar não apaga
+await page.getByRole("button", { name: /Apagar orçamento/ }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.waitForURL("**/orcamentos");
+await page.getByText("Abertos").or(page.getByText(/Aberto \(1\)/)).first().waitFor();
+await page.goto(quoteUrl);                                              // o original continua lá
+await page.getByText("Enviar pelo WhatsApp").waitFor();
+
 // PDF: intercepta o download (sem Web Share no headless) e valida o conteúdo
 const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.context().on("page", (p) => p.close()), page.getByText("Enviar pelo WhatsApp").click()]);
 const path = `${process.env.OUT ?? "/tmp"}/orcamento.pdf`;
@@ -74,6 +96,33 @@ await page.getByText("Maria Souza").waitFor();
 await shot("09-obras");
 await page.goto(base + "/visitas");
 await page.getByText("Orçamento feito").waitFor();
+// apagar visita
+await page.getByText("Maria Souza").first().click();
+await page.getByRole("button", { name: /Apagar visita/ }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.waitForURL("**/visitas");
+await page.getByText(/Nenhuma visita ainda/).waitFor();
+// cliente com orçamento: bloqueia; depois de apagar orçamento e obra, libera
+await page.goto(base + "/clientes");
+await page.getByRole("button", { name: "Apagar", exact: true }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.getByText(/Apague-os primeiro/).waitFor();
+await page.goto(base + "/obras");
+await page.getByRole("button", { name: "Apagar obra" }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.getByText(/Quando você fechar/).waitFor();
+await page.goto(quoteUrl);
+await page.getByRole("button", { name: /Apagar orçamento/ }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.waitForURL("**/orcamentos");
+await page.goto(base + "/clientes");
+await page.getByRole("button", { name: "Editar", exact: true }).click();
+await page.getByText("Nome", { exact: true }).locator("..").locator("input").fill("Maria Souza Lima");
+await page.getByRole("button", { name: "Salvar alterações" }).click();
+await page.getByText("Maria Souza Lima").waitFor();
+await page.getByRole("button", { name: "Apagar", exact: true }).click();
+await page.getByRole("button", { name: "Sim, apagar" }).click();
+await page.getByText("Nenhum cliente ainda.").waitFor();
 await page.goto(base);
 await shot("10-painel-final");
 console.log("ERROS DE CONSOLE:", errors.length ? errors : "nenhum");

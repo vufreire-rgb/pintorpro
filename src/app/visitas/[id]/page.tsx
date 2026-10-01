@@ -1,9 +1,10 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
-import { Button, Card, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
+import { Button, Card, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { PhotoGrid } from "@/components/PhotoGrid";
-import { addVisitPhotos, removeVisitPhoto, setVisitAddress, setVisitNotes } from "@/modules/visits";
+import { addVisitPhotos, deleteVisit, removeVisitPhoto, setVisitAddress, setVisitNotes } from "@/modules/visits";
 import { useAppDb } from "@/modules/useApp";
 import { fmtDate } from "@/shared/format";
 
@@ -12,6 +13,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const db = useAppDb();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
+  const router = useRouter();
   if (!db) return <Loading />;
   const v = db.visits.find((x) => x.id === id);
   if (!v) return <Screen title="Visita" back="/visitas"><p>Visita não encontrada.</p></Screen>;
@@ -45,6 +48,14 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
 
       <LinkButton href={`/orcamentos/novo?visita=${v.id}`}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
+      <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar visita</Button>
+      <ConfirmDialog
+        open={askDelete}
+        title="Apagar esta visita?"
+        text="As fotos, os áudios e as observações serão apagados. O orçamento já feito a partir dela continua existindo. Isso não pode ser desfeito."
+        onCancel={() => setAskDelete(false)}
+        onConfirm={async () => { await deleteVisit(v.id, db.visits); router.replace("/visitas"); }}
+      />
     </Screen>
   );
 }

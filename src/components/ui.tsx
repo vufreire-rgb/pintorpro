@@ -136,3 +136,20 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: { value: number;
 }
 
 export const Loading = () => <div className="grid min-h-dvh place-items-center text-slate-500">Carregando…</div>;
+
+/** Janela de confirmação para ações que não têm volta (apagar). */
+export function ConfirmDialog({ open, title, text, confirmLabel = "Sim, apagar", onConfirm, onCancel }: {
+  open: boolean; title: string; text: string; confirmLabel?: string; onConfirm: () => void; onCancel: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-4 sm:items-center sm:justify-center" role="dialog" aria-modal="true">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-3xl bg-white p-5">
+        <h2 className="text-xl font-bold">{title}</h2>
+        <p className="text-slate-700">{text}</p>
+        <Button variant="danger" onClick={onConfirm}>{confirmLabel}</Button>
+        <Button variant="ghost" onClick={onCancel}>Cancelar</Button>
+      </div>
+    </div>
+  );
+}

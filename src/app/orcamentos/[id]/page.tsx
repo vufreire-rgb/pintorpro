@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { use, useState } from "react";
-import { Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
-import { isExpired, setQuoteStatus } from "@/modules/quotes";
+import { Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { deleteQuote, duplicateQuote, isExpired, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -13,6 +14,8 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const db = useAppDb();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [askDelete, setAskDelete] = useState(false);
+  const router = useRouter();
   if (!db) return <Loading />;
   const q = db.quotes.find((x) => x.id === id);
   if (!q) return <Screen title="Orçamento" back="/orcamentos"><p>Orçamento não encontrado.</p></Screen>;
@@ -24,7 +27,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
     try { await fn(); } catch { setMsg("Não foi possível gerar o PDF. Tente de novo."); } finally { setBusy(false); }
   };
   return (
-    <Screen title={`Orçamento nº ${q.number}`} back="/orcamentos">
+    <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
       <Card>
         <div className="text-lg font-semibold">{client?.name}</div>
         <div className="text-slate-600">{q.siteAddress}</div>
@@ -67,6 +70,23 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
           </div>
         ))}
       </Card>
+      <Card className="flex flex-col gap-3">
+        <div className="font-bold">Mais opções</div>
+        {q.status === "won" ? (
+          <p className="text-sm text-slate-600">Orçamento fechado não pode ser editado. Para alterar, marque como <b>Aberto</b> antes.</p>
+        ) : (
+          <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost">✏️ Editar orçamento</LinkButton>
+        )}
+        <Button variant="ghost" onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>📄 Duplicar orçamento</Button>
+        <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar orçamento</Button>
+      </Card>
+      <ConfirmDialog
+        open={askDelete}
+        title={`Apagar o orçamento nº ${q.number}?`}
+        text={q.status === "won" ? "Ele está fechado: a obra criada a partir dele também será apagada. Isso não pode ser desfeito." : "Isso não pode ser desfeito."}
+        onCancel={() => setAskDelete(false)}
+        onConfirm={() => { deleteQuote(q.id); router.replace("/orcamentos"); }}
+      />
       <Link href="/orcamentos/novo" className="text-center text-blue-700 underline">Fazer outro orçamento</Link>
     </Screen>
   );

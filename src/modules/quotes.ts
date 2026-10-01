@@ -41,6 +41,55 @@ export function saveQuote(db: Db, data: NewQuote): string {
   return id;
 }
 
+const DAY = 86400000;
+
+/** Edita um orçamento ainda não fechado. Recalcula com os valores ATUAIS dos Ajustes. */
+export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes">): void {
+  const config = buildEngineConfig(db);
+  const result = calculateQuote(data.input, config);
+  const now = new Date();
+  updateDb((d) => ({
+    ...d,
+    quotes: d.quotes.map((q) =>
+      q.id !== id
+        ? q
+        : {
+            ...q,
+            ...data,
+            configSnapshot: config,
+            engineVersion: ENGINE_VERSION,
+            result,
+            revision: (q.revision ?? 0) + 1,
+            revisedAt: now.toISOString(),
+            validUntil: new Date(now.getTime() + VALIDITY_DAYS * DAY).toISOString(),
+          },
+    ),
+  }));
+}
+
+/** Cria uma cópia (novo número, status Aberto, validade nova), recalculada com os valores atuais. */
+export function duplicateQuote(db: Db, id: string): string | null {
+  const q = db.quotes.find((x) => x.id === id);
+  if (!q) return null;
+  return saveQuote(db, {
+    clientId: q.clientId,
+    siteAddress: q.siteAddress,
+    input: JSON.parse(JSON.stringify(q.input)) as QuoteInput,
+    paymentTerms: q.paymentTerms,
+    notes: q.notes,
+  });
+}
+
+/** Apaga o orçamento e a obra criada a partir dele. */
+export function deleteQuote(id: string): void {
+  updateDb((db) => ({
+    ...db,
+    quotes: db.quotes.filter((q) => q.id !== id),
+    works: db.works.filter((w) => w.quoteId !== id),
+    visits: db.visits.map((v) => (v.quoteId === id ? { ...v, quoteId: undefined } : v)),
+  }));
+}
+
 /** Fechado vira obra automaticamente (uma vez). */
 export function setQuoteStatus(quoteId: string, status: QuoteStatus): void {
   updateDb((db) => {

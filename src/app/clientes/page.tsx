@@ -1,32 +1,66 @@
 "use client";
 import { useState } from "react";
-import { Button, Card, Field, Loading, Screen, TextInput } from "@/components/ui";
-import { addClient } from "@/modules/clients";
+import { Button, Card, ConfirmDialog, Field, Loading, Screen, TextInput } from "@/components/ui";
+import { addClient, deleteClient, updateClient } from "@/modules/clients";
 import { useAppDb } from "@/modules/useApp";
+
+const EMPTY = { name: "", phone: "", address: "" };
 
 export default function Clientes() {
   const db = useAppDb();
-  const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ name: "", phone: "", address: "" });
+  const [editing, setEditing] = useState<string | "new" | null>(null);
+  const [f, setF] = useState(EMPTY);
+  const [askDelete, setAskDelete] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState("");
   if (!db) return <Loading />;
+
+  const open = (id: string | "new") => {
+    const c = db.clients.find((x) => x.id === id);
+    setF(c ? { name: c.name, phone: c.phone, address: c.address } : EMPTY);
+    setEditing(id);
+    setBlocked("");
+  };
+  const save = () => {
+    if (editing === "new") addClient(f);
+    else if (editing) updateClient(editing, f);
+    setEditing(null);
+    setF(EMPTY);
+  };
+  const target = db.clients.find((c) => c.id === askDelete);
+
   return (
     <Screen title="Clientes" nav>
-      {open ? (
+      {editing ? (
         <Card className="flex flex-col gap-3">
           <Field label="Nome"><TextInput value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <Field label="Telefone"><TextInput type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
           <Field label="Endereço"><TextInput value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
-          <Button disabled={!f.name.trim()} onClick={() => { addClient(f); setF({ name: "", phone: "", address: "" }); setOpen(false); }}>Salvar cliente</Button>
+          <Button disabled={!f.name.trim()} onClick={save}>{editing === "new" ? "Salvar cliente" : "Salvar alterações"}</Button>
+          <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
         </Card>
-      ) : <Button onClick={() => setOpen(true)}>+ Novo cliente</Button>}
+      ) : <Button onClick={() => open("new")}>+ Novo cliente</Button>}
+      {blocked ? <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{blocked}</p> : null}
       {db.clients.length === 0 ? <p className="text-slate-500">Nenhum cliente ainda.</p> : null}
       {db.clients.map((c) => (
-        <Card key={c.id}>
-          <div className="text-lg font-semibold">{c.name}</div>
-          <div className="text-slate-600">{c.phone}</div>
-          <div className="text-slate-600">{c.address}</div>
+        <Card key={c.id} className="flex flex-col gap-2">
+          <div>
+            <div className="text-lg font-semibold">{c.name}</div>
+            <div className="text-slate-600">{c.phone}</div>
+            <div className="text-slate-600">{c.address}</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="ghost" className="text-base" onClick={() => open(c.id)}>Editar</Button>
+            <Button variant="ghost" className="text-base text-red-700" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
+          </div>
         </Card>
       ))}
+      <ConfirmDialog
+        open={!!target}
+        title={`Apagar ${target?.name}?`}
+        text="O cliente será removido da lista. Isso não pode ser desfeito."
+        onCancel={() => setAskDelete(null)}
+        onConfirm={() => { if (askDelete) setBlocked(deleteClient(db, askDelete) ?? ""); setAskDelete(null); }}
+      />
     </Screen>
   );
 }

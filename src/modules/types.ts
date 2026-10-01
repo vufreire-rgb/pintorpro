@@ -31,6 +31,9 @@ export interface Quote {
   clientId: string;
   siteAddress: string;
   visitId?: string;
+  /** Quantas vezes foi editado depois de salvo (0/ausente = original). */
+  revision?: number;
+  revisedAt?: string;
   status: QuoteStatus;
   createdAt: string;
   validUntil: string;

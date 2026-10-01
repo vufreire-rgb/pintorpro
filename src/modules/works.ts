@@ -10,3 +10,5 @@ export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
 
 export const setWorkStatus = (id: string, status: WorkStatus) =>
   updateDb((db) => ({ ...db, works: db.works.map((w) => (w.id === id ? { ...w, status } : w)) }));
+
+export const deleteWork = (id: string) => updateDb((db) => ({ ...db, works: db.works.filter((w) => w.id !== id) }));
