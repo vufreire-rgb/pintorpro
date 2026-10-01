@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { audioExt, fmtClock, useRecorder } from "@/modules/audio";
+import { fmtClock, useRecorder } from "@/modules/audio";
 import { useFileUrl } from "@/modules/photos";
 import { addVisitAudio, removeVisitAudio } from "@/modules/visits";
 import type { AudioNote } from "@/modules/types";
@@ -19,8 +19,7 @@ function Player({ note, index, onRemove }: { note: AudioNote; index: number; onR
       {url ? (
         <>
           <audio controls src={url} className="w-full" onError={() => setFailed(true)} />
-          {failed ? <p className="text-sm text-amber-800">Este aparelho não consegue tocar este áudio (gravado em outro formato). Toque em Baixar.</p> : null}
-          <a href={url} download={`audio-${index + 1}.${audioExt(note.mime)}`} className="grid min-h-12 place-items-center rounded-xl bg-slate-200 font-medium">⬇ Baixar áudio</a>
+          {failed ? <p className="text-sm text-amber-800">Este aparelho não consegue tocar este áudio (gravado em outro formato). Grave de novo.</p> : null}
         </>
       ) : <span className="text-sm text-slate-500">Carregando áudio… (se não aparecer, ele não está neste aparelho)</span>}
     </div>

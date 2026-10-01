@@ -28,10 +28,10 @@ async function run(forceWebm) {
   const info = await page.evaluate(async () => {
     const a = document.querySelector("audio");
     await new Promise((r) => { if (a.readyState >= 1) r(); else a.addEventListener("loadedmetadata", r, { once: true }); setTimeout(r, 5000); });
-    return { duration: a.duration, hasDownload: !!document.querySelector("a[download]") };
+    return { duration: a.duration };
   });
   console.log(forceWebm ? "[forçando WebM]" : "[padrão do navegador]", "formato salvo:", mime, "| duração:", info.duration?.toFixed?.(2), "| botão baixar:", info.hasDownload, "| erros:", errors.length ? errors : "nenhum");
-  const ok = /wav|mp4a|aac/.test(mime) && !/opus/.test(mime) && info.duration > 1 && info.hasDownload && errors.length === 0;
+  const ok = /wav|mp4a|aac/.test(mime) && !/opus/.test(mime) && info.duration > 1 && errors.length === 0;
   await ctx.close();
   return ok;
 }

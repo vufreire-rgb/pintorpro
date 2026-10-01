@@ -119,5 +119,3 @@ export function useRecorder() {
 
 export const fmtClock = (s: number): string => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-/** Extensão do arquivo para download, conforme o formato gravado. */
-export const audioExt = (mime: string): string => (/wav/i.test(mime) ? "wav" : /mp4|aac/i.test(mime) ? "m4a" : /ogg/i.test(mime) ? "ogg" : "webm");
