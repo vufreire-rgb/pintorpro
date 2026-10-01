@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Chip, Field, Loading, NumberInput, TextInput } from "@/components/ui";
 import { useDb } from "@/modules/db";
 import { DEFAULT_COMPANY, saveCompany, setEnabledServices, updateService } from "@/modules/settings";
@@ -17,7 +17,12 @@ export default function Onboarding() {
   const [c, setC] = useState<Company>(DEFAULT_COMPANY);
   const [enabled, setEnabled] = useState<string[] | null>(null);
   const [prices, setPrices] = useState<Record<string, number>>({});
-  if (!db) return <Loading />;
+  // Se os dados da conta chegarem da nuvem enquanto o cadastro está aberto, a conta já está configurada.
+  const alreadySetUp = Boolean(db?.company);
+  useEffect(() => {
+    if (alreadySetUp) router.replace("/");
+  }, [alreadySetUp, router]);
+  if (!db || alreadySetUp) return <Loading />;
   const services = db.services;
   const on = enabled ?? services.map((s) => s.id);
   const set = <K extends keyof Company>(k: K, v: Company[K]) => setC((p) => ({ ...p, [k]: v }));

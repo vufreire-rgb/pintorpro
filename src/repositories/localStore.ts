@@ -44,9 +44,20 @@ export const setNamespace = (id: string | null): void => {
   listeners.forEach((l) => l());
 };
 
+/** Pequenas anotações da conta atual (ex.: "mudou desde o último envio?"). */
+export const getMeta = (name: string): string | null => safe(() => localStorage.getItem(`${key}:meta:${name}`), null);
+export const setMeta = (name: string, value: string): void => safe(() => localStorage.setItem(`${key}:meta:${name}`, value), undefined);
+
+/** Guarda uma cópia de segurança antes de qualquer substituição de dados locais. */
+export const saveBackup = (raw: string): void => safe(() => localStorage.setItem(`${LEGACY_KEY}:backup:${key}`, raw), undefined);
+
 export const readLegacy = (): string | null => safe(() => localStorage.getItem(LEGACY_KEY), null);
 export const clearLegacy = (): void => safe(() => localStorage.removeItem(LEGACY_KEY), undefined);
 export const clearCurrent = (): void => {
-  safe(() => localStorage.removeItem(key), undefined);
+  safe(() => {
+    localStorage.removeItem(key);
+    localStorage.removeItem(`${key}:meta:dirty`);
+    localStorage.removeItem(`${key}:meta:synced`);
+  }, undefined);
   listeners.forEach((l) => l());
 };

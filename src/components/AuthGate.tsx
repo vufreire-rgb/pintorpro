@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { initAuth, login, register, useAuthState, useSyncStatus } from "@/modules/auth";
+import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { Button, Field, Loading, TextInput } from "./ui";
 
 function LoginScreen() {
@@ -40,6 +40,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   useEffect(() => initAuth(), []);
   if (auth.status === "loading") return <Loading />;
   if (auth.status === "signedOut") return <LoginScreen />;
+  if (auth.status === "error")
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 p-6">
+        <h1 className="text-2xl font-bold">Não conseguimos carregar seus dados</h1>
+        <p className="text-lg text-slate-600">Verifique sua internet e tente de novo. Seus dados continuam guardados na sua conta, nada foi apagado.</p>
+        <Button onClick={retryLoad}>Tentar de novo</Button>
+      </div>
+    );
   return (
     <>
       {sync === "error" ? (

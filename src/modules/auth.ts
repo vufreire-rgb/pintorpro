@@ -8,6 +8,7 @@ export type AuthState =
   | { status: "loading" }
   | { status: "local" } // sem nuvem configurada: funciona como antes
   | { status: "signedOut" }
+  | { status: "error" } // logou, mas não conseguiu carregar os dados da conta
   | { status: "ready"; email: string };
 
 let state: AuthState = cloudConfigured ? { status: "loading" } : { status: "local" };
@@ -27,12 +28,13 @@ export const useAuthState = (): AuthState =>
 export const useSyncStatus = () => useSyncExternalStore(subscribeSync, getSyncStatus, () => "idle" as const);
 
 let started = false;
+let applyRef: ((s: { user: { id: string; email?: string } } | null) => Promise<void>) | null = null;
 if (typeof window !== "undefined") window.addEventListener("online", () => void flushPendingUploads());
 /** Idempotente: chamar uma vez na raiz do app. */
 export function initAuth(): void {
   if (started || !cloudConfigured) return;
   started = true;
-  const apply = async (session: { user: { id: string; email?: string } } | null) => {
+  applyRef = async (session: { user: { id: string; email?: string } } | null) => {
     if (!session) {
       await stopSync();
       set({ status: "signedOut" });
@@ -41,20 +43,28 @@ export function initAuth(): void {
     try {
       await startSync(session.user.id);
     } catch {
-      /* sem internet: segue com o cache local deste aparelho */
+      // Sem internet e sem cópia local: não mostramos uma conta "vazia" (evitaria sobrescrever a nuvem).
+      set({ status: "error" });
+      return;
     }
     set({ status: "ready", email: session.user.email ?? "" });
     void flushPendingUploads();
   };
-  getSession().then(apply).catch(() => set({ status: "signedOut" }));
+  getSession().then((s) => applyRef!(s)).catch(() => set({ status: "signedOut" }));
   let last: string | null = null;
   onAuthChange((s) => {
     const id = s?.user.id ?? null;
     if (id !== last) {
       last = id;
-      void apply(s);
+      void applyRef!(s);
     }
   });
+}
+
+/** Tenta carregar de novo os dados da conta (botão da tela de erro). */
+export function retryLoad(): void {
+  set({ status: "loading" });
+  getSession().then((s) => applyRef?.(s)).catch(() => set({ status: "error" }));
 }
 
 const translate = (msg: string): string => {
