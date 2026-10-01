@@ -11,6 +11,7 @@ export const newDb = (): Db => ({
   materials: DEFAULT_MATERIALS,
   enabledServiceIds: DEFAULT_SERVICES.map((s) => s.id),
   clients: [],
+  visits: [],
   quotes: [],
   works: [],
   counters: { quote: 0 },

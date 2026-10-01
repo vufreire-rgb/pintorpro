@@ -30,6 +30,7 @@ export interface Quote {
   number: number;
   clientId: string;
   siteAddress: string;
+  visitId?: string;
   status: QuoteStatus;
   createdAt: string;
   validUntil: string;
@@ -60,6 +61,17 @@ export interface Work {
   actual?: { hours?: number; costCents?: number; endDate?: string };
 }
 
+export interface Visit {
+  id: string;
+  clientId: string;
+  siteAddress: string;
+  notes: string;
+  /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */
+  photoIds: string[];
+  createdAt: string;
+  quoteId?: string;
+}
+
 export interface Db {
   version: 1;
   company: Company | null;
@@ -67,6 +79,7 @@ export interface Db {
   materials: MaterialConfig[];
   enabledServiceIds: string[];
   clients: Client[];
+  visits: Visit[];
   quotes: Quote[];
   works: Work[];
   counters: { quote: number };

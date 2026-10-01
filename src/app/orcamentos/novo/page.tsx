@@ -1,6 +1,7 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useMemo, useState } from "react";
+import { PhotoGrid } from "@/components/PhotoGrid";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
 import { addClient } from "@/modules/clients";
 import { suggestServices, WALL_CONDITIONS } from "@/modules/catalog";
@@ -18,11 +19,22 @@ const win = (qty: number): Opening => ({ kind: "window", widthM: 1.2, heightM: 1
 interface RoomForm { name: string; lengthM: number; widthM: number; heightM: number; condition: string; doors: number; windows: number }
 const EMPTY_ROOM: RoomForm = { name: "", lengthM: 0, widthM: 0, heightM: 2.7, condition: "pintada", doors: 1, windows: 1 };
 
-export default function NovoOrcamento() {
+export default function NovoOrcamentoPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <NovoOrcamento />
+    </Suspense>
+  );
+}
+
+function NovoOrcamento() {
   const db = useAppDb();
   const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [clientId, setClientId] = useState("");
+  const visitId = useSearchParams().get("visita");
+  const visit = db?.visits.find((v) => v.id === visitId);
+  const [step, setStep] = useState(visitId ? 1 : 0);
+  const [pickedClient, setClientId] = useState("");
+  const clientId = pickedClient || visit?.clientId || "";
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
   const [site, setSite] = useState("");
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -56,6 +68,7 @@ export default function NovoOrcamento() {
     setRooms(rooms.map((r) => r.id !== roomId ? r : { ...r, services: r.services.map((s) => s.serviceId === serviceId ? { ...s, ...patch } : s) }));
 
   const chosenClient = db.clients.find((c) => c.id === clientId);
+  const siteValue = site || visit?.siteAddress || chosenClient?.address || "";
   const canNext = [
     (clientId || newClient.name.trim()) && true,
     rooms.length > 0,
@@ -75,13 +88,21 @@ export default function NovoOrcamento() {
   };
 
   const save = () => {
-    const id = saveQuote(db, { clientId, siteAddress: site, input, paymentTerms: payment ?? db.company!.paymentTerms, notes });
+    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms: payment ?? db.company!.paymentTerms, notes });
     router.replace(`/orcamentos/${id}`);
   };
 
   const t = result?.totals;
   return (
     <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back="/orcamentos">
+      {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0) ? (
+        <details className="rounded-2xl border border-blue-200 bg-blue-50 p-3" open={step === 1}>
+          <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
+          {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
+          <div className="mt-2"><PhotoGrid ids={visit.photoIds} /></div>
+        </details>
+      ) : null}
+
       {step === 0 && (
         <>
           {db.clients.length > 0 && (
@@ -100,7 +121,7 @@ export default function NovoOrcamento() {
               <Field label="Endereço da obra"><TextInput value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} /></Field>
             </Card>
           )}
-          {clientId && <Field label="Endereço da obra"><TextInput value={site || chosenClient?.address || ""} onChange={(e) => setSite(e.target.value)} /></Field>}
+          {clientId && <Field label="Endereço da obra"><TextInput value={siteValue} onChange={(e) => setSite(e.target.value)} /></Field>}
         </>
       )}
 

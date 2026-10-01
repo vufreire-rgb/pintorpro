@@ -9,6 +9,7 @@ export const previewQuote = (input: QuoteInput, db: Db): QuoteResult => calculat
 
 interface NewQuote {
   clientId: string;
+  visitId?: string;
   siteAddress: string;
   input: QuoteInput;
   paymentTerms: string;
@@ -31,7 +32,12 @@ export function saveQuote(db: Db, data: NewQuote): string {
     engineVersion: ENGINE_VERSION,
     result,
   };
-  updateDb((d) => ({ ...d, quotes: [quote, ...d.quotes], counters: { quote: quote.number } }));
+  updateDb((d) => ({
+    ...d,
+    quotes: [quote, ...d.quotes],
+    visits: d.visits.map((v) => (v.id === data.visitId ? { ...v, quoteId: id } : v)),
+    counters: { quote: quote.number },
+  }));
   return id;
 }
 

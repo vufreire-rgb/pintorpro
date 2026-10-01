@@ -11,6 +11,7 @@ export function dashboard(db: Db) {
   const wonMonth = db.quotes.filter((q) => q.status === "won" && sameMonth(q.closedAt));
   const decided = db.quotes.filter((q) => q.status !== "open").length;
   return {
+    visitsPending: db.visits.filter((v) => !v.quoteId).length,
     openCount: open.length,
     openCents: open.reduce((s, q) => s + q.result.totals.totalCents, 0),
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),

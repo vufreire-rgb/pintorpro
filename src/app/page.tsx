@@ -16,8 +16,13 @@ export default function Painel() {
   );
   return (
     <Screen title={`Olá, ${db.company!.name}`} nav>
-      <LinkButton href="/orcamentos/novo">+ NOVO ORÇAMENTO</LinkButton>
+      <LinkButton href="/visitas/nova">GRAVAR VISITA</LinkButton>
       <div className="grid grid-cols-2 gap-3">
+        <LinkButton href="/orcamentos/novo" variant="ghost">Orçar rápido</LinkButton>
+        <LinkButton href="/clientes" variant="ghost">Clientes</LinkButton>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {stat("Visitas sem orçamento", String(d.visitsPending))}
         {stat(`Em aberto (${d.openCount})`, formatBRL(d.openCents))}
         {stat("Vendido no mês", formatBRL(d.soldMonthCents))}
         {stat("Lucro estimado do mês", formatBRL(d.profitMonthCents))}

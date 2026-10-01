@@ -22,8 +22,8 @@ export function Screen({ title, back, children, nav = false }: { title: string; 
 
 const NAV = [
   ["/", "Painel"],
+  ["/visitas", "Visitas"],
   ["/orcamentos", "Orçamentos"],
-  ["/clientes", "Clientes"],
   ["/obras", "Obras"],
   ["/configuracoes", "Ajustes"],
 ] as const;
@@ -82,6 +82,10 @@ export const inputCls = "min-h-14 w-full rounded-xl border border-slate-300 bg-w
 
 export function TextInput(p: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...p} className={inputCls} />;
+}
+
+export function TextArea(p: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea {...p} className={`${inputCls} min-h-40 py-3`} />;
 }
 
 /** Campo numérico que aceita vírgula (2,5). */
