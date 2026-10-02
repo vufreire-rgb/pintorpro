@@ -1,5 +1,8 @@
 "use client";
+import Link from "next/link";
+import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { whenLabel, visitState } from "@/modules/visitList";
 import { dashboard } from "@/modules/dashboard";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -16,7 +19,19 @@ export default function Painel() {
   );
   return (
     <Screen title={`Olá, ${db.company!.name}`} nav>
-      <LinkButton href="/visitas/nova">GRAVAR VISITA</LinkButton>
+      <QuickVisitButton />
+      <LinkButton href="/visitas/agendar" variant="ghost">📅 Agendar visita</LinkButton>
+      {d.nextVisits.length > 0 ? (
+        <Card className="flex flex-col gap-2">
+          <b>Próximas visitas</b>
+          {d.nextVisits.map((v) => (
+            <Link key={v.id} href={`/visitas/${v.id}`} className="flex justify-between gap-2 rounded-xl bg-slate-50 p-3">
+              <span className="truncate font-medium">{db.clients.find((c) => c.id === v.clientId)?.name || v.siteAddress || "Visita"}</span>
+              <span className={visitState(v) === "late" ? "shrink-0 text-red-700" : "shrink-0 text-brand"}>{whenLabel(v.scheduledAt!)}</span>
+            </Link>
+          ))}
+        </Card>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <LinkButton href="/orcamentos/novo" variant="ghost">Orçar rápido</LinkButton>
         <LinkButton href="/clientes" variant="ghost">Clientes</LinkButton>

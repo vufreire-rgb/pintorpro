@@ -1,4 +1,6 @@
 import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
+import { buildIcs } from "./visitList";
+import type { Client, Visit } from "./types";
 import { loadFileBlob, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
 
@@ -59,4 +61,14 @@ export async function downloadPdf(db: Db, q: Quote): Promise<void> {
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank");
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/** Baixa o compromisso (.ics): abre no calendário do celular, com alarme 1 hora antes. */
+export function downloadVisitIcs(v: Visit, client?: Client): void {
+  const url = URL.createObjectURL(new Blob([buildIcs(v, client)], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "visita.ics";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

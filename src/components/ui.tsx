@@ -64,8 +64,9 @@ export function LinkButton({ href, children, variant = "primary" }: { href: stri
   );
 }
 
+/** Cartão. Cor de fundo e de borda podem ser trocadas pelo `className` (ex.: "bg-brand-soft border-brand/30"). */
 export const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <section className={`rounded-2xl border border-slate-200 bg-white p-4 ${className}`}>{children}</section>
+  <section className={`rounded-2xl border p-4 ${/\bbg-/.test(className) ? "" : "bg-white"} ${/(^|\s)border-(brand|accent|slate|amber|red|blue|emerald|green|white|black)/.test(className) ? "" : "border-slate-200"} ${className}`}>{children}</section>
 );
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -114,7 +115,7 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-12 rounded-full border px-4 text-base ${active ? "border-brand bg-brand text-white" : "border-slate-300 bg-white"}`}
+      className={`min-h-12 rounded-full border px-4 text-base ${active ? "border-brand bg-brand text-white" : "border-slate-300 bg-white text-slate-900"}`}
     >
       {children}
     </button>

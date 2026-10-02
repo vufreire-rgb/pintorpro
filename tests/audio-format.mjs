@@ -6,7 +6,7 @@ const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/c
 const browser = await chromium.launch({ executablePath: exe, args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] });
 
 async function run(forceWebm) {
-  const ctx = await browser.newContext({ ...devices["Pixel 7"], permissions: ["microphone"] });
+  const ctx = await browser.newContext({ ...devices["Pixel 7"], permissions: ["microphone", "camera"] });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -20,6 +20,7 @@ async function run(forceWebm) {
   await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
   await page.goto(base + "/visitas/v1");
   await page.getByRole("button", { name: /Gravar áudio/ }).click();
+  await page.getByRole("button", { name: /Sim, avisei/ }).click();
   await page.getByRole("button", { name: /Parar e guardar/ }).waitFor();
   await page.waitForTimeout(2500);
   await page.getByRole("button", { name: /Parar e guardar/ }).click();

@@ -1,3 +1,4 @@
+import { filterVisits, visitState } from "./visitList";
 import type { Db } from "./types";
 
 export function dashboard(db: Db) {
@@ -11,7 +12,8 @@ export function dashboard(db: Db) {
   const wonMonth = db.quotes.filter((q) => q.status === "won" && sameMonth(q.closedAt));
   const decided = db.quotes.filter((q) => q.status !== "open").length;
   return {
-    visitsPending: db.visits.filter((v) => !v.quoteId).length,
+    visitsPending: db.visits.filter((v) => visitState(v) === "done" && !v.quoteId).length,
+    nextVisits: filterVisits(db.visits, db.clients, { filter: "scheduled" }).slice(0, 3),
     openCount: open.length,
     openCents: open.reduce((s, q) => s + q.result.totals.totalCents, 0),
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),

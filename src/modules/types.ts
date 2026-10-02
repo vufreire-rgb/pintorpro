@@ -79,16 +79,44 @@ export interface Work {
   actual?: { hours?: number; costCents?: number; endDate?: string };
 }
 
+/** Marca feita pelo pintor durante a gravação (ex.: "📍 Medida" aos 0:42). */
+export interface AudioMarker {
+  t: number;
+  label: string;
+}
+
 export interface AudioNote {
   id: string;
   seconds: number;
   createdAt: string;
   mime: string;
+  markers?: AudioMarker[];
+}
+
+/** Medidas anotadas na visita; viram ambientes do orçamento. */
+export interface VisitRoom {
+  id: string;
+  name: string;
+  lengthM: number;
+  widthM: number;
+  heightM: number;
+  condition: string;
+  doors: number;
+  windows: number;
 }
 
 export interface Visit {
   id: string;
-  clientId: string;
+  /** Pode faltar: a visita rápida começa sem cliente e ele é definido depois. */
+  clientId?: string;
+  /** Medidas anotadas na visita (viram os ambientes do orçamento). */
+  rooms?: VisitRoom[];
+  /** Visita agendada (ISO). Sem `startedAt` = ainda não aconteceu. */
+  scheduledAt?: string;
+  /** Quando a visita foi iniciada (visitas rápidas já nascem iniciadas). */
+  startedAt?: string;
+  /** O pintor confirmou que avisou o cliente sobre a gravação. */
+  recordingConsent?: boolean;
   siteAddress: string;
   notes: string;
   /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */

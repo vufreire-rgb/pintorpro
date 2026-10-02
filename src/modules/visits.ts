@@ -1,20 +1,24 @@
 import { uid, updateDb } from "./db";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
-import type { Db, Visit } from "./types";
+import type { RoomForm } from "./rooms";
+import type { AudioMarker, Db, Visit } from "./types";
 
-/** Cria a visita; se não escolheu cliente existente, cadastra um novo. */
-export function createVisit(db: Db, data: { clientId?: string; name: string; phone: string; address: string }): string {
-  const client = data.clientId ? db.clients.find((c) => c.id === data.clientId) : undefined;
-  const clientId = client?.id ?? addClient({ name: data.name, phone: data.phone, address: data.address }).id;
-  const visit: Visit = {
-    id: uid(),
-    clientId,
-    siteAddress: data.address || client?.address || "",
-    notes: "",
-    photoIds: [],
-    createdAt: new Date().toISOString(),
-  };
+const blankVisit = (): Visit => ({ id: uid(), siteAddress: "", notes: "", photoIds: [], createdAt: new Date().toISOString() });
+
+/** Visita rápida: nasce na hora, já iniciada e SEM cliente (ele é definido depois). */
+export function createQuickVisit(): string {
+  const now = new Date().toISOString();
+  const visit: Visit = { ...blankVisit(), startedAt: now };
+  updateDb((d) => ({ ...d, visits: [visit, ...d.visits] }));
+  return visit.id;
+}
+
+/** Agenda uma visita futura. Se não escolheu cliente existente e informou um nome, cadastra o cliente. */
+export function createScheduledVisit(db: Db, data: { clientId?: string; name?: string; phone?: string; address: string; scheduledAt: string; notes?: string }): string {
+  const existing = data.clientId ? db.clients.find((c) => c.id === data.clientId) : undefined;
+  const clientId = existing?.id ?? (data.name?.trim() ? addClient({ name: data.name.trim(), phone: data.phone ?? "", address: data.address }).id : undefined);
+  const visit: Visit = { ...blankVisit(), clientId, siteAddress: data.address || existing?.address || "", scheduledAt: data.scheduledAt, notes: data.notes ?? "" };
   updateDb((d) => ({ ...d, visits: [visit, ...d.visits] }));
   return visit.id;
 }
@@ -22,12 +26,40 @@ export function createVisit(db: Db, data: { clientId?: string; name: string; pho
 const patch = (id: string, fn: (v: Visit) => Visit) =>
   updateDb((d) => ({ ...d, visits: d.visits.map((v) => (v.id === id ? fn(v) : v)) }));
 
+export const setVisitClient = (id: string, clientId: string) =>
+  updateDb((d) => {
+    const c = d.clients.find((x) => x.id === clientId);
+    return { ...d, visits: d.visits.map((v) => (v.id === id ? { ...v, clientId, siteAddress: v.siteAddress || c?.address || "" } : v)) };
+  });
+
+/** Cadastra o cliente e já liga à visita. */
+export function createClientForVisit(id: string, data: { name: string; phone: string; address: string }): void {
+  const client = addClient(data);
+  patch(id, (v) => ({ ...v, clientId: client.id, siteAddress: v.siteAddress || data.address }));
+}
+
+/** Marca que a visita agendada começou agora. */
+export const startVisit = (id: string) => patch(id, (v) => ({ ...v, startedAt: new Date().toISOString() }));
+export const rescheduleVisit = (id: string, scheduledAt: string) => patch(id, (v) => ({ ...v, scheduledAt, startedAt: undefined }));
+export const setRecordingConsent = (id: string) => patch(id, (v) => ({ ...v, recordingConsent: true }));
+
+export function addVisitRoom(id: string, form: RoomForm): void {
+  patch(id, (v) => ({ ...v, rooms: [...(v.rooms ?? []), { ...form, id: uid(), name: form.name.trim() || `Ambiente ${(v.rooms?.length ?? 0) + 1}` }] }));
+}
+export const removeVisitRoom = (id: string, roomId: string) => patch(id, (v) => ({ ...v, rooms: (v.rooms ?? []).filter((r) => r.id !== roomId) }));
+
 export const setVisitNotes = (id: string, notes: string) => patch(id, (v) => ({ ...v, notes }));
 export const setVisitAddress = (id: string, siteAddress: string) => patch(id, (v) => ({ ...v, siteAddress }));
 
-export async function addVisitPhotos(id: string, files: File[]): Promise<void> {
+/** Guarda as fotos. `room`: ambiente anotado na hora (vira o rótulo da foto no PDF). Retorna os ids. */
+export async function addVisitPhotos(id: string, files: File[], room?: string): Promise<string[]> {
   const ids = await storePhotos(files);
-  patch(id, (v) => ({ ...v, photoIds: [...v.photoIds, ...ids] }));
+  patch(id, (v) => ({
+    ...v,
+    photoIds: [...v.photoIds, ...ids],
+    photoMeta: room ? { ...v.photoMeta, ...Object.fromEntries(ids.map((pid) => [pid, { ...v.photoMeta?.[pid], room }])) } : v.photoMeta,
+  }));
+  return ids;
 }
 
 export async function removeVisitPhoto(id: string, photoId: string): Promise<void> {
@@ -35,8 +67,8 @@ export async function removeVisitPhoto(id: string, photoId: string): Promise<voi
   await removePhotoFile(photoId);
 }
 
-export async function addVisitAudio(id: string, blob: Blob, seconds: number): Promise<void> {
-  const note = { id: await saveAudioFile(blob), seconds, createdAt: new Date().toISOString(), mime: blob.type };
+export async function addVisitAudio(id: string, blob: Blob, seconds: number, markers: AudioMarker[] = []): Promise<void> {
+  const note = { id: await saveAudioFile(blob), seconds, createdAt: new Date().toISOString(), mime: blob.type, markers };
   patch(id, (v) => ({ ...v, audios: [...(v.audios ?? []), note] }));
 }
 

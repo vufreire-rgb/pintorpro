@@ -38,7 +38,7 @@ export function saveQuote(db: Db, data: NewQuote): string {
   updateDb((d) => ({
     ...d,
     quotes: [quote, ...d.quotes],
-    visits: d.visits.map((v) => (v.id === data.visitId ? { ...v, quoteId: id } : v)),
+    visits: d.visits.map((v) => (v.id === data.visitId ? { ...v, quoteId: id, clientId: v.clientId ?? data.clientId } : v)),
     counters: { quote: quote.number },
   }));
   return id;
