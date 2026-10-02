@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { cloudEnabled } from "@/modules/auth";
 import { fmtClock, useRecorder } from "@/modules/audio";
 import { useFileUrl } from "@/modules/photos";
 import { addVisitAudio, removeVisitAudio } from "@/modules/visits";
@@ -51,7 +52,7 @@ export function AudioRecorder({ visitId, audios }: { visitId: string; audios: Au
       )}
       {state === "denied" ? <p className="text-sm text-red-700">Sem acesso ao microfone. Permita o microfone nas configurações do navegador e tente de novo.</p> : null}
       {state === "unsupported" ? <p className="text-sm text-red-700">Este navegador não consegue gravar áudio.</p> : null}
-      <p className="text-sm text-slate-500">Avise o cliente que a conversa está sendo gravada. Os áudios ficam guardados neste aparelho.</p>
+      <p className="text-sm text-slate-500">Avise o cliente que a conversa está sendo gravada. {cloudEnabled ? "Os áudios ficam guardados na sua conta." : "Os áudios ficam guardados neste aparelho."}</p>
     </div>
   );
 }

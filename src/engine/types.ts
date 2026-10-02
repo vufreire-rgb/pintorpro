@@ -39,6 +39,8 @@ export interface ServiceConfig {
   usesCoats: boolean;
   defaultCoats: number;
   materialIds: string[];
+  /** Frase mostrada ao cliente no PDF. Aceita {demaos} (ex.: "2 demãos"). */
+  clientText?: string;
   isDemo?: boolean;
 }
 

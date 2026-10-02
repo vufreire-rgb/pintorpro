@@ -1,5 +1,6 @@
 "use client";
-import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
+import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
+import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
 import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
@@ -20,6 +21,34 @@ export default function Configuracoes() {
         <Field label="WhatsApp"><TextInput value={c.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} /></Field>
         <Field label="Cidade"><TextInput value={c.city} onChange={(e) => set({ city: e.target.value })} /></Field>
         <Field label="Condição de pagamento padrão"><TextInput value={c.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value })} /></Field>
+      </Card>
+
+      <Card className="flex flex-col gap-4">
+        <h2 className="text-lg font-bold">Seu orçamento em PDF</h2>
+        <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
+        <div>
+          <p className="mb-2 font-medium">Cor do seu PDF</p>
+          <div className="flex flex-wrap gap-3">
+            {PDF_COLORS.map((col) => (
+              <button
+                key={col.hex}
+                type="button"
+                onClick={() => set({ brandColor: col.hex })}
+                aria-label={col.name}
+                aria-pressed={(c.brandColor ?? "#0F3B7A") === col.hex}
+                className={`grid h-12 w-12 place-items-center rounded-full text-xl text-white ${(c.brandColor ?? "#0F3B7A") === col.hex ? "ring-4 ring-slate-300" : ""}`}
+                style={{ backgroundColor: col.hex }}
+              >
+                {(c.brandColor ?? "#0F3B7A") === col.hex ? "✓" : ""}
+              </button>
+            ))}
+          </div>
+        </div>
+        <Field label="Entrada sugerida (%)" hint="Usada no botão de pagar do PDF, quando você coloca o link de pagamento."><NumberInput value={c.depositPct ?? 50} onChange={(n) => set({ depositPct: Math.min(100, Math.max(1, n || 50)) })} /></Field>
+        <Field label="O que não está incluso" hint="Um item por linha."><TextArea value={c.exclusionsText ?? DEFAULT_PDF_TEXTS.exclusionsText} onChange={(e) => set({ exclusionsText: e.target.value })} /></Field>
+        <Field label="Antes de começar (o que o cliente faz)" hint="Um item por linha."><TextArea value={c.beforeStartText ?? DEFAULT_PDF_TEXTS.beforeStartText} onChange={(e) => set({ beforeStartText: e.target.value })} /></Field>
+        <Field label="Garantia"><TextArea value={c.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText} onChange={(e) => set({ warrantyText: e.target.value })} /></Field>
+        <p className="text-sm text-slate-500">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
       </Card>
 
       <Card className="flex flex-col gap-3">

@@ -27,6 +27,8 @@ export const DEFAULT_COMPANY: Company = {
   safetyDays: 1,
   pricingMode: "base_price",
   marginMode: "on_price",
+  brandColor: "#0F3B7A",
+  depositPct: 50,
 };
 
 export const saveCompany = (company: Company) => updateDb((db) => ({ ...db, company }));

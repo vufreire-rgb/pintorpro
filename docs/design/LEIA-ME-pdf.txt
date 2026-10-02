@@ -1,0 +1,23 @@
+PDF DO ORCAMENTO (ETAPA 1) - Medde (nome provisorio)
+
+IMAGENS (PNG, A4 em pe, 1190 x 1684, o dobro do tamanho de 595 x 842 para ficar nitido)
+  1-pagina-resumo.png ............................ pagina 1: pintor, cliente, valor total, botao de pagar a entrada
+  2-pagina-detalhes.png .......................... pagina 2: o que sera feito em cada ambiente (so o total, sem valor por ambiente)
+  2b-pagina-detalhes-com-valor-por-ambiente.png .. pagina 2 quando o pintor liga o valor por ambiente
+  3-pagina-combinados-e-fotos.png ................ pagina 3: textos prontos, observacoes e ate 6 fotos
+  cores-do-pintor.png ............................ as 6 cores que o pintor pode escolher, com o contraste de cada uma
+  ficha-do-pdf.png ............................... cores, fontes, tamanhos, espacos, botao e cantos
+
+orcamento-exemplo.pdf
+  PDF real de 3 paginas (A4) gerado com as fontes embutidas. O botao PAGAR ENTRADA e um link clicavel
+  (endereco de exemplo, nao funciona). Serve para o desenvolvedor ver que o desenho e reproduzivel em PDF.
+
+fontes (gratis, licenca livre OFL)
+  Outfit (titulos, valores, botao) - fonts.google.com/specimen/Outfit
+  Atkinson Hyperlegible (textos) - fonts.google.com/specimen/Atkinson+Hyperlegible
+  Os arquivos .ttf estao na pasta, junto com as licencas.
+
+OBSERVACOES
+  Nomes, valores, telefone, endereco e link de pagamento sao exemplos.
+  As fotos aparecem como quadros cinza: no PDF real entram as fotos que o pintor marcar (ate 6).
+  O texto de garantia e uma sugestao que o pintor edita.

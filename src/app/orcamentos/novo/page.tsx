@@ -52,6 +52,9 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const [adj, setAdj] = useState<Adjustment>(quote?.input.adjustment ?? { type: "discount", mode: "percent", value: 0 });
   const [payment, setPayment] = useState<string | null>(quote?.paymentTerms ?? null);
   const [notes, setNotes] = useState(quote?.notes ?? "");
+  const [showRoomPrices, setShowRoomPrices] = useState(quote?.showRoomPrices ?? false);
+  const [paymentLink, setPaymentLink] = useState(quote?.paymentLink ?? "");
+  const [depositPct, setDepositPct] = useState(quote?.depositPct ?? db.company?.depositPct ?? 50);
 
   const input: QuoteInput = useMemo(
     () => ({ rooms, extras: [], materialsIncluded: included, yieldOverrides: yields, adjustment: adj }),
@@ -97,11 +100,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const save = () => {
     const paymentTerms = payment ?? db.company!.paymentTerms;
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms, notes });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
-    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes });
+    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -242,7 +245,18 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
             <NumberInput value={adj.mode === "cents" ? adj.value / 100 : adj.value} onChange={(n) => setAdj({ ...adj, value: adj.mode === "cents" ? Math.round(n * 100) : n })} />
           </Card>
           <Field label="Condição de pagamento"><TextInput value={payment ?? db.company!.paymentTerms} onChange={(e) => setPayment(e.target.value)} /></Field>
-          <Field label="Observações (opcional)"><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <Field label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados."><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+          <Card className="flex flex-col gap-3">
+            <b>No PDF do cliente</b>
+            <div className="flex items-center justify-between gap-3">
+              <span>Mostrar o valor de cada ambiente</span>
+              <Chip active={showRoomPrices} onClick={() => setShowRoomPrices(!showRoomPrices)}>{showRoomPrices ? "Sim" : "Não"}</Chip>
+            </div>
+            <Field label="Link para o cliente pagar a entrada (opcional)" hint="Cole o link de pagamento (Pix, cartão) que você já usa. Sem link, o botão de pagar não aparece.">
+              <TextInput type="url" inputMode="url" placeholder="https://" value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
+            </Field>
+            {paymentLink.trim() ? <Field label="Entrada (% do valor total)"><NumberInput value={depositPct} onChange={(n) => setDepositPct(Math.min(100, Math.max(1, n || 50)))} /></Field> : null}
+          </Card>
         </>
       )}
 

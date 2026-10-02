@@ -14,6 +14,16 @@ export interface Company {
   safetyDays: number;
   pricingMode: EngineConfig["pricingMode"];
   marginMode: EngineConfig["marginMode"];
+  // ---- PDF do orçamento (todos opcionais: contas antigas usam os padrões) ----
+  ownerName?: string;
+  /** Uma das cores de PDF_COLORS. */
+  brandColor?: string;
+  /** Um item por linha. */
+  exclusionsText?: string;
+  beforeStartText?: string;
+  warrantyText?: string;
+  /** % da entrada sugerida no botão de pagamento do PDF. */
+  depositPct?: number;
 }
 
 export interface Client {
@@ -34,6 +44,11 @@ export interface Quote {
   /** Quantas vezes foi editado depois de salvo (0/ausente = original). */
   revision?: number;
   revisedAt?: string;
+  /** PDF: mostrar o valor de cada ambiente. */
+  showRoomPrices?: boolean;
+  /** PDF: link para o cliente pagar a entrada (Pix/cartão do próprio pintor). Sem link, o bloco não aparece. */
+  paymentLink?: string;
+  depositPct?: number;
   status: QuoteStatus;
   createdAt: string;
   validUntil: string;
@@ -78,6 +93,8 @@ export interface Visit {
   notes: string;
   /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */
   photoIds: string[];
+  /** Fotos escolhidas para o PDF (por id), com legenda e ambiente. */
+  photoMeta?: Record<string, { inPdf?: boolean; caption?: string; room?: string }>;
   /** Gravações de áudio (arquivos ficam no aparelho). */
   audios?: AudioNote[];
   createdAt: string;

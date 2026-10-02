@@ -52,3 +52,20 @@ export async function deleteVisit(id: string, visits: Visit[]): Promise<void> {
   if (!v) return;
   await Promise.all([...v.photoIds, ...(v.audios ?? []).map((a) => a.id)].map((fid) => removePhotoFile(fid)));
 }
+
+export type PhotoMeta = NonNullable<Visit["photoMeta"]>[string];
+
+/** Marca/desmarca a foto para o PDF (até 6) e guarda legenda/ambiente. Retorna false se já há 6. */
+export function setPhotoMeta(visitId: string, photoId: string, meta: Partial<PhotoMeta>, maxInPdf: number): boolean {
+  let ok = true;
+  patch(visitId, (v) => {
+    const all = v.photoMeta ?? {};
+    const already = Object.values(all).filter((m) => m.inPdf).length;
+    if (meta.inPdf && !all[photoId]?.inPdf && already >= maxInPdf) {
+      ok = false;
+      return v;
+    }
+    return { ...v, photoMeta: { ...all, [photoId]: { ...all[photoId], ...meta } } };
+  });
+  return ok;
+}

@@ -84,6 +84,27 @@ export async function removePhotoFile(id: string): Promise<void> {
   if (cloudConfigured && uid) await removeCloudFile(uid, id).catch(() => undefined);
 }
 
+/** Lê o arquivo do aparelho; se não estiver aqui, baixa da nuvem e guarda para a próxima vez. */
+export async function loadFileBlob(id: string): Promise<Blob | undefined> {
+  const local = await getFile(id).catch(() => undefined);
+  if (local) return local;
+  const uid = getUserId();
+  const remote = cloudConfigured && uid ? await downloadFile(uid, id).catch(() => null) : null;
+  if (remote) await putFile(id, remote).catch(() => undefined);
+  return remote ?? undefined;
+}
+
+/** Reduz uma foto para o PDF (lado maior 900 px, JPEG) e devolve como data URL. */
+export async function photoForPdf(blob: Blob): Promise<string> {
+  const bmp = await createImageBitmap(blob);
+  const scale = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.8);
+}
+
 /** URL temporária para exibir um arquivo (foto ou áudio); null enquanto carrega ou se não existe neste aparelho. */
 export function useFileUrl(id: string): string | null {
   const [url, setUrl] = useState<string | null>(null);

@@ -1,50 +1,42 @@
-import { formatBRL } from "@/shared/money";
-import { fmtDate, fmtNum, UNIT_LABEL } from "@/shared/format";
+import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
+import { loadFileBlob, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
-
-/** Monta os dados do cliente. Nunca inclui custo, lucro ou margem. */
-export function buildPdfData(db: Db, q: Quote) {
-  const client = db.clients.find((c) => c.id === q.clientId);
-  const rooms = q.input.rooms
-    .map((r) => ({
-      name: r.name,
-      lines: q.result.serviceLines
-        .filter((l) => l.roomId === r.id)
-        .map((l) => ({ name: l.name, qty: `${fmtNum(l.quantity)} ${UNIT_LABEL[l.unit] ?? l.unit}` })),
-    }))
-    .filter((r) => r.lines.length > 0);
-  const days = q.result.schedule.totalDays;
-  return {
-    companyName: db.company?.name ?? "",
-    companyWhatsapp: db.company?.whatsapp ?? "",
-    companyCity: db.company?.city ?? "",
-    number: q.number,
-    date: fmtDate(q.revisedAt ?? q.createdAt),
-    validUntil: fmtDate(q.validUntil),
-    clientName: client?.name ?? "",
-    siteAddress: q.siteAddress,
-    rooms,
-    materialNames: q.result.materialLines.filter((m) => m.included).map((m) => m.name),
-    total: formatBRL(q.result.totals.totalCents),
-    days: days > 0 ? `${days} dia${days > 1 ? "s" : ""} (com dias de segurança)` : "a combinar",
-    paymentTerms: q.paymentTerms,
-    notes: q.notes,
-  };
-}
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "");
 
+/** Fotos que o pintor marcou "No PDF" na visita (até 6), já reduzidas. */
+async function loadPdfPhotos(db: Db, q: Quote): Promise<QuotePdfData["photos"]> {
+  const visit = db.visits.find((v) => v.id === q.visitId);
+  if (!visit) return [];
+  const chosen = visit.photoIds.filter((id) => visit.photoMeta?.[id]?.inPdf).slice(0, MAX_PDF_PHOTOS);
+  const out: QuotePdfData["photos"] = [];
+  for (const id of chosen) {
+    const blob = await loadFileBlob(id);
+    if (!blob) continue;
+    try {
+      out.push({ src: await photoForPdf(blob), room: visit.photoMeta?.[id]?.room ?? "", caption: visit.photoMeta?.[id]?.caption ?? "" });
+    } catch {
+      /* foto ilegível: pula */
+    }
+  }
+  return out;
+}
+
+async function makePdf(db: Db, q: Quote): Promise<{ blob: Blob; data: QuotePdfData }> {
+  const { renderQuotePdf } = await import("@/integrations/pdf/quotePdf");
+  const data = buildPdfData(db, q, await loadPdfPhotos(db, q));
+  return { blob: await renderQuotePdf(data), data };
+}
+
 /** Gera o PDF e abre o compartilhamento do celular; se não houver, baixa o PDF e abre o WhatsApp. */
 export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "downloaded"> {
-  const { renderQuotePdf } = await import("@/integrations/pdf/quotePdf");
-  const data = buildPdfData(db, q);
-  const blob = await renderQuotePdf(data);
-  const file = new File([blob], `orcamento-${q.number}.pdf`, { type: "application/pdf" });
-  const text = `Olá ${data.clientName}! Segue o orçamento nº ${q.number} — ${data.total}. Validade: ${data.validUntil}.`;
+  const { blob, data } = await makePdf(db, q);
+  const file = new File([blob], `orcamento-${data.number}.pdf`, { type: "application/pdf" });
+  const text = `Olá ${data.clientName}! Segue o orçamento nº ${data.number} — ${data.total}. Validade: ${data.validity.replace("7 dias, ", "")}.`;
 
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], text, title: `Orçamento ${q.number}` });
+      await navigator.share({ files: [file], text, title: `Orçamento ${data.number}` });
       return "shared";
     } catch (e) {
       if ((e as Error).name === "AbortError") return "shared";
@@ -63,8 +55,7 @@ export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "
 }
 
 export async function downloadPdf(db: Db, q: Quote): Promise<void> {
-  const { renderQuotePdf } = await import("@/integrations/pdf/quotePdf");
-  const blob = await renderQuotePdf(buildPdfData(db, q));
+  const { blob } = await makePdf(db, q);
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank");
   setTimeout(() => URL.revokeObjectURL(url), 60000);

@@ -14,6 +14,9 @@ interface NewQuote {
   input: QuoteInput;
   paymentTerms: string;
   notes: string;
+  showRoomPrices?: boolean;
+  paymentLink?: string;
+  depositPct?: number;
 }
 
 export function saveQuote(db: Db, data: NewQuote): string {
@@ -44,7 +47,7 @@ export function saveQuote(db: Db, data: NewQuote): string {
 const DAY = 86400000;
 
 /** Edita um orçamento ainda não fechado. Recalcula com os valores ATUAIS dos Ajustes. */
-export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes">): void {
+export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes" | "showRoomPrices" | "paymentLink" | "depositPct">): void {
   const config = buildEngineConfig(db);
   const result = calculateQuote(data.input, config);
   const now = new Date();
@@ -77,6 +80,9 @@ export function duplicateQuote(db: Db, id: string): string | null {
     input: JSON.parse(JSON.stringify(q.input)) as QuoteInput,
     paymentTerms: q.paymentTerms,
     notes: q.notes,
+    showRoomPrices: q.showRoomPrices,
+    paymentLink: q.paymentLink,
+    depositPct: q.depositPct,
   });
 }
 
