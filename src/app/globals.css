@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Identidade do app (ver src/shared/brand.ts). */
+@theme {
+  --color-brand: #0f3b7a;
+  --color-brand-dark: #0b2d5e;
+  --color-brand-soft: #e9eff8;
+  --color-accent: #14a85e;
+  --color-accent-dark: #0b7f44; /* verde com contraste suficiente para texto/botão */
+}
+
 /* Comportamento de app: sem "pulo" ao puxar a tela e sem seleção acidental de botões. */
 html { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
 button { touch-action: manipulation; }

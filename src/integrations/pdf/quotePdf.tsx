@@ -20,14 +20,14 @@ export interface QuotePdfData {
 
 const s = StyleSheet.create({
   page: { padding: 36, fontSize: 10, fontFamily: "Helvetica", color: "#0f172a" },
-  head: { borderBottom: "2 solid #1d4ed8", paddingBottom: 10, marginBottom: 14 },
-  title: { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#1d4ed8" },
+  head: { borderBottom: "2 solid #0F3B7A", paddingBottom: 10, marginBottom: 14 },
+  title: { fontSize: 20, fontFamily: "Helvetica-Bold", color: "#0F3B7A" },
   muted: { color: "#475569" },
   h2: { fontSize: 12, fontFamily: "Helvetica-Bold", marginTop: 14, marginBottom: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
   room: { fontFamily: "Helvetica-Bold", marginTop: 6 },
   total: { marginTop: 16, padding: 12, backgroundColor: "#eff6ff", flexDirection: "row", justifyContent: "space-between" },
-  totalValue: { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#1d4ed8" },
+  totalValue: { fontSize: 18, fontFamily: "Helvetica-Bold", color: "#0F3B7A" },
 });
 
 function QuoteDoc({ d }: { d: QuotePdfData }) {

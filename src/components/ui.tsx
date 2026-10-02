@@ -42,8 +42,8 @@ export function BottomNav() {
 
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "danger" | "success" };
 const VARIANT = {
-  primary: "bg-blue-700 text-white active:bg-blue-800",
-  success: "bg-emerald-600 text-white active:bg-emerald-700",
+  primary: "bg-brand text-white active:bg-brand-dark",
+  success: "bg-accent-dark text-white active:bg-accent-dark/90",
   danger: "bg-red-600 text-white active:bg-red-700",
   ghost: "bg-slate-100 text-slate-900 active:bg-slate-200",
 };
@@ -78,7 +78,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-export const inputCls = "min-h-14 w-full rounded-xl border border-slate-300 bg-white px-4 text-lg outline-blue-600";
+export const inputCls = "min-h-14 w-full rounded-xl border border-slate-300 bg-white px-4 text-lg outline-brand";
 
 export function TextInput(p: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...p} className={inputCls} />;
@@ -114,7 +114,7 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-12 rounded-full border px-4 text-base ${active ? "border-blue-700 bg-blue-700 text-white" : "border-slate-300 bg-white"}`}
+      className={`min-h-12 rounded-full border px-4 text-base ${active ? "border-brand bg-brand text-white" : "border-slate-300 bg-white"}`}
     >
       {children}
     </button>

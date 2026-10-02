@@ -71,7 +71,7 @@ export default function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col p-4">
-      <div className="mb-6 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-blue-700 transition-all" style={{ width: `${((step + 1) / STEPS) * 100}%` }} /></div>
+      <div className="mb-6 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-brand transition-all" style={{ width: `${((step + 1) / STEPS) * 100}%` }} /></div>
       <div className="flex flex-1 flex-col justify-center gap-4">{body}</div>
       <div className="flex gap-3 pt-6">
         {step > 0 ? <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button> : null}

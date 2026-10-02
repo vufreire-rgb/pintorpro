@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
+import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
 import { Button, Field, Loading, TextInput } from "./ui";
 
 function LoginScreen() {
@@ -20,16 +21,24 @@ function LoginScreen() {
   };
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 p-6">
-      <h1 className="text-3xl font-bold">Pintor Pro</h1>
-      <p className="text-lg text-slate-600">{mode === "in" ? "Entre na sua conta" : "Crie sua conta — 30 dias grátis"}</p>
-      <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-      <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
-        <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
-      </Field>
-      {msg ? <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{msg}</p> : null}
-      <Button disabled={busy || !email.includes("@") || password.length < 6} onClick={submit}>{busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}</Button>
-      <Button variant="ghost" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-brand">
+      <header className="flex flex-col items-center gap-3 px-6 pb-10 pt-14 text-center text-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/simbolo-sobre-escuro.svg" alt="" className="h-24 w-24" />
+        <h1 className="text-4xl font-bold tracking-tight">{APP_NAME}</h1>
+        <p className="text-lg text-white/80">{APP_TAGLINE}</p>
+      </header>
+      <section className="flex flex-1 flex-col gap-4 rounded-t-3xl bg-white p-6 pb-10">
+        <h2 className="text-2xl font-bold">{mode === "in" ? "Entrar na sua conta" : "Criar sua conta"}</h2>
+        {mode === "up" ? <p className="-mt-2 text-slate-600">30 dias grátis, sem cartão.</p> : null}
+        <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
+        <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
+          <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        {msg ? <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{msg}</p> : null}
+        <Button disabled={busy || !email.includes("@") || password.length < 6} onClick={submit}>{busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}</Button>
+        <Button variant="ghost" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>
+      </section>
     </div>
   );
 }

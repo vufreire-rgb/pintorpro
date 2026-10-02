@@ -1,5 +1,6 @@
 "use client";
 import { dismissInstall, promptInstall, useInstallState } from "@/modules/pwa";
+import { APP_NAME } from "@/shared/brand";
 import { Button } from "./ui";
 
 /** Ensina (ou faz) a instalação do app no celular. `always`: ignora o "agora não" (usado em Ajustes). */
@@ -7,8 +8,8 @@ export function InstallBanner({ always = false }: { always?: boolean }) {
   const state = useInstallState(always);
   if (state === "hidden") return null;
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4">
-      <h2 className="text-lg font-bold">📲 Instale o Pintor Pro no celular</h2>
+    <section className="flex flex-col gap-3 rounded-2xl border border-brand/25 bg-brand-soft p-4">
+      <h2 className="text-lg font-bold">📲 Instale o {APP_NAME} no celular</h2>
       {state === "can-prompt" ? (
         <>
           <p>Abre em tela cheia, como um aplicativo, direto da tela inicial.</p>

@@ -31,7 +31,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
       <Card>
         <div className="text-lg font-semibold">{client?.name}</div>
         <div className="text-slate-600">{q.siteAddress}</div>
-        <div className="mt-2 text-3xl font-bold text-blue-700">{formatBRL(t.totalCents)}</div>
+        <div className="mt-2 text-3xl font-bold text-brand">{formatBRL(t.totalCents)}</div>
         <div className="text-sm text-slate-600">
           Prazo: {q.result.schedule.totalDays} dia(s) · Válido até {fmtDate(q.validUntil)}{isExpired(q) ? " (vencido)" : ""}
         </div>
@@ -87,7 +87,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { deleteQuote(q.id); router.replace("/orcamentos"); }}
       />
-      <Link href="/orcamentos/novo" className="text-center text-blue-700 underline">Fazer outro orçamento</Link>
+      <Link href="/orcamentos/novo" className="text-center text-brand underline">Fazer outro orçamento</Link>
     </Screen>
   );
 }

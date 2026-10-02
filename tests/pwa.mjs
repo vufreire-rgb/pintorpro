@@ -46,10 +46,10 @@ await ctx.setOffline(false);
 // 4) banner de instalação
 await page.goto(base + "/");
 await page.getByText("GRAVAR VISITA").waitFor();
-check(await page.getByText("Instale o Pintor Pro no celular").isVisible(), "aviso de instalação aparece no painel");
+check(await page.getByText("Instale o Medde no celular").isVisible(), "aviso de instalação aparece no painel");
 await page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/pwa-painel.png` });
 await page.getByRole("button", { name: "Agora não" }).click();
-check(!(await page.getByText("Instale o Pintor Pro no celular").isVisible()), "'Agora não' esconde o aviso");
+check(!(await page.getByText("Instale o Medde no celular").isVisible()), "'Agora não' esconde o aviso");
 
 await browser.close();
 if (fails.length) { console.log("\nFALHARAM:", fails.length); process.exit(1); }

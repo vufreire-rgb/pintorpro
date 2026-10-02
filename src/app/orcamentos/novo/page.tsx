@@ -109,12 +109,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   return (
     <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back={quote ? `/orcamentos/${quote.id}` : "/orcamentos"}>
       {quote ? (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm">
+        <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-sm">
           <b>Editando o orçamento nº {quote.number}.</b> Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
         </div>
       ) : null}
       {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
-        <details className="rounded-2xl border border-blue-200 bg-blue-50 p-3" open={step === 1}>
+        <details className="rounded-2xl border border-brand/25 bg-brand-soft p-3" open={step === 1}>
           <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
           {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
           <div className="mt-2"><PhotoGrid ids={visit.photoIds} /></div>
@@ -250,7 +250,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         <>
           <Card>
             <div className="text-sm text-slate-600">Preço para o cliente</div>
-            <div className="text-4xl font-bold text-blue-700">{formatBRL(t.totalCents)}</div>
+            <div className="text-4xl font-bold text-brand">{formatBRL(t.totalCents)}</div>
             <div className="text-slate-600">Prazo: {result.schedule.workDays} dia(s) de trabalho + {result.schedule.safetyDays} de segurança</div>
           </Card>
           <Card className="border-amber-300 bg-amber-50">
@@ -281,5 +281,5 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 }
 
 function Link2() {
-  return <a href="/configuracoes" className="mt-2 block text-blue-700 underline">Conferir valores em Ajustes</a>;
+  return <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>;
 }

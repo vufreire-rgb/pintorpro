@@ -1,4 +1,4 @@
-/* Service worker do Pintor Pro: deixa o app abrir sem internet. Os DADOS continuam vindo do aparelho/nuvem. */
+/* Service worker do app: deixa o app abrir sem internet. Os DADOS continuam vindo do aparelho/nuvem. */
 const VERSION = "v1";
 const STATIC = `pp-static-${VERSION}`;
 const PAGES = `pp-pages-${VERSION}`;
