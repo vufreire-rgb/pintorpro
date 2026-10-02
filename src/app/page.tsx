@@ -1,5 +1,4 @@
 "use client";
-import { InstallBanner } from "@/components/InstallBanner";
 import { Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { dashboard } from "@/modules/dashboard";
 import { useAppDb } from "@/modules/useApp";
@@ -17,7 +16,6 @@ export default function Painel() {
   );
   return (
     <Screen title={`Olá, ${db.company!.name}`} nav>
-      <InstallBanner />
       <LinkButton href="/visitas/nova">GRAVAR VISITA</LinkButton>
       <div className="grid grid-cols-2 gap-3">
         <LinkButton href="/orcamentos/novo" variant="ghost">Orçar rápido</LinkButton>
