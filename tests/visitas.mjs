@@ -72,9 +72,27 @@ await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 // visita rápida pelo painel
 await page.goto(base + "/");
 await page.getByRole("button", { name: "GRAVAR VISITA" }).click();
-await page.getByText("Quem é o cliente?").waitFor();
+await page.getByText("Salvar visita").first().waitFor();
 check(/\/visitas\/[0-9a-f-]{36}$/.test(page.url()), "GRAVAR VISITA abre a visita na hora, sem pedir cliente");
 
+// salvar visita: pede nome/telefone só agora
+await page.getByRole("button", { name: "✅ Salvar visita" }).click();
+await page.getByRole("heading", { name: "Quem é o cliente?" }).waitFor();
+check(await page.getByRole("button", { name: "✅ Salvar visita" }).last().isDisabled(), "sem nome, não deixa salvar");
+await page.getByLabel(/Nome do cliente|nome/).last().fill("Marta Souza");
+await page.getByLabel("Telefone (WhatsApp)").fill("11988887777");
+await page.getByRole("button", { name: "✅ Salvar visita" }).last().click();
+await page.waitForURL(/\/visitas$/);
+check(await page.getByText("Marta Souza").first().isVisible(), "visita salva aparece na lista com o cliente");
+
+// cor do app segue a cor escolhida + logo
+await page.goto(base + "/configuracoes");
+await page.getByRole("button", { name: "Vermelho" }).or(page.locator("button[aria-pressed]").nth(2)).first().click();
+const brand = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--color-brand").trim());
+check(brand.toLowerCase() === "#b3261e", "cor do app muda para a cor escolhida (" + brand + ")");
+await page.setInputFiles('[data-testid="logo-input"]', "tests/logo-teste.png");
+await page.getByAltText("Seu logo").waitFor();
+check(await page.getByRole("button", { name: "Trocar logo" }).isVisible(), "logo enviado aparece em Ajustes");
 console.log("erros de console:", errors.length ? errors : "nenhum");
 await browser.close();
 if (fails.length || errors.length) { console.log("\nFALHARAM:", fails); process.exit(1); }

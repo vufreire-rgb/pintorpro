@@ -1,14 +1,24 @@
 "use client";
+import { useRef, useState } from "react";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
+import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
 import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
 
+function LogoPreview({ id }: { id: string }) {
+  const url = useFileUrl(id);
+  // eslint-disable-next-line @next/next/no-img-element
+  return url ? <img src={url} alt="Seu logo" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" /> : <div className="h-20 w-20 rounded-xl bg-slate-100" />;
+}
+
 export default function Configuracoes() {
   const db = useAppDb();
+  const logoInput = useRef<HTMLInputElement>(null);
+  const [logoMsg, setLogoMsg] = useState("");
   const auth = useAuthState();
   if (!db) return <Loading />;
   const c = db.company!;
@@ -26,8 +36,26 @@ export default function Configuracoes() {
       <Card className="flex flex-col gap-4">
         <h2 className="text-lg font-bold">Seu orçamento em PDF</h2>
         <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
+        <div className="flex flex-col gap-3">
+          <p className="font-medium">Seu logo</p>
+          <div className="flex items-center gap-4">
+            {c.logoId ? <LogoPreview id={c.logoId} /> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-brand text-sm text-white">sem logo</div>}
+            <div className="flex flex-1 flex-col gap-2">
+              <Button variant="ghost" onClick={() => logoInput.current?.click()}>{c.logoId ? "Trocar logo" : "Enviar meu logo"}</Button>
+              {c.logoId ? <button className="min-h-10 text-red-700 underline" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
+            </div>
+          </div>
+          <input ref={logoInput} type="file" accept="image/*" hidden data-testid="logo-input" onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            setLogoMsg("");
+            try { const old = c.logoId; const id = await storeLogo(f); set({ logoId: id }); if (old) void removePhotoFile(old); } catch { setLogoMsg("Não consegui ler essa imagem. Tente outra (PNG ou JPG)."); }
+          }} />
+          {logoMsg ? <p className="text-sm text-red-700">{logoMsg}</p> : <p className="text-sm text-slate-500">Aparece no topo do PDF. Sem logo, usamos as iniciais do seu negócio.</p>}
+        </div>
         <div>
-          <p className="mb-2 font-medium">Cor do seu PDF</p>
+          <p className="mb-2 font-medium">Cor do app e do PDF</p>
           <div className="flex flex-wrap gap-3">
             {PDF_COLORS.map((col) => (
               <button

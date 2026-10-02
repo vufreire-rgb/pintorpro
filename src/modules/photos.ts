@@ -71,6 +71,34 @@ export async function storePhotos(files: File[]): Promise<string[]> {
   return ids;
 }
 
+/** Logo do pintor: reduzido (lado maior 500 px) em PNG, para manter fundo transparente. */
+export async function storeLogo(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 500 / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
+  if (!blob) throw new Error("logo");
+  const id = crypto.randomUUID();
+  await putFile(id, blob);
+  void pushToCloud(id, blob);
+  return id;
+}
+
+/** Logo como data URL para o PDF (ou undefined se não der para ler). */
+export async function logoForPdf(id: string): Promise<string | undefined> {
+  const blob = await loadFileBlob(id);
+  if (!blob) return undefined;
+  return await new Promise<string | undefined>((resolve) => {
+    const r = new FileReader();
+    r.onload = () => resolve(typeof r.result === "string" ? r.result : undefined);
+    r.onerror = () => resolve(undefined);
+    r.readAsDataURL(blob);
+  });
+}
+
 export async function saveAudioFile(blob: Blob): Promise<string> {
   const id = crypto.randomUUID();
   await putFile(id, blob);

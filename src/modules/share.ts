@@ -1,7 +1,7 @@
 import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
 import { buildIcs } from "./visitList";
 import type { Client, Visit } from "./types";
-import { loadFileBlob, photoForPdf } from "./photos";
+import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "");
@@ -26,7 +26,9 @@ async function loadPdfPhotos(db: Db, q: Quote): Promise<QuotePdfData["photos"]> 
 
 async function makePdf(db: Db, q: Quote): Promise<{ blob: Blob; data: QuotePdfData }> {
   const { renderQuotePdf } = await import("@/integrations/pdf/quotePdf");
-  const data = buildPdfData(db, q, await loadPdfPhotos(db, q));
+  const logoId = db.company?.logoId;
+  const logo = logoId ? await logoForPdf(logoId).catch(() => undefined) : undefined;
+  const data = { ...buildPdfData(db, q, await loadPdfPhotos(db, q)), logo };
   return { blob: await renderQuotePdf(data), data };
 }
 

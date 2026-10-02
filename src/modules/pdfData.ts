@@ -7,6 +7,8 @@ import type { Db, Quote } from "./types";
 export interface QuotePdfData {
   color: string;
   tint: string;
+  /** Logo do pintor como data URL; ausente = monograma com iniciais. */
+  logo?: string;
   painter: { company: string; initials: string; contact: string; whatsapp: string };
   number: string;
   date: string;

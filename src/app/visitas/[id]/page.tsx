@@ -26,6 +26,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [askDelete, setAskDelete] = useState(false);
   const [camera, setCamera] = useState(false);
   const [changing, setChanging] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
   const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
   const [when, setWhen] = useState("");
@@ -56,7 +57,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           {when ? <Button variant="ghost" onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
         </Card>
       ) : (
-        <div className="text-sm text-slate-600">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · salva automaticamente</div>
+        <div className="text-sm text-slate-600">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
       )}
 
       <Card className="flex flex-col gap-3">
@@ -72,18 +73,15 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <ContactActions phone={client.phone} address={v.siteAddress || client.address} />
           </>
         ) : (
-          <>
-            <b>{client ? "Trocar cliente" : "Quem é o cliente?"}</b>
-            {db.clients.length > 0 ? (
+          client ? (
+            <>
+              <b>Trocar cliente</b>
               <div className="flex flex-wrap gap-2">
                 {db.clients.map((c) => <Chip key={c.id} active={v.clientId === c.id} onClick={() => { setVisitClient(v.id, c.id); setChanging(false); }}>{c.name}</Chip>)}
               </div>
-            ) : null}
-            <Field label="Novo cliente: nome"><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
-            <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Button disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); setNewClient({ name: "", phone: "", address: "" }); setChanging(false); }}>Salvar cliente</Button>
-            {!client ? <p className="text-sm text-slate-500">Pode deixar para depois. A visita já está salva.</p> : null}
-          </>
+              <Button variant="ghost" onClick={() => setChanging(false)}>Cancelar</Button>
+            </>
+          ) : <p className="text-slate-600">👤 O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
         )}
         <Field label="Endereço da obra"><TextInput value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} /></Field>
       </Card>
@@ -140,7 +138,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </Field>
 
-      <LinkButton href={`/orcamentos/novo?visita=${v.id}`}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
+      <Button onClick={() => (client ? router.push("/visitas") : setSaving(true))}>✅ Salvar visita</Button>
+      <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
       <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar visita</Button>
       <ConfirmDialog
@@ -150,6 +149,22 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         onCancel={() => setAskDelete(false)}
         onConfirm={async () => { await deleteVisit(v.id, db.visits); router.replace("/visitas"); }}
       />
+      {saving ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-4 sm:items-center sm:justify-center" role="dialog" aria-modal="true">
+          <div className="mx-auto flex max-h-[90dvh] w-full max-w-md flex-col gap-3 overflow-y-auto rounded-3xl bg-white p-5">
+            <h2 className="text-xl font-bold">Quem é o cliente?</h2>
+            {db.clients.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => { setVisitClient(v.id, c.id); router.push("/visitas"); }}>{c.name}</Chip>)}
+              </div>
+            ) : null}
+            <Field label={db.clients.length > 0 ? "Ou cadastre um novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
+            <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
+            <Button disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>✅ Salvar visita</Button>
+            <Button variant="ghost" onClick={() => setSaving(false)}>Voltar</Button>
+          </div>
+        </div>
+      ) : null}
       {camera ? (
         <CameraCapture
           rooms={rooms.map((r) => r.name)}

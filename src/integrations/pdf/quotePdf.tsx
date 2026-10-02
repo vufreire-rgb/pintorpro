@@ -34,7 +34,9 @@ const s = StyleSheet.create({
   hr: { borderBottomWidth: 1, borderBottomColor: LINE },
 });
 
-function Monogram({ text, color, size, radius, font }: { text: string; color: string; size: number; radius: number; font: number }) {
+function Monogram({ text, color, size, radius, font, logo }: { text: string; color: string; size: number; radius: number; font: number; logo?: string }) {
+  // eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf, não é <img>
+  if (logo) return <Image src={logo} style={{ width: size, height: size, objectFit: "contain" }} />;
   return (
     <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: color, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ fontFamily: "Outfit", fontWeight: 800, fontSize: font, color: "#FFFFFF" }}>{text}</Text>
@@ -50,7 +52,7 @@ function Footer({ d }: { d: QuotePdfData }) {
       <View style={[s.hr, { marginBottom: 12 }]} />
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Monogram text={d.painter.initials} color={d.color} size={28} radius={8} font={11} />
+          <Monogram text={d.painter.initials} logo={d.logo} color={d.color} size={28} radius={8} font={11} />
           <Text style={{ marginLeft: 10, fontSize: 13, lineHeight: 1.4, color: SUPPORT }}>
             {[d.painter.company, d.painter.whatsapp && `WhatsApp ${d.painter.whatsapp}`].filter(Boolean).join(" · ")}
           </Text>
@@ -66,7 +68,7 @@ function RunningHeader({ d }: { d: QuotePdfData }) {
     <View fixed>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingBottom: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Monogram text={d.painter.initials} color={d.color} size={34} radius={10} font={14} />
+          <Monogram text={d.painter.initials} logo={d.logo} color={d.color} size={34} radius={10} font={14} />
           <Text style={{ marginLeft: 12, fontFamily: "Outfit", fontWeight: 700, fontSize: 18, color: d.color }}>{d.painter.company}</Text>
         </View>
         <Text style={{ fontSize: 13, color: SUPPORT }}>Orçamento nº {d.number} · {d.clientName}</Text>
@@ -85,7 +87,7 @@ function Summary({ d }: { d: QuotePdfData }) {
     <Page size="A4" style={s.page}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", flexShrink: 1 }}>
-          <Monogram text={d.painter.initials} color={d.color} size={56} radius={14} font={24} />
+          <Monogram text={d.painter.initials} logo={d.logo} color={d.color} size={56} radius={14} font={24} />
           <View style={{ marginLeft: 16, flexShrink: 1 }}>
             <Text style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: 25, lineHeight: 1.2, color: d.color }}>{d.painter.company}</Text>
             {d.painter.contact ? <Text style={{ fontSize: 14, lineHeight: 1.4, color: SUPPORT }}>{d.painter.contact}</Text> : null}

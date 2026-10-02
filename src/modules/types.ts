@@ -18,6 +18,8 @@ export interface Company {
   ownerName?: string;
   /** Uma das cores de PDF_COLORS. */
   brandColor?: string;
+  /** Id do arquivo (IndexedDB/nuvem) com o logo do pintor; sem ele o PDF usa as iniciais. */
+  logoId?: string;
   /** Um item por linha. */
   exclusionsText?: string;
   beforeStartText?: string;
