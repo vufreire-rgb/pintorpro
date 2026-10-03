@@ -56,17 +56,15 @@ check(!(await page.getByText("📅 Visita agendada").isVisible().catch(() => fal
 
 // lista: filtros e busca
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /Todas \(2\)/ }).waitFor();
-check(await page.getByRole("button", { name: /Falta orçar \(1\)/ }).isVisible(), "contagem 'Falta orçar (1)' (a de Ana já começou; a de João está atrasada)");
-check(await page.getByRole("button", { name: /Agendadas \(1\)/ }).isVisible(), "contagem 'Agendadas (1)'");
-await page.getByRole("button", { name: /Agendadas/ }).click();
+await page.getByRole("tab", { name: /Agendadas/ }).waitFor();
+check(await page.getByRole("tab", { name: /Agendadas \(1\)/ }).getAttribute("aria-selected") === "true", "a aba abre em 'Agendadas (1)'");
+check(await page.getByRole("tab", { name: /Sem orçamento \(1\)/ }).isVisible(), "aba 'Sem orçamento (1)'");
+check(await page.getByRole("tab", { name: /Orçamento feito \(0\)/ }).isVisible(), "aba 'Orçamento feito (0)'");
 check(await page.getByText("⏰ Atrasada").isVisible(), "visita atrasada marcada em vermelho");
-await page.getByRole("button", { name: /Todas/ }).click();
-await page.getByLabel("Buscar visitas").fill("joao");
-check((await page.locator("a[href^='/visitas/']:not([href='/visitas/agendar'])").count()) === 1, "busca 'joao' acha 'João' (sem acento)");
-await page.getByLabel("Buscar visitas").fill("zzz");
-check(await page.getByText("Nenhuma visita encontrada.").isVisible(), "busca sem resultado avisa");
-await page.getByLabel("Buscar visitas").fill("");
+await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+check(await page.getByText("Ana Lima").first().isVisible(), "aba 'Sem orçamento' mostra a visita já começada");
+await page.getByRole("tab", { name: /Orçamento feito/ }).click();
+check(await page.getByText("Nenhuma visita com orçamento ainda.").isVisible(), "aba vazia avisa");
 await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 
 // visita rápida pelo painel
@@ -83,6 +81,7 @@ await page.getByLabel(/Nome do cliente|nome/).last().fill("Marta Souza");
 await page.getByLabel("Telefone (WhatsApp)").fill("11988887777");
 await page.getByRole("button", { name: "✅ Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
+await page.getByRole("tab", { name: /Sem orçamento/ }).click();
 check(await page.getByText("Marta Souza").first().isVisible(), "visita salva aparece na lista com o cliente");
 
 // cor do app segue a cor escolhida + logo

@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
-import { Card, Chip, LinkButton, Loading, Screen, TextInput } from "@/components/ui";
+import { Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
 import { countByFilter, filterVisits, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
@@ -21,11 +21,10 @@ function Thumb({ id }: { id?: string }) {
   );
 }
 
-const FILTERS: { id: VisitFilter; label: string }[] = [
-  { id: "all", label: "Todas" },
-  { id: "scheduled", label: "Agendadas" },
-  { id: "todo", label: "Falta orçar" },
-  { id: "quoted", label: "Orçadas" },
+const TABS: { id: VisitFilter; label: string; empty: string }[] = [
+  { id: "scheduled", label: "Agendadas", empty: "Nenhuma visita agendada." },
+  { id: "todo", label: "Sem orçamento", empty: "Nenhuma visita esperando orçamento." },
+  { id: "quoted", label: "Orçamento feito", empty: "Nenhuma visita com orçamento ainda." },
 ];
 
 function Badge({ v }: { v: Visit }) {
@@ -37,24 +36,43 @@ function Badge({ v }: { v: Visit }) {
 
 export default function Visitas() {
   const db = useAppDb();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<VisitFilter>("all");
-  const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { query, filter }) : []), [db, query, filter]);
+  const [filter, setFilter] = useState<VisitFilter>("scheduled");
+  const touchX = useRef<number | null>(null);
+  const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
     <Screen title="Visitas" nav>
-      <QuickVisitButton />
-      <LinkButton href="/visitas/agendar" variant="ghost">📅 Agendar visita</LinkButton>
-      {db.visits.length > 0 ? (
-        <>
-          <TextInput type="search" placeholder="Buscar cliente, endereço ou ambiente…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Buscar visitas" />
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => <Chip key={f.id} active={filter === f.id} onClick={() => setFilter(f.id)}>{f.label} ({counts[f.id]})</Chip>)}
-          </div>
-        </>
-      ) : <p className="text-slate-500">Nenhuma visita ainda. Na obra, toque em GRAVAR VISITA: já começa a guardar fotos, áudio e medidas.</p>}
-      {db.visits.length > 0 && list.length === 0 ? <p className="text-slate-500">Nenhuma visita encontrada.</p> : null}
+      <div
+        className="flex flex-col gap-4"
+        onTouchStart={(e) => { touchX.current = e.touches[0]!.clientX; }}
+        onTouchEnd={(e) => {
+          if (touchX.current === null) return;
+          const dx = e.changedTouches[0]!.clientX - touchX.current;
+          touchX.current = null;
+          const i = TABS.findIndex((t) => t.id === filter);
+          if (dx < -60 && i < TABS.length - 1) setFilter(TABS[i + 1]!.id);
+          if (dx > 60 && i > 0) setFilter(TABS[i - 1]!.id);
+        }}
+      >
+      <div className="grid grid-cols-2 gap-3">
+        <QuickVisitButton label="GRAVAR VISITA" className="!min-h-12 !text-base" />
+        <LinkButton href="/visitas/agendar" variant="ghost" className="!min-h-12 !text-base">📅 Agendar</LinkButton>
+      </div>
+      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={filter === t.id}
+            onClick={() => setFilter(t.id)}
+            className={`min-h-12 rounded-xl px-1 text-sm font-semibold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-slate-700"}`}
+          >
+            {t.label} ({counts[t.id]})
+          </button>
+        ))}
+      </div>
+      {list.length === 0 ? <p className="text-slate-500">{db.visits.length === 0 ? "Nenhuma visita ainda. Na obra, toque em GRAVAR VISITA: já começa a guardar fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const bits = [`${v.photoIds.length} foto(s)`, `${(v.audios ?? []).length} áudio(s)`, (v.rooms ?? []).length ? `${v.rooms!.length} ambiente(s)` : null].filter(Boolean).join(" · ");
@@ -75,6 +93,7 @@ export default function Visitas() {
           </Link>
         );
       })}
+      </div>
     </Screen>
   );
 }

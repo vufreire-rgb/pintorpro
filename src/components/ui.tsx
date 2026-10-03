@@ -56,9 +56,9 @@ export function Button({ variant = "primary", className = "", ...p }: BtnProps) 
   );
 }
 
-export function LinkButton({ href, children, variant = "primary" }: { href: string; children: React.ReactNode; variant?: keyof typeof VARIANT }) {
+export function LinkButton({ href, children, variant = "primary", className = "" }: { href: string; children: React.ReactNode; variant?: keyof typeof VARIANT; className?: string }) {
   return (
-    <Link href={href} className={`grid min-h-14 w-full place-items-center rounded-2xl px-5 text-lg font-semibold ${VARIANT[variant]}`}>
+    <Link href={href} className={`grid min-h-14 w-full place-items-center rounded-2xl px-5 text-lg font-semibold ${VARIANT[variant]} ${className}`}>
       {children}
     </Link>
   );
