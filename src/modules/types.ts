@@ -66,6 +66,14 @@ export interface Quote {
 
 export type WorkStatus = "scheduled" | "in_progress" | "issues" | "done";
 
+export interface Payment {
+  id: string;
+  /** AAAA-MM-DD */
+  date: string;
+  amountCents: number;
+  note: string;
+}
+
 export interface Work {
   id: string;
   quoteId: string;
@@ -77,6 +85,11 @@ export interface Work {
   plannedHours: number;
   plannedTotalCents: number;
   plannedCostCents: number;
+  /** Datas combinadas (AAAA-MM-DD, dia local). */
+  startDate?: string;
+  endDate?: string;
+  /** Pagamentos recebidos do cliente. */
+  payments?: Payment[];
   /** Campos "realizado" reservados para comparar orçado × realizado no futuro. */
   actual?: { hours?: number; costCents?: number; endDate?: string };
 }

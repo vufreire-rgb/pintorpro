@@ -1,4 +1,5 @@
 import { filterVisits, visitState } from "./visitList";
+import { isThisWeek, remainingCents } from "./workInfo";
 import type { Db } from "./types";
 
 export function dashboard(db: Db) {
@@ -20,6 +21,8 @@ export function dashboard(db: Db) {
     profitMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.profitCents, 0),
     worksActive: db.works.filter((w) => w.status === "in_progress" || w.status === "issues").length,
     worksNext: db.works.filter((w) => w.status === "scheduled").length,
+    worksWeek: db.works.filter((w) => isThisWeek(w)).sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? "")),
+    receivableCents: db.works.filter((w) => w.status !== "done" || remainingCents(w) > 0).reduce((s, w) => s + remainingCents(w), 0),
     closeRate: decided > 0 ? db.quotes.filter((q) => q.status === "won").length / decided : null,
   };
 }

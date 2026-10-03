@@ -1,6 +1,7 @@
 import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
 import { buildIcs } from "./visitList";
-import type { Client, Visit } from "./types";
+import { buildWorkIcs } from "./workInfo";
+import type { Client, Visit, Work } from "./types";
 import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
 
@@ -71,6 +72,15 @@ export function downloadVisitIcs(v: Visit, client?: Client): void {
   const a = document.createElement("a");
   a.href = url;
   a.download = "visita.ics";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+export function downloadWorkIcs(w: Work, client: Client | undefined, address: string): void {
+  const url = URL.createObjectURL(new Blob([buildWorkIcs(w, client, address)], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "obra.ics";
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
