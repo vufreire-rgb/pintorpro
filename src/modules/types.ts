@@ -20,6 +20,8 @@ export interface Company {
   brandColor?: string;
   /** Id do arquivo (IndexedDB/nuvem) com o logo do pintor; sem ele o PDF usa as iniciais. */
   logoId?: string;
+  /** Lembrete de revisar orçamentos: hora "HH:MM" e dias da semana (0=domingo … 6=sábado). */
+  reviewReminder?: { time: string; days: number[] };
   /** Um item por linha. */
   exclusionsText?: string;
   beforeStartText?: string;

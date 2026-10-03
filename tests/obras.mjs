@@ -54,6 +54,17 @@ await page.goto(base + "/");
 await page.getByText("Obras desta semana").waitFor();
 check(await page.getByText("Começa em 2 dias").isVisible().catch(() => false) || await page.getByText("Carla Dias").first().isVisible(), "painel mostra 'Obras desta semana'");
 
+// lembrete de revisão
+await page.goto(base + "/orcamentos");
+await page.getByRole("button", { name: /Hora de revisar/ }).click();
+await page.locator('input[type="time"]').fill("07:30");
+await page.getByRole("button", { name: "Todo dia" }).click();
+const [dl2] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Salvar no calendário do celular" }).click()]);
+const ics2 = await (await import("node:fs/promises")).readFile(await dl2.path(), "utf8");
+check(ics2.includes("RRULE:FREQ=DAILY") && ics2.includes("T073000") && ics2.includes("TRIGGER:PT0S"), "lembrete diário às 07:30 gera .ics com alarme");
+check(await page.getByText("Todo dia às 07:30").isVisible(), "botão mostra o lembrete salvo");
+await page.screenshot({ path: "/tmp/orc.png" });
+
 console.log("erros de console:", errors.length ? errors : "nenhum");
 await browser.close();
 if (fails.length || errors.length) { console.log("\nFALHARAM:", fails); process.exit(1); }

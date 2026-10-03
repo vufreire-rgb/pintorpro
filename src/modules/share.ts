@@ -1,5 +1,6 @@
 import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
 import { buildIcs } from "./visitList";
+import { buildReviewIcs, type ReviewReminder } from "./reminder";
 import { buildWorkIcs } from "./workInfo";
 import type { Client, Visit, Work } from "./types";
 import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
@@ -81,6 +82,15 @@ export function downloadWorkIcs(w: Work, client: Client | undefined, address: st
   const a = document.createElement("a");
   a.href = url;
   a.download = "obra.ics";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+export function downloadReviewIcs(r: ReviewReminder): void {
+  const url = URL.createObjectURL(new Blob([buildReviewIcs(r, `${window.location.origin}/orcamentos`)], { type: "text/calendar;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "lembrete-revisao.ics";
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }

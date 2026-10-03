@@ -50,3 +50,29 @@ describe("datas da obra", () => {
     expect(buildWorkIcs(w(), undefined, "")).toBe("");
   });
 });
+
+import { buildReviewIcs, firstOccurrence, isValidTime, reminderLabel } from "./reminder";
+describe("lembrete de revisão", () => {
+  const now = new Date(2026, 9, 10, 10, 0); // sábado 10/10/2026 10:00
+  it("rótulos e validação", () => {
+    expect(reminderLabel({ time: "08:00", days: [0, 1, 2, 3, 4, 5, 6] })).toBe("Todo dia às 08:00");
+    expect(reminderLabel({ time: "08:00", days: [5, 4, 3, 2, 1] })).toBe("Seg a Sex às 08:00");
+    expect(reminderLabel({ time: "07:30", days: [3, 1] })).toBe("Seg, Qua às 07:30");
+    expect(isValidTime("08:00")).toBe(true);
+    expect(isValidTime("25:00")).toBe(false);
+    expect(isValidTime("")).toBe(false);
+  });
+  it("primeira ocorrência: hoje se ainda não passou, senão o próximo dia marcado", () => {
+    expect(firstOccurrence({ time: "18:00", days: [6] }, now).getDate()).toBe(10);
+    expect(firstOccurrence({ time: "08:00", days: [6] }, now).getDate()).toBe(17);
+    expect(firstOccurrence({ time: "08:00", days: [1, 2, 3, 4, 5] }, now).getDate()).toBe(12); // segunda
+  });
+  it(".ics: recorrência semanal ou diária, alarme na hora, UID fixo", () => {
+    const wk = buildReviewIcs({ time: "08:00", days: [1, 3] }, "https://x/orcamentos", now);
+    expect(wk).toContain("RRULE:FREQ=WEEKLY;BYDAY=MO,WE");
+    expect(wk).toContain("DTSTART:20261012T080000");
+    expect(wk).toContain("TRIGGER:PT0S");
+    expect(wk).toContain("UID:revisao-orcamentos@pintorpro");
+    expect(buildReviewIcs({ time: "08:00", days: [0, 1, 2, 3, 4, 5, 6] }, "u", now)).toContain("RRULE:FREQ=DAILY");
+  });
+});
