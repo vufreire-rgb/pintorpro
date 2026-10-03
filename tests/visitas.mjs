@@ -23,11 +23,11 @@ await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) loc
 
 // painel: visita atrasada aparece em "Próximas visitas"
 await page.goto(base + "/");
-await page.getByText("Próximas visitas").waitFor();
-check(await page.getByText("João Pereira").isVisible(), "painel lista a visita atrasada em 'Próximas visitas'");
+await page.waitForURL(base + "/visitas");
+check(await page.getByText("João Pereira").isVisible(), "o app abre direto em Visitas, na aba Agendadas, com a atrasada");
 
 // agendar
-await page.getByRole("link", { name: /Agendar visita/ }).click();
+await page.getByRole("link", { name: /Agendar/ }).click();
 await page.getByText("Dia e hora").waitFor();
 const dflt = await page.locator('input[type="datetime-local"]').inputValue();
 check(/T09:00$/.test(dflt), `data padrão sugerida é amanhã às 9h (${dflt})`);
@@ -47,9 +47,8 @@ check(ics.includes("BEGIN:VEVENT") && ics.includes("TRIGGER:-PT1H") && ics.inclu
 await page.screenshot({ path: `${OUT}/visita-agendada.png` });
 
 // painel mostra as duas; começar a visita tira da lista de próximas
-await page.goto(base + "/");
-await page.getByText("Próximas visitas").waitFor();
-check(await page.getByText("Ana Lima").isVisible(), "painel lista a visita agendada");
+await page.goto(base + "/visitas");
+check(await page.getByText("Ana Lima").isVisible(), "Agendadas lista a visita agendada");
 await page.getByText("Ana Lima").click();
 await page.getByRole("button", { name: /Começar a visita agora/ }).click();
 check(!(await page.getByText("📅 Visita agendada").isVisible().catch(() => false)), "ao começar, o aviso de agendamento some");
@@ -68,7 +67,7 @@ check(await page.getByText("Nenhuma visita com orçamento ainda.").isVisible(), 
 await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 
 // visita rápida pelo painel
-await page.goto(base + "/");
+await page.goto(base + "/visitas");
 await page.getByRole("button", { name: "GRAVAR VISITA" }).click();
 await page.getByText("Salvar visita").first().waitFor();
 check(/\/visitas\/[0-9a-f-]{36}$/.test(page.url()), "GRAVAR VISITA abre a visita na hora, sem pedir cliente");

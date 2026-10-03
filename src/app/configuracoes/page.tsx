@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
-import { Button, Card, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
+import { LinkButton, Button, Card, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
@@ -25,6 +25,7 @@ export default function Configuracoes() {
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
+      <LinkButton href="/clientes" variant="ghost">👥 Meus clientes</LinkButton>
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Seu negócio</h2>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>

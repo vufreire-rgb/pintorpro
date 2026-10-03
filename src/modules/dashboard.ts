@@ -1,7 +1,7 @@
-import { filterVisits, visitState } from "./visitList";
-import { isThisWeek, remainingCents } from "./workInfo";
+import { remainingCents } from "./workInfo";
 import type { Db } from "./types";
 
+/** Números do painel (ficam recolhidos na aba Obras). */
 export function dashboard(db: Db) {
   const now = new Date();
   const sameMonth = (iso?: string) => {
@@ -9,20 +9,11 @@ export function dashboard(db: Db) {
     const d = new Date(iso);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   };
-  const open = db.quotes.filter((q) => q.status === "open");
   const wonMonth = db.quotes.filter((q) => q.status === "won" && sameMonth(q.closedAt));
-  const decided = db.quotes.filter((q) => q.status !== "open").length;
   return {
-    visitsPending: db.visits.filter((v) => visitState(v) === "done" && !v.quoteId).length,
-    nextVisits: filterVisits(db.visits, db.clients, { filter: "scheduled" }).slice(0, 3),
-    openCount: open.length,
-    openCents: open.reduce((s, q) => s + q.result.totals.totalCents, 0),
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),
     profitMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.profitCents, 0),
+    receivableCents: db.works.reduce((s, w) => s + remainingCents(w), 0),
     worksActive: db.works.filter((w) => w.status === "in_progress" || w.status === "issues").length,
-    worksNext: db.works.filter((w) => w.status === "scheduled").length,
-    worksWeek: db.works.filter((w) => isThisWeek(w)).sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? "")),
-    receivableCents: db.works.filter((w) => w.status !== "done" || remainingCents(w) > 0).reduce((s, w) => s + remainingCents(w), 0),
-    closeRate: decided > 0 ? db.quotes.filter((q) => q.status === "won").length / decided : null,
   };
 }

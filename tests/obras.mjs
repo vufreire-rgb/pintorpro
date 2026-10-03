@@ -19,8 +19,8 @@ const db = {
 await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
 
 await page.goto(base + "/obras");
-await page.getByText("Falta receber (todas as obras)").waitFor();
-check(await page.getByText("R$ 3.000,00").first().isVisible(), "lista mostra o valor a receber");
+await page.getByRole("button", { name: /Ver painel/ }).waitFor();
+check(await page.getByText("Falta receber R$ 3.000,00").isVisible(), "cada obra mostra quanto falta receber");
 await page.getByText("Carla Dias").click();
 await page.getByText("💰 Dinheiro da obra").waitFor();
 
@@ -50,9 +50,11 @@ await page.screenshot({ path: "/tmp/obra.png", fullPage: true });
 // lista e painel
 await page.goto(base + "/obras");
 check(await page.getByText("✓ Tudo recebido").isVisible(), "lista marca 'Tudo recebido'");
-await page.goto(base + "/");
-await page.getByText("Obras desta semana").waitFor();
-check(await page.getByText("Começa em 2 dias").isVisible().catch(() => false) || await page.getByText("Carla Dias").first().isVisible(), "painel mostra 'Obras desta semana'");
+check(await page.getByText("Vendido no mês").isVisible().catch(() => false) === false, "painel de valores começa escondido");
+await page.getByRole("button", { name: /Ver painel/ }).click();
+check(await page.getByText("Falta receber").first().isVisible() && await page.getByText("Vendido no mês").isVisible() && await page.getByText("Lucro estimado do mês").isVisible(), "painel recolhível mostra vendido, lucro e falta receber");
+await page.reload();
+check(await page.getByText("Vendido no mês").isVisible().catch(() => false) === false, "ao reabrir, o painel volta escondido");
 
 // lembrete de revisão
 await page.goto(base + "/orcamentos");

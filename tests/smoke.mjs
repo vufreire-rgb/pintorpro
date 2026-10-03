@@ -20,11 +20,11 @@ await page.getByPlaceholder("Ex.: Campinas - SP").fill("Campinas - SP"); await n
 await next(); await next(); await next(); await next(); await next(); await next();
 await shot("01-onboarding-fim");
 await next();
-await page.waitForURL(base + "/");
-await page.getByText("GRAVAR VISITA").waitFor();
+await page.waitForURL(base + "/visitas");
+await page.getByRole("button", { name: "GRAVAR VISITA" }).waitFor();
 await shot("02-painel");
 
-await page.getByText("GRAVAR VISITA").click();                       // um toque: a visita já existe, sem cliente
+await page.getByRole("button", { name: "GRAVAR VISITA" }).click();                       // um toque: a visita já existe, sem cliente
 await page.getByText("Fotos (0)").waitFor();
 await page.getByText("Endereço da obra").locator("..").locator("input").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)

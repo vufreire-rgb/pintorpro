@@ -20,7 +20,7 @@ export default function Onboarding() {
   // Se os dados da conta chegarem da nuvem enquanto o cadastro está aberto, a conta já está configurada.
   const alreadySetUp = Boolean(db?.company);
   useEffect(() => {
-    if (alreadySetUp) router.replace("/");
+    if (alreadySetUp) router.replace("/visitas");
   }, [alreadySetUp, router]);
   if (!db || alreadySetUp) return <Loading />;
   const services = db.services;
@@ -31,7 +31,7 @@ export default function Onboarding() {
     setEnabledServices(on);
     for (const [id, reais] of Object.entries(prices)) updateService(id, { salePriceCents: toCents(reais) });
     saveCompany(c);
-    router.replace("/");
+    router.replace("/visitas");
   };
 
   const canNext = [c.name.trim(), c.whatsapp.trim(), c.city.trim(), on.length > 0, true, c.dailyRateCents > 0, c.hoursPerDay > 0, c.marginPct >= 0, c.paymentTerms.trim(), true][step];

@@ -77,6 +77,7 @@ export default function Orcamentos() {
           </button>
         ))}
       </div>
+      {tab === "open" && list.length > 0 ? <div className="text-slate-600">Total em aberto: <b>{formatBRL(list.reduce((s, q) => s + q.result.totals.totalCents, 0))}</b></div> : null}
       {list.length === 0 ? <p className="text-slate-500">Nada por aqui.</p> : null}
       {list.map((q) => (
         <Link key={q.id} href={`/orcamentos/${q.id}`}>

@@ -21,7 +21,6 @@ export function Screen({ title, back, children, nav = false }: { title: string; 
 }
 
 const NAV = [
-  ["/", "Painel"],
   ["/visitas", "Visitas"],
   ["/orcamentos", "Orçamentos"],
   ["/obras", "Obras"],

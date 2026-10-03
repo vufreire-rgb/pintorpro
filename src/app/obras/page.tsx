@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import { Card, Loading, Screen } from "@/components/ui";
+import { useState } from "react";
+import { dashboard } from "@/modules/dashboard";
+import { Button, Card, Loading, Screen } from "@/components/ui";
 import { WORK_STATUS_LABEL } from "@/modules/works";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
 import { useAppDb } from "@/modules/useApp";
@@ -10,17 +12,31 @@ const TONE = { scheduled: "text-brand", in_progress: "text-accent-dark", issues:
 
 export default function Obras() {
   const db = useAppDb();
+  const [showPanel, setShowPanel] = useState(false); // sempre começa recolhido: o cliente pode estar olhando
   if (!db) return <Loading />;
-  const receivable = db.works.reduce((s, w) => s + remainingCents(w), 0);
+  const d = dashboard(db);
   const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
   return (
     <Screen title="Obras" nav>
-      {db.works.length === 0 ? <p className="text-slate-500">Quando você fechar um orçamento, a obra aparece aqui.</p> : (
-        <Card className="border-brand/30 bg-brand-soft">
-          <div className="text-sm text-slate-600">Falta receber (todas as obras)</div>
-          <div className="text-2xl font-bold text-brand">{formatBRL(receivable)}</div>
-        </Card>
-      )}
+      <Button variant="ghost" className="!min-h-12 !text-base" aria-expanded={showPanel} onClick={() => setShowPanel((o) => !o)}>
+        {showPanel ? "🙈 Esconder painel" : "📊 Ver painel (valores)"}
+      </Button>
+      {showPanel ? (
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            ["Vendido no mês", formatBRL(d.soldMonthCents)],
+            ["Lucro estimado do mês", formatBRL(d.profitMonthCents)],
+            ["Falta receber", formatBRL(d.receivableCents)],
+            ["Obras em andamento", String(d.worksActive)],
+          ].map(([label, value]) => (
+            <Card key={label}>
+              <div className="text-sm text-slate-500">{label}</div>
+              <div className="text-xl font-bold">{value}</div>
+            </Card>
+          ))}
+        </div>
+      ) : null}
+      {db.works.length === 0 ? <p className="text-slate-500">Quando você fechar um orçamento, a obra aparece aqui.</p> : null}
       {works.map((w) => (
         <Link key={w.id} href={`/obras/${w.id}`}>
           <Card className="flex flex-col gap-2">
