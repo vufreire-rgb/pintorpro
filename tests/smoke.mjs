@@ -25,16 +25,8 @@ await page.getByText("GRAVAR VISITA").waitFor();
 await shot("02-painel");
 
 await page.getByText("GRAVAR VISITA").click();                       // um toque: a visita já existe, sem cliente
-await page.getByText("Quem é o cliente?").waitFor();
 await page.getByText("Fotos (0)").waitFor();
-await page.getByText("Novo cliente: nome").locator("..").locator("input").fill("Maria Souza");
-await page.getByText("Telefone (WhatsApp)").locator("..").locator("input").fill("11977776666");
-await page.getByRole("button", { name: "Salvar cliente" }).click();
-await page.getByText("Maria Souza").first().waitFor();
 await page.getByText("Endereço da obra").locator("..").locator("input").fill("Rua das Flores, 100");
-// atalhos de contato do cliente
-const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsWith("https://wa.me/5511977776666")) || !hrefs.some((h) => h?.includes("google.com/maps"))) throw new Error("atalhos de contato ausentes: " + hrefs);
 // medidas na visita (viram ambientes do orçamento)
 await page.getByPlaceholder("Ex.: Sala").fill("Sala");
 await page.getByText("Comprim. (m)").locator("..").locator("input").fill("5");
@@ -73,6 +65,19 @@ await page.getByText(/Áudio 1 ·/).waitFor();
 await page.getByRole("group", { name: "Marcas do áudio" }).or(page.getByLabel("Marcas do áudio")).getByRole("button", { name: /📍 Medida/ }).waitFor();
 await page.getByPlaceholder(/Cliente quer cor/).fill("Sala 4x5, mofo perto da janela");
 await shot("03a-visita");
+// salvar a visita: só agora pede nome e telefone do cliente
+await page.getByRole("button", { name: "✅ Salvar visita" }).click();
+await page.getByRole("heading", { name: "Quem é o cliente?" }).waitFor();
+await page.getByText("Nome do cliente").locator("..").locator("input").fill("Maria Souza");
+await page.getByText("Telefone (WhatsApp)").last().locator("..").locator("input").fill("11977776666");
+await page.getByRole("button", { name: "✅ Salvar visita" }).last().click();
+await page.waitForURL(/\/visitas$/);
+await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByText("Maria Souza").first().click();
+await page.getByText("Fotos (4)").waitFor();
+// atalhos de contato do cliente
+const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsWith("https://wa.me/5511977776666")) || !hrefs.some((h) => h?.includes("google.com/maps"))) throw new Error("atalhos de contato ausentes: " + hrefs);
 await page.getByRole("link", { name: "Montar orçamento" }).click();
 await page.getByText("Suas anotações da visita").waitFor();
 await page.getByText("Sala 4x5, mofo perto da janela").waitFor();
@@ -123,19 +128,21 @@ await page.goto(base + "/obras");
 await page.getByText("Maria Souza").waitFor();
 await shot("09-obras");
 await page.goto(base + "/visitas");
-await page.getByText("Orçamento feito").waitFor();
+await page.getByRole("tab", { name: /Orçamento feito \(1\)/ }).click();
+await page.getByText("Maria Souza").first().waitFor();
 // apagar visita
 await page.getByText("Maria Souza").first().click();
 await page.getByRole("button", { name: /Apagar visita/ }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.waitForURL("**/visitas");
-await page.getByText(/Nenhuma visita ainda/).waitFor();
+await page.getByText(/Nenhuma visita/).first().waitFor();
 // cliente com orçamento: bloqueia; depois de apagar orçamento e obra, libera
 await page.goto(base + "/clientes");
 await page.getByRole("button", { name: "Apagar", exact: true }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.getByText(/Apague-os primeiro/).waitFor();
 await page.goto(base + "/obras");
+await page.getByText("Maria Souza").first().click();
 await page.getByRole("button", { name: "Apagar obra" }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.getByText(/Quando você fechar/).waitFor();
