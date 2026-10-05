@@ -1,6 +1,7 @@
 import { updateDb } from "./db";
 import { suggestEnd } from "./workInfo";
-import type { Payment, WorkStatus, Work } from "./types";
+import { removePhotoFile } from "./photos";
+import type { Installment, Payment, WorkStatus, Work } from "./types";
 
 export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   scheduled: "Agendada",
@@ -27,7 +28,18 @@ export const setWorkEnd = (id: string, endDate: string) => patch(id, (w) => ({ .
 export const addPayment = (id: string, p: Omit<Payment, "id">) =>
   patch(id, (w) => ({ ...w, payments: [...(w.payments ?? []), { ...p, id: crypto.randomUUID() }] }));
 
-export const removePayment = (id: string, paymentId: string) =>
+/** Apaga o pagamento (e a foto do comprovante, se houver). */
+export function removePayment(id: string, paymentId: string, proofId?: string): void {
   patch(id, (w) => ({ ...w, payments: (w.payments ?? []).filter((p) => p.id !== paymentId) }));
+  if (proofId) void removePhotoFile(proofId);
+}
+
+export const setPlan = (id: string, plan: Installment[]) => patch(id, (w) => ({ ...w, plan }));
+export const updateInstallment = (id: string, instId: string, patchIn: Partial<Omit<Installment, "id">>) =>
+  patch(id, (w) => ({ ...w, plan: (w.plan ?? []).map((p) => (p.id === instId ? { ...p, ...patchIn } : p)) }));
+export const addInstallment = (id: string, inst: Omit<Installment, "id">) =>
+  patch(id, (w) => ({ ...w, plan: [...(w.plan ?? []), { ...inst, id: crypto.randomUUID() }] }));
+export const removeInstallment = (id: string, instId: string) =>
+  patch(id, (w) => ({ ...w, plan: (w.plan ?? []).filter((p) => p.id !== instId) }));
 
 export const deleteWork = (id: string) => updateDb((db) => ({ ...db, works: db.works.filter((w) => w.id !== id) }));

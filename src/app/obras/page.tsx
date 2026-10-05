@@ -4,6 +4,7 @@ import { useState } from "react";
 import { dashboard } from "@/modules/dashboard";
 import { Button, Card, Loading, Screen } from "@/components/ui";
 import { WORK_STATUS_LABEL } from "@/modules/works";
+import { lateCents } from "@/modules/finance";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -27,6 +28,7 @@ export default function Obras() {
             ["Vendido no mês", formatBRL(d.soldMonthCents)],
             ["Lucro estimado do mês", formatBRL(d.profitMonthCents)],
             ["Falta receber", formatBRL(d.receivableCents)],
+            ["Em atraso", formatBRL(d.lateCents)],
             ["Obras em andamento", String(d.worksActive)],
           ].map(([label, value]) => (
             <Card key={label}>
@@ -48,6 +50,7 @@ export default function Obras() {
             <div className="flex justify-between text-sm"><span>📅 {dateLabel(w)}</span><span>{formatBRL(w.plannedTotalCents)}</span></div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-accent" style={{ width: `${paidPct(w)}%` }} /></div>
             <div className="text-sm text-slate-600">{remainingCents(w) > 0 ? `Falta receber ${formatBRL(remainingCents(w))}` : "✓ Tudo recebido"}</div>
+            {lateCents(w) > 0 ? <div className="text-sm font-semibold text-red-700">⚠ {formatBRL(lateCents(w))} em atraso</div> : null}
           </Card>
         </Link>
       ))}

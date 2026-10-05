@@ -39,7 +39,7 @@ async function gerar({ nome, cor, comValores, comLink }) {
     await page.getByText("Comprim. (m)").locator("..").locator("input").fill(c);
     await page.getByText("Largura (m)").locator("..").locator("input").fill(l);
     if (cond) await page.getByRole("button", { name: cond }).click();
-    await page.getByText("+ Adicionar ambiente").click();
+    await page.getByRole("button", { name: "+ Adicionar ambiente" }).click();
   };
   await room("Sala", "6", "5", "Com trincas");
   await room("Quarto", "4", "3,5", "Já pintada, boa");

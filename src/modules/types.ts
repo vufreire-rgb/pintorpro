@@ -1,4 +1,5 @@
 import type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment } from "@/engine";
+import type { PixConfig } from "./pix";
 
 export type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment };
 
@@ -21,6 +22,8 @@ export interface Company {
   /** Id do arquivo (IndexedDB/nuvem) com o logo do pintor; sem ele o PDF usa as iniciais. */
   logoId?: string;
   /** Lembrete de revisar orçamentos: hora "HH:MM" e dias da semana (0=domingo … 6=sábado). */
+  /** Chave Pix do pintor, para gerar o "copia e cola" e o QR. */
+  pix?: PixConfig;
   reviewReminder?: { time: string; days: number[] };
   /** Um item por linha. */
   exclusionsText?: string;
@@ -68,12 +71,26 @@ export interface Quote {
 
 export type WorkStatus = "scheduled" | "in_progress" | "issues" | "done";
 
+export type PaymentMethod = "pix" | "dinheiro" | "cartao" | "transferencia" | "outro";
+
 export interface Payment {
   id: string;
   /** AAAA-MM-DD */
   date: string;
   amountCents: number;
   note: string;
+  method?: PaymentMethod;
+  /** Foto do comprovante (arquivo guardado como as fotos da visita). */
+  proofId?: string;
+}
+
+/** Parcela combinada com o cliente. */
+export interface Installment {
+  id: string;
+  label: string;
+  /** AAAA-MM-DD */
+  dueDate: string;
+  amountCents: number;
 }
 
 /** Marca desenhada pelo pintor em cima de uma foto. Coordenadas de 0 a 1 (independem do tamanho da foto). */
@@ -113,6 +130,8 @@ export interface Work {
   endDate?: string;
   /** Pagamentos recebidos do cliente. */
   payments?: Payment[];
+  /** Plano de pagamento combinado (parcelas). */
+  plan?: Installment[];
   /** Campos "realizado" reservados para comparar orçado × realizado no futuro. */
   actual?: { hours?: number; costCents?: number; endDate?: string };
 }

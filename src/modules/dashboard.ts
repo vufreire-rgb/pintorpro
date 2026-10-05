@@ -1,3 +1,4 @@
+import { lateCents } from "./finance";
 import { remainingCents } from "./workInfo";
 import type { Db } from "./types";
 
@@ -14,6 +15,7 @@ export function dashboard(db: Db) {
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),
     profitMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.profitCents, 0),
     receivableCents: db.works.reduce((s, w) => s + remainingCents(w), 0),
+    lateCents: db.works.reduce((s, w) => s + lateCents(w), 0),
     worksActive: db.works.filter((w) => w.status === "in_progress" || w.status === "issues").length,
   };
 }

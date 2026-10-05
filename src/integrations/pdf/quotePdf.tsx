@@ -4,7 +4,7 @@ import type { QuotePdfData } from "@/modules/pdfData";
 /** Fontes livres (OFL) servidas pelo próprio app: Outfit (títulos/valores) e Atkinson Hyperlegible (textos). */
 const fontBase = () => (typeof window !== "undefined" ? window.location.origin : "") + "/fonts/";
 let fontsReady = false;
-function registerFonts() {
+export function registerFonts() {
   if (fontsReady) return;
   fontsReady = true;
   Font.register({
@@ -24,9 +24,9 @@ function registerFonts() {
   Font.registerHyphenationCallback((word) => [word]); // sem hifenização estranha
 }
 
-const INK = "#0E1B2E";
-const SUPPORT = "#4A5B70";
-const LINE = "#D3DBE6";
+export const INK = "#0E1B2E";
+export const SUPPORT = "#4A5B70";
+export const LINE = "#D3DBE6";
 
 const s = StyleSheet.create({
   page: { paddingTop: 36, paddingHorizontal: 36, paddingBottom: 78, fontFamily: "Atkinson", fontSize: 15, color: INK },
@@ -34,7 +34,7 @@ const s = StyleSheet.create({
   hr: { borderBottomWidth: 1, borderBottomColor: LINE },
 });
 
-function Monogram({ text, color, size, radius, font, logo }: { text: string; color: string; size: number; radius: number; font: number; logo?: string }) {
+export function Monogram({ text, color, size, radius, font, logo }: { text: string; color: string; size: number; radius: number; font: number; logo?: string }) {
   // eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf, não é <img>
   if (logo) return <Image src={logo} style={{ width: size, height: size, objectFit: "contain" }} />;
   return (
@@ -158,8 +158,26 @@ function Summary({ d }: { d: QuotePdfData }) {
           </View>
         </View>
       ) : null}
+      {!d.deposit ? <PixBlock d={d} /> : null}
       <Footer d={d} />
     </Page>
+  );
+}
+
+function PixBlock({ d }: { d: QuotePdfData }) {
+  if (!d.pix) return null;
+  return (
+        <View wrap={false} style={{ marginTop: 18, borderWidth: 2, borderColor: LINE, borderRadius: 20, padding: 18, flexDirection: "row", alignItems: "center" }}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- Image do react-pdf, não é <img> */}
+          <Image src={d.pix.qr} style={{ width: 118, height: 118 }} />
+          <View style={{ marginLeft: 18, flexShrink: 1 }}>
+            <Text style={[s.caps, { color: d.color }]}>Ou pague por Pix</Text>
+            <Text style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: 20, lineHeight: 1.2, marginTop: 2 }}>Entrada de {d.pix.amount}</Text>
+            <Text style={{ fontSize: 13, color: SUPPORT }}>{d.pix.pct} Aponte a câmera do banco para o QR Code.</Text>
+            <Text style={{ fontSize: 13, color: SUPPORT, marginTop: 4 }}>Recebedor: <Text style={{ fontWeight: 700, color: INK }}>{d.pix.receiver}</Text></Text>
+            <Text style={{ fontSize: 12, color: SUPPORT, marginTop: 4 }}>O “copia e cola” segue na mensagem do WhatsApp.</Text>
+          </View>
+        </View>
   );
 }
 
@@ -253,8 +271,9 @@ function Terms({ d }: { d: QuotePdfData }) {
         </View>
       ) : null}
 
+      {d.deposit ? <PixBlock d={d} /> : null}
       {d.photos.length > 0 ? (
-        <View>
+        <View wrap={false}>
           <Text style={{ fontFamily: "Outfit", fontWeight: 800, fontSize: 28, lineHeight: 1.2, marginBottom: 12 }}>Fotos da visita</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
             {d.photos.map((p, i) => (

@@ -1,8 +1,12 @@
 import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
+import { normalizePixKey, pixPayload, pixText } from "./pix";
+import { qrDataUrl } from "./qr";
+import { formatBRL } from "@/shared/money";
 import { buildIcs } from "./visitList";
 import { buildReviewIcs, type ReviewReminder } from "./reminder";
 import { buildWorkIcs } from "./workInfo";
-import type { Client, PhotoMark, Visit, Work } from "./types";
+import { buildReceiptData } from "./receiptData";
+import type { Client, Payment, PhotoMark, Visit, Work } from "./types";
 import { loadFileBlob, logoForPdf, markedPhotoBlob, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
 
@@ -30,19 +34,23 @@ async function makePdf(db: Db, q: Quote): Promise<{ blob: Blob; data: QuotePdfDa
   const { renderQuotePdf } = await import("@/integrations/pdf/quotePdf");
   const logoId = db.company?.logoId;
   const logo = logoId ? await logoForPdf(logoId).catch(() => undefined) : undefined;
-  const data = { ...buildPdfData(db, q, await loadPdfPhotos(db, q)), logo };
+  const data: QuotePdfData = { ...buildPdfData(db, q, await loadPdfPhotos(db, q)), logo };
+  const px = db.company?.pix;
+  if (px && db.company && normalizePixKey(px.type, px.key)) {
+    const pct = q.depositPct ?? db.company.depositPct ?? 50;
+    const cents = Math.round((q.result.totals.totalCents * pct) / 100);
+    const code = pixPayload(px, { name: db.company.name, city: db.company.city }, cents);
+    if (code) data.pix = { qr: await qrDataUrl(code, 300), code, amount: formatBRL(cents), pct: `${pct}% do valor total.`, receiver: pixText(px.name || db.company.name, 25) };
+  }
   return { blob: await renderQuotePdf(data), data };
 }
 
-/** Gera o PDF e abre o compartilhamento do celular; se não houver, baixa o PDF e abre o WhatsApp. */
-export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "downloaded"> {
-  const { blob, data } = await makePdf(db, q);
-  const file = new File([blob], `orcamento-${data.number}.pdf`, { type: "application/pdf" });
-  const text = `Olá ${data.clientName}! Segue o orçamento nº ${data.number} — ${data.total}. Validade: ${data.validity.replace("7 dias, ", "")}.`;
-
+/** Abre o compartilhamento do celular com o arquivo; se não houver, baixa e abre o WhatsApp com o texto. */
+async function shareFileOnWhatsApp(blob: Blob, filename: string, text: string, title: string, rawPhone: string): Promise<"shared" | "downloaded"> {
+  const file = new File([blob], filename, { type: blob.type || "application/pdf" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], text, title: `Orçamento ${data.number}` });
+      await navigator.share({ files: [file], text, title });
       return "shared";
     } catch (e) {
       if ((e as Error).name === "AbortError") return "shared";
@@ -54,10 +62,28 @@ export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "
   a.download = file.name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
-  const phone = onlyDigits(db.clients.find((c) => c.id === q.clientId)?.phone ?? "");
-  const wa = `https://wa.me/${phone ? (phone.length <= 11 ? "55" + phone : phone) : ""}?text=${encodeURIComponent(text)}`;
-  window.open(wa, "_blank");
+  const phone = onlyDigits(rawPhone);
+  window.open(`https://wa.me/${phone ? (phone.length <= 11 ? "55" + phone : phone) : ""}?text=${encodeURIComponent(text)}`, "_blank");
   return "downloaded";
+}
+
+/** Gera o PDF do orçamento e manda pelo WhatsApp. */
+export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "downloaded"> {
+  const { blob, data } = await makePdf(db, q);
+  const base = `Olá ${data.clientName}! Segue o orçamento nº ${data.number} — ${data.total}. Validade: ${data.validity.replace("7 dias, ", "")}.`;
+  const text = data.pix ? `${base}\n\nPara pagar a entrada (${data.pix.amount}) por Pix, copie o código abaixo e cole no app do seu banco:\n${data.pix.code}` : base;
+  return shareFileOnWhatsApp(blob, `orcamento-${data.number}.pdf`, text, `Orçamento ${data.number}`, db.clients.find((c) => c.id === q.clientId)?.phone ?? "");
+}
+
+/** Gera o recibo de um pagamento e manda pelo WhatsApp. */
+export async function shareReceipt(db: Db, w: Work, payment: Payment): Promise<"shared" | "downloaded"> {
+  const { renderReceiptPdf } = await import("@/integrations/pdf/receiptPdf");
+  const logoId = db.company?.logoId;
+  const logo = logoId ? await logoForPdf(logoId).catch(() => undefined) : undefined;
+  const data = { ...buildReceiptData(db, w, payment), logo };
+  const blob = await renderReceiptPdf(data);
+  const text = `Olá ${data.clientName.split(" ")[0] ?? ""}! Segue o recibo nº ${data.number} — ${data.amount}. Obrigado!`;
+  return shareFileOnWhatsApp(blob, `recibo-${data.number}.pdf`, text, `Recibo ${data.number}`, db.clients.find((c) => c.id === w.clientId)?.phone ?? "");
 }
 
 export async function downloadPdf(db: Db, q: Quote): Promise<void> {

@@ -20,6 +20,8 @@ export interface QuotePdfData {
   payment: string;
   validity: string;
   deposit: null | { amount: string; pct: string; link: string };
+  /** Pix da entrada: QR (imagem) e o código "copia e cola". */
+  pix?: { qr: string; code: string; amount: string; pct: string; receiver: string };
   rooms: { name: string; facts: string; items: string[]; materials: string; price?: string }[];
   showRoomPrices: boolean;
   terms: { exclusions: string[]; before: string[]; warranty: string };

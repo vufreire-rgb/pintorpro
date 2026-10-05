@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
+import { PixModal } from "@/components/PixModal";
+import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
 import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
@@ -19,6 +21,7 @@ export default function Configuracoes() {
   const db = useAppDb();
   const logoInput = useRef<HTMLInputElement>(null);
   const [logoMsg, setLogoMsg] = useState("");
+  const [pixTest, setPixTest] = useState(false);
   const auth = useAuthState();
   if (!db) return <Loading />;
   const c = db.company!;
@@ -75,6 +78,32 @@ export default function Configuracoes() {
         <Field label="Antes de começar (o que o cliente faz)" hint="Um item por linha."><TextArea value={c.beforeStartText ?? DEFAULT_PDF_TEXTS.beforeStartText} onChange={(e) => set({ beforeStartText: e.target.value })} /></Field>
         <Field label="Garantia"><TextArea value={c.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText} onChange={(e) => set({ warrantyText: e.target.value })} /></Field>
         <p className="text-sm text-slate-500">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
+      </Section>
+      <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
+        <p className="text-sm text-slate-600">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(PIX_TYPE_LABEL) as PixKeyType[]).map((t) => (
+            <Chip key={t} active={(c.pix?.type ?? "doc") === t} onClick={() => set({ pix: { type: t, key: "", name: c.pix?.name, city: c.pix?.city } })}>{PIX_TYPE_LABEL[t]}</Chip>
+          ))}
+        </div>
+        <Field label={`Sua chave Pix (${PIX_TYPE_LABEL[c.pix?.type ?? "doc"].toLowerCase()})`}>
+          <TextInput value={c.pix?.key ?? ""} inputMode={(c.pix?.type ?? "doc") === "email" ? "email" : "text"} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: e.target.value, name: c.pix?.name, city: c.pix?.city } })} />
+        </Field>
+        {c.pix?.key ? (
+          normalizePixKey(c.pix.type, c.pix.key) ? <p className="text-sm text-accent-dark">✓ Chave válida</p> : <p className="text-sm text-red-700">Essa chave não parece certa para o tipo escolhido.</p>
+        ) : null}
+        <Field label="Nome que aparece para quem paga" hint="Até 25 letras. Se ficar vazio, usamos o nome do seu negócio.">
+          <TextInput value={c.pix?.name ?? ""} maxLength={25} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: c.pix?.key ?? "", name: e.target.value, city: c.pix?.city } })} />
+        </Field>
+        {c.pix?.key && normalizePixKey(c.pix.type, c.pix.key) ? (
+          <>
+            <Button variant="ghost" onClick={() => setPixTest(true)}>🔍 Ver o QR de teste (R$ 1,00)</Button>
+            <p className="text-sm text-slate-500">Dica: pague esse R$ 1,00 para você mesmo, para ter certeza de que a chave está certa.</p>
+          </>
+        ) : null}
+        {pixTest && c.pix ? (
+          <PixModal code={pixPayload(c.pix, { name: c.name, city: c.city }, 100)} title="QR de teste" amount="R$ 1,00" onClose={() => setPixTest(false)} />
+        ) : null}
       </Section>
       <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
         {db.services.map((s) => {

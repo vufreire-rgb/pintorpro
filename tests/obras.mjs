@@ -34,13 +34,13 @@ const ics = await (await import("node:fs/promises")).readFile(await dl.path(), "
 check(ics.includes("DTSTART;VALUE=DATE:" + d(2).replace(/-/g, "")) && ics.includes("SUMMARY:Obra - Carla Dias"), "arquivo .ics da obra");
 
 // pagamentos
-await page.getByRole("button", { name: "Entrada" }).click();
+await page.getByRole("button", { name: "Entrada", exact: true }).click();
 await page.waitForTimeout(300);
 const v1 = await page.getByLabel("Valor recebido (R$)").inputValue(); console.log("valor:", v1); check(/^1[.]?500/.test(v1), "entrada sugerida de 50%");
 await page.getByRole("button", { name: "Registrar", exact: true }).click();
 check(await page.getByText("Entrada ·").isVisible(), "pagamento registrado na lista");
 check(await page.getByText("R$ 1.500,00").first().isVisible(), "recebido e falta atualizam");
-await page.getByRole("button", { name: "Pagamento final" }).click();
+await page.getByRole("button", { name: "Pagamento final", exact: true }).click();
 await page.waitForTimeout(300);
 const v2 = await page.getByLabel("Valor recebido (R$)").inputValue(); console.log("valor:", v2); check(/^1[.]?500/.test(v2), "pagamento final = o que falta");
 await page.getByRole("button", { name: "Registrar", exact: true }).click();
