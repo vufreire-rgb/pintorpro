@@ -2,7 +2,7 @@ import { uid, updateDb } from "./db";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
 import type { RoomForm } from "./rooms";
-import type { AudioMarker, Db, PhotoMark, Visit } from "./types";
+import type { AudioMarker, Db, GeoPoint, PhotoMark, Visit } from "./types";
 
 const blankVisit = (): Visit => ({ id: uid(), siteAddress: "", notes: "", photoIds: [], createdAt: new Date().toISOString() });
 
@@ -49,6 +49,10 @@ export function addVisitRoom(id: string, form: RoomForm): void {
 export const removeVisitRoom = (id: string, roomId: string) => patch(id, (v) => ({ ...v, rooms: (v.rooms ?? []).filter((r) => r.id !== roomId) }));
 
 export const setVisitNotes = (id: string, notes: string) => patch(id, (v) => ({ ...v, notes }));
+/** Guarda o ponto no mapa; se veio um endereço escrito, ele passa a ser o endereço da obra. */
+export const setVisitLocation = (id: string, location: GeoPoint, address?: string) =>
+  patch(id, (v) => ({ ...v, location, siteAddress: address || v.siteAddress }));
+
 export const setVisitAddress = (id: string, siteAddress: string) => patch(id, (v) => ({ ...v, siteAddress }));
 
 /** Guarda as fotos. `room`: ambiente anotado na hora (vira o rótulo da foto no PDF). Retorna os ids. */

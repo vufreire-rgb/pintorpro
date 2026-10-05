@@ -9,12 +9,13 @@ import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomFormCard } from "@/components/RoomFormCard";
 import { Button, Card, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
+import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
 import { EMPTY_ROOM, type RoomForm } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
-import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
-import { confirmationText, fromLocalInput, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
+import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
+import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum } from "@/shared/format";
 
 export default function Visita({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +27,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [msg, setMsg] = useState("");
   const [askDelete, setAskDelete] = useState(false);
   const [camera, setCamera] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [geoMsg, setGeoMsg] = useState("");
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,6 +47,21 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
     setBusy(true);
     try { await addVisitPhotos(v.id, Array.from(files)); } finally { setBusy(false); }
     if (input.current) input.current.value = "";
+  };
+
+  const fillFromLocation = async () => {
+    setLocating(true);
+    setGeoMsg("");
+    try {
+      const point = await getPosition();
+      const found = await reverseGeocode(point);
+      setVisitLocation(v.id, point, found?.text);
+      setGeoMsg(!found ? "Salvei o ponto no mapa, mas não consegui descobrir o nome da rua. Digite o endereço acima." : found.hasNumber ? "Endereço preenchido. Confira se está certo." : "Preenchi a rua. Falta o número: complete acima.");
+    } catch (e) {
+      setGeoMsg(e instanceof GeoError ? GEO_MESSAGE[e.reason] : GEO_MESSAGE.unavailable);
+    } finally {
+      setLocating(false);
+    }
   };
 
   return (
@@ -72,7 +90,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               </div>
               <button className="min-h-10 px-2 text-brand underline" onClick={() => setChanging(true)}>Trocar</button>
             </div>
-            <ContactActions phone={client.phone} address={v.siteAddress || client.address} />
+            <ContactActions phone={client.phone} address={v.siteAddress || client.address} location={v.location} />
           </>
         ) : (
           client ? (
@@ -86,6 +104,9 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           ) : <p className="text-slate-600">👤 O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
         )}
         <Field label="Endereço da obra"><TextInput value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} /></Field>
+        <Button variant="ghost" className="!min-h-12 !text-base" disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "📍 Atualizar pela minha localização" : "📍 Usar minha localização"}</Button>
+        {v.location ? <p className="text-sm text-accent-dark">✓ Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
+        {geoMsg ? <p className="text-sm text-slate-700">{geoMsg}</p> : null}
       </Card>
 
       <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>

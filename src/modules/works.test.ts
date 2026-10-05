@@ -105,3 +105,18 @@ describe("marcações na foto", () => {
     expect(isTooShort(arrow, 1000, 1000)).toBe(false);
   });
 });
+
+import { addressFromNominatim } from "./geo";
+import { mapsUrl } from "./visitList";
+describe("localização", () => {
+  it("monta o endereço escrito a partir do OpenStreetMap", () => {
+    expect(addressFromNominatim({ address: { road: "Rua das Flores", house_number: "120", suburb: "Centro", city: "Campinas", "ISO3166-2-lvl4": "BR-SP" } })).toEqual({ text: "Rua das Flores, 120 - Centro, Campinas - SP", hasNumber: true });
+    expect(addressFromNominatim({ address: { road: "Av. Brasil", town: "Valinhos", "ISO3166-2-lvl4": "BR-SP" } })).toEqual({ text: "Av. Brasil, Valinhos - SP", hasNumber: false });
+    expect(addressFromNominatim({ address: { city: "Campinas" } }).text).toBe("");
+    expect(addressFromNominatim({}).text).toBe("");
+  });
+  it("o mapa abre no ponto exato quando há coordenadas", () => {
+    expect(mapsUrl("Rua A", { lat: -22.9, lng: -47.06 })).toContain("query=-22.9,-47.06");
+    expect(mapsUrl("Rua A")).toContain("query=Rua%20A");
+  });
+});

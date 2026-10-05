@@ -79,7 +79,9 @@ export const waUrl = (phone: string, text = ""): string => {
   const n = digits(phone);
   return `https://wa.me/${n.length <= 11 ? "55" + n : n}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
 };
-export const mapsUrl = (address: string): string => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+/** Abre no ponto exato se houver coordenadas; senão procura pelo endereço escrito. */
+export const mapsUrl = (address: string, loc?: { lat: number; lng: number }): string =>
+  `https://www.google.com/maps/search/?api=1&query=${loc ? `${loc.lat},${loc.lng}` : encodeURIComponent(address)}`;
 
 export function confirmationText(v: Visit, client: Client | undefined, company: Company | null, now = Date.now()): string {
   const first = client?.name.split(" ")[0] ?? "";

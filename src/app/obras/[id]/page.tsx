@@ -42,7 +42,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
     <Screen title={client?.name ?? "Obra"} back="/obras">
       <Card className="flex flex-col gap-3">
         <div className="text-slate-600">{quote?.siteAddress || "Sem endereço"}</div>
-        <ContactActions phone={client?.phone} address={quote?.siteAddress || client?.address} />
+        <ContactActions phone={client?.phone} address={quote?.siteAddress || client?.address} location={visit?.location} />
         <div className="flex flex-wrap gap-2">
           {(Object.keys(WORK_STATUS_LABEL) as WorkStatus[]).map((s) => (
             <Chip key={s} active={w.status === s} onClick={() => setWorkStatus(w.id, s)}>{WORK_STATUS_LABEL[s]}</Chip>

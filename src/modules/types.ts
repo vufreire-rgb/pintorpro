@@ -77,6 +77,13 @@ export interface Payment {
 }
 
 /** Marca desenhada pelo pintor em cima de uma foto. Coordenadas de 0 a 1 (independem do tamanho da foto). */
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+  /** Precisão do GPS, em metros. */
+  accuracy?: number;
+}
+
 export interface PhotoMark {
   id: string;
   kind: "text" | "arrow" | "dim";
@@ -153,6 +160,8 @@ export interface Visit {
   /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */
   photoIds: string[];
   /** Fotos escolhidas para o PDF (por id), com legenda e ambiente. */
+  /** Ponto no mapa marcado pelo pintor com "Usar minha localização". */
+  location?: GeoPoint;
   photoMeta?: Record<string, { inPdf?: boolean; caption?: string; room?: string; marks?: PhotoMark[] }>;
   /** Gravações de áudio (arquivos ficam no aparelho). */
   audios?: AudioNote[];
