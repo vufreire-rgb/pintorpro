@@ -47,6 +47,15 @@ check(await page.getByText(/em atraso/).first().isVisible(), "parcelas vencidas 
 const href = decodeURIComponent(await page.getByRole("link", { name: "💬 Cobrar" }).first().getAttribute("href"));
 check(href.includes("wa.me/5511977771111") && href.includes("Olá, Carla!") && href.includes("000201010211"), "botão Cobrar abre o WhatsApp com mensagem e Pix copia e cola");
 
+// 3b) cobrança em PDF (com QR do Pix) para mandar pelo WhatsApp
+const [dc] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: "📄 PDF" }).first().click()]);
+const cb = await readFile(await dc.path());
+check(cb.slice(0, 4).toString() === "%PDF" && cb.length > 3000 && /^cobranca-/.test(dc.suggestedFilename()), "cobrança em PDF gerada (" + dc.suggestedFilename() + ", " + cb.length + " bytes)");
+await dc.saveAs("/tmp/cobranca.pdf");
+await page.getByText(/O arquivo foi baixado e o WhatsApp foi aberto/).waitFor();
+check(true, "aviso claro quando o celular não abre o compartilhamento direto");
+await page.getByText(/O arquivo foi baixado/).click();
+
 // 4) Pix da parcela (QR para mostrar ao cliente)
 await page.getByRole("button", { name: "📱 Pix" }).first().click();
 await page.getByTestId("pix-qr").waitFor();
@@ -64,6 +73,11 @@ check(pay.method === "dinheiro" && !!pay.proofId && pay.amountCents === 150000, 
 await page.getByAltText("Comprovante").waitFor();
 check(true, "miniatura do comprovante aparece");
 check(await page.getByText("✓ Paga").first().isVisible(), "a entrada passa a '✓ Paga' sozinha");
+
+// 5b) enviar o comprovante (foto) guardado no pagamento
+const [dp] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.getByRole("button", { name: "📤 Enviar comprovante" }).click()]);
+check(dp.suggestedFilename() === "comprovante.jpg" && (await readFile(await dp.path())).length > 100, "botão 'Enviar comprovante' manda a foto anexada");
+await page.getByText(/O arquivo foi baixado/).click();
 
 // 6) recibo em PDF
 const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: "🧾 Recibo" }).click()]);

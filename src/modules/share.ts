@@ -5,6 +5,8 @@ import { formatBRL } from "@/shared/money";
 import { buildIcs } from "./visitList";
 import { buildReviewIcs, type ReviewReminder } from "./reminder";
 import { buildWorkIcs } from "./workInfo";
+import { buildChargeData, pixCodeFor } from "./chargeData";
+import { chargeMessage, type InstallmentView } from "./finance";
 import { buildReceiptData } from "./receiptData";
 import type { Client, Payment, PhotoMark, Visit, Work } from "./types";
 import { loadFileBlob, logoForPdf, markedPhotoBlob, photoForPdf } from "./photos";
@@ -73,6 +75,31 @@ export async function sharePdfOnWhatsApp(db: Db, q: Quote): Promise<"shared" | "
   const base = `Olá ${data.clientName}! Segue o orçamento nº ${data.number} — ${data.total}. Validade: ${data.validity.replace("7 dias, ", "")}.`;
   const text = data.pix ? `${base}\n\nPara pagar a entrada (${data.pix.amount}) por Pix, copie o código abaixo e cole no app do seu banco:\n${data.pix.code}` : base;
   return shareFileOnWhatsApp(blob, `orcamento-${data.number}.pdf`, text, `Orçamento ${data.number}`, db.clients.find((c) => c.id === q.clientId)?.phone ?? "");
+}
+
+/** Gera o PDF de cobrança de uma parcela (com QR do Pix) e manda pelo WhatsApp, com a mensagem pronta e o copia e cola. */
+export async function shareCharge(db: Db, w: Work, p: InstallmentView): Promise<"shared" | "downloaded"> {
+  const { renderChargePdf } = await import("@/integrations/pdf/chargePdf");
+  const logoId = db.company?.logoId;
+  const logo = logoId ? await logoForPdf(logoId).catch(() => undefined) : undefined;
+  const open = p.amountCents - p.coveredCents;
+  const code = pixCodeFor(db, open);
+  const pix = code ? { code, qr: await qrDataUrl(code, 300) } : undefined;
+  const data = { ...buildChargeData(db, w, p, pix), logo };
+  const blob = await renderChargePdf(data);
+  const client = db.clients.find((c) => c.id === w.clientId);
+  const text = chargeMessage(p, client?.name ?? "", db.company?.name ?? "", code || undefined);
+  return shareFileOnWhatsApp(blob, `cobranca-${data.number}-${p.label.toLowerCase().replace(/\s+/g, "-")}.pdf`, text, `Cobrança ${p.label}`, client?.phone ?? "");
+}
+
+/** Manda a foto do comprovante guardada no pagamento. */
+export async function shareProof(db: Db, w: Work, payment: Payment): Promise<"shared" | "downloaded" | "missing"> {
+  if (!payment.proofId) return "missing";
+  const blob = await loadFileBlob(payment.proofId);
+  if (!blob) return "missing";
+  const client = db.clients.find((c) => c.id === w.clientId);
+  const text = `Comprovante do pagamento de ${formatBRL(payment.amountCents)}${payment.note ? ` (${payment.note.toLowerCase()})` : ""}. Obrigado!${db.company?.name ? `\n— ${db.company.name}` : ""}`;
+  return shareFileOnWhatsApp(blob, "comprovante.jpg", text, "Comprovante", client?.phone ?? "");
 }
 
 /** Gera o recibo de um pagamento e manda pelo WhatsApp. */

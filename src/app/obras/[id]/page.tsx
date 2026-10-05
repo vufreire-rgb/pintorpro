@@ -10,7 +10,7 @@ import { buildPlan, chargeMessage, lateCents, planGapCents, planView, PLAN_PRESE
 import { normalizePixKey, pixPayload } from "@/modules/pix";
 import { storePhotos, useFileUrl } from "@/modules/photos";
 import { METHOD_LABEL } from "@/modules/receiptData";
-import { downloadWorkIcs, shareReceipt } from "@/modules/share";
+import { downloadWorkIcs, shareCharge, shareProof, shareReceipt } from "@/modules/share";
 import { waUrl } from "@/modules/visitList";
 import { useAppDb } from "@/modules/useApp";
 import { dateBR, ymd, paidCents, paidPct, remainingCents } from "@/modules/workInfo";
@@ -53,6 +53,19 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const proofInput = useRef<HTMLInputElement>(null);
+  const send = async (job: () => Promise<"shared" | "downloaded" | "missing">, fail: string) => {
+    setBusy(true);
+    setMsg("");
+    try {
+      const r = await job();
+      if (r === "downloaded") setMsg("O arquivo foi baixado e o WhatsApp foi aberto. Se ele não aparecer na conversa, toque no clipe 📎 do WhatsApp e escolha o arquivo baixado.");
+      if (r === "missing") setMsg("Esse arquivo não está neste aparelho.");
+    } catch {
+      setMsg(fail);
+    } finally {
+      setBusy(false);
+    }
+  };
   if (!db) return <Loading />;
   const w = db.works.find((x) => x.id === id);
   if (!w) return <Screen title="Obra" back="/obras"><p>Obra não encontrada.</p></Screen>;
@@ -128,6 +141,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
                 {p.state !== "paid" ? (
                   <div className="flex gap-2">
                     {client?.phone ? <a className="grid min-h-11 flex-1 place-items-center rounded-xl bg-white px-2 text-[15px] font-semibold" href={waUrl(client.phone, chargeMessage(p, client.name, db.company!.name, pixFor(p.amountCents - p.coveredCents)))} target="_blank" rel="noreferrer">💬 Cobrar</a> : null}
+                    <button className="min-h-11 flex-1 rounded-xl bg-white px-2 text-[15px] font-semibold disabled:opacity-50" disabled={busy} onClick={() => send(() => shareCharge(db, w, p), "Não consegui gerar a cobrança em PDF. Tente de novo.")}>📄 PDF</button>
                     {pixOk ? <button className="min-h-11 flex-1 rounded-xl bg-white px-2 text-[15px] font-semibold" onClick={() => setPixModal({ code: pixFor(p.amountCents - p.coveredCents), title: `${p.label} · Pix`, amount: formatBRL(p.amountCents - p.coveredCents) })}>📱 Pix</button> : null}
                   </div>
                 ) : null}
@@ -164,13 +178,13 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
             <div className="min-w-0 flex-1">
               <b>{formatBRL(p.amountCents)}</b>
               <div className="text-sm text-slate-600">{p.note} · {dateBR(p.date)}{p.method ? ` · ${METHOD_LABEL[p.method]}` : ""}</div>
-              <button className="mt-1 min-h-9 text-sm font-semibold text-brand underline disabled:opacity-50" disabled={busy} onClick={async () => { setBusy(true); setMsg(""); try { await shareReceipt(db, w, p); } catch { setMsg("Não consegui gerar o recibo. Tente de novo."); } finally { setBusy(false); } }}>🧾 Recibo</button>
+              <button className="mt-1 min-h-9 text-sm font-semibold text-brand underline disabled:opacity-50" disabled={busy} onClick={() => send(() => shareReceipt(db, w, p), "Não consegui gerar o recibo. Tente de novo.")}>🧾 Recibo</button>
+              {p.proofId ? <button className="ml-4 mt-1 min-h-9 text-sm font-semibold text-brand underline disabled:opacity-50" disabled={busy} onClick={() => send(() => shareProof(db, w, p), "Não consegui enviar o comprovante. Tente de novo.")}>📤 Enviar comprovante</button> : null}
             </div>
             {p.proofId ? <ProofThumb id={p.proofId} /> : null}
             <button className="h-10 w-10 shrink-0 rounded-full bg-slate-200" aria-label="Remover pagamento" onClick={() => removePayment(w.id, p.id, p.proofId)}>✕</button>
           </div>
         ))}
-        {msg ? <p className="text-sm text-red-700">{msg}</p> : null}
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
           <b>Registrar pagamento</b>
           <div className="flex flex-wrap gap-2">
@@ -202,6 +216,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         ) : <p className="text-sm text-slate-500">Este orçamento não veio de uma visita gravada.</p>}
       </Card>
 
+      {msg ? <button className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-md rounded-2xl bg-slate-900 p-4 text-left text-white shadow-lg" onClick={() => setMsg("")}>{msg}<span className="mt-1 block text-xs text-white/70">Toque para fechar</span></button> : null}
       {pixModal ? <PixModal {...pixModal} onClose={() => setPixModal(null)} /> : null}
       <Button variant="ghost" className="text-base text-red-700" onClick={() => setAskDelete(true)}>Apagar obra</Button>
       <ConfirmDialog
