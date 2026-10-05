@@ -1,6 +1,6 @@
-import { Document, Page, StyleSheet, Text, View, pdf } from "@react-pdf/renderer";
+import { Document, Page, StyleSheet, View, pdf } from "@react-pdf/renderer";
 import type { ReceiptPdfData } from "@/modules/receiptData";
-import { INK, LINE, Monogram, SUPPORT, registerFonts } from "./quotePdf";
+import { INK, LINE, Monogram, SUPPORT, Text, registerFonts } from "./quotePdf";
 
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: "Atkinson", fontSize: 15, color: INK },

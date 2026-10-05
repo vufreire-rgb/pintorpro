@@ -1,14 +1,27 @@
 @import "tailwindcss";
+@import "@fontsource/outfit/latin-700.css";
+@import "@fontsource/outfit/latin-800.css";
+@import "@fontsource/atkinson-hyperlegible/latin-400.css";
+@import "@fontsource/atkinson-hyperlegible/latin-700.css";
 
-/* Identidade do app (ver src/shared/brand.ts). */
+/* Identidade do app (ver src/shared/brand.ts e a ficha do designer). */
 @theme {
+  --font-sans: "Atkinson Hyperlegible", system-ui, sans-serif; /* textos e campos */
+  --font-display: "Outfit", system-ui, sans-serif; /* títulos, preços e botões */
   --color-brand: #0f3b7a;
   --color-brand-dark: #0b2d5e;
-  --color-brand-soft: #e9eff8;
+  --color-brand-soft: #e8effa;
   --color-accent: #14a85e;
-  --color-accent-dark: #0b7f44; /* verde com contraste suficiente para texto/botão */
+  --color-accent-dark: #0b7f44; /* verde de ação: botão principal, texto branco (contraste 5,1) */
+  --color-ink: #0e1b2e;
+  --color-support: #4a5b70;
+  --color-field: #6f829b; /* borda de campo e de opção não escolhida */
+  --color-live: #1d5fc4; /* links e foco */
+  --color-err: #c0262d; /* só erro e "Apagar" */
 }
 
 /* Comportamento de app: sem "pulo" ao puxar a tela e sem seleção acidental de botões. */
 html { overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
 button { touch-action: manipulation; }
+body { background-color: #f3f6fa; color: var(--color-ink); font-family: var(--font-sans); }
+h1, h2, h3 { font-family: var(--font-display); }

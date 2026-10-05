@@ -31,12 +31,12 @@ function LoginScreen() {
       </header>
       <section className="flex flex-1 flex-col gap-4 rounded-t-3xl bg-white p-6 pb-10">
         <h2 className="text-2xl font-bold">{mode === "in" ? "Entrar na sua conta" : "Criar sua conta"}</h2>
-        {mode === "up" ? <p className="-mt-2 text-slate-600">30 dias grátis, sem cartão.</p> : null}
+        {mode === "up" ? <p className="-mt-2 text-support">30 dias grátis, sem cartão.</p> : null}
         <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
           <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
-        {msg ? <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{msg}</p> : null}
+        {msg ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{msg}</p> : null}
         <Button disabled={busy || !email.includes("@") || password.length < 6} onClick={submit}>{busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}</Button>
         <Button variant="ghost" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>
       </section>
@@ -54,7 +54,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 p-6">
         <h1 className="text-2xl font-bold">Não conseguimos carregar seus dados</h1>
-        <p className="text-lg text-slate-600">Verifique sua internet e tente de novo. Seus dados continuam guardados na sua conta, nada foi apagado.</p>
+        <p className="text-lg text-support">Verifique sua internet e tente de novo. Seus dados continuam guardados na sua conta, nada foi apagado.</p>
         <Button onClick={retryLoad}>Tentar de novo</Button>
       </div>
     );
@@ -62,7 +62,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     <>
       <ThemeApplier />
       {sync === "error" ? (
-        <div className="bg-amber-100 p-2 text-center text-sm text-amber-900">Sem conexão: salvo só neste aparelho. Vamos tentar de novo.</div>
+        <div className="bg-amber-100 p-2 text-center text-base text-[#8A4B00]">Sem conexão: salvo só neste aparelho. Vamos tentar de novo.</div>
       ) : null}
       {children}
     </>

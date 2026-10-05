@@ -45,7 +45,7 @@ check(!/0 foto|0 áudio|\(s\)/.test(card), "card sem '0 foto(s)' nem '(s)': " + 
 await page.goto(base + "/visitas/v1");
 await page.getByText("Fotos (0)").waitFor();
 check(!(await page.getByPlaceholder("Ex.: Sala").isVisible()), "formulário de medidas começa recolhido");
-const save = page.getByRole("button", { name: "✅ Salvar visita" });
+const save = page.getByRole("button", { name: "Salvar visita" });
 const box = await save.boundingBox();
 const vh = page.viewportSize().height;
 check(box && box.y + box.height > vh - 120, "'Salvar visita' fica fixo na parte de baixo da tela mesmo sem rolar");
@@ -62,6 +62,18 @@ check(await page.getByPlaceholder("(11) 99999-9999").or(page.locator('input[valu
 check(!(await page.getByText("Valor de exemplo — confira").first().isVisible().catch(() => false)), "serviços começam recolhidos");
 await page.getByText("Serviços e preços").click();
 check(await page.getByText("Valor de exemplo — confira").first().isVisible(), "tocar em 'Serviços e preços' abre o bloco");
+
+// nada passa da largura da tela (em 390 e 412 px), com todos os blocos abertos
+for (const w of [360, 390]) {
+  await page.setViewportSize({ width: w, height: 800 });
+  for (const u of ["/visitas", "/visitas/v1", "/orcamentos", "/orcamentos/novo?visita=v1", "/obras", "/configuracoes", "/clientes"]) {
+    await page.goto(base + u);
+    await page.waitForTimeout(400);
+    await page.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
+    const over = await page.evaluate(() => { const cw = document.documentElement.clientWidth; return [...document.querySelectorAll("body *")].filter((e) => e.getBoundingClientRect().right > cw + 1 && !e.closest("[data-allow-scroll]") && getComputedStyle(e).overflowX === "visible").slice(0, 3).map((e) => e.tagName + ":" + (e.textContent || "").slice(0, 30)); });
+    check(over.length === 0, `sem estouro de largura em ${u} (${w}px)` + (over.length ? " → " + JSON.stringify(over) : ""));
+  }
+}
 
 console.log("erros de console:", errors.length ? errors : "nenhum");
 await browser.close();

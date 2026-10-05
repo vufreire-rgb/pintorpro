@@ -3,7 +3,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
-import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
+import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
+import { Eye, EyeOff, Settings, X } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { RoomFormCard } from "@/components/RoomFormCard";
 import { EMPTY_ROOM, isRoomValid, roomFromForm, type RoomForm } from "@/modules/rooms";
@@ -11,7 +12,7 @@ import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
-import { fmtNum, UNIT_LABEL } from "@/shared/format";
+import { fmtNum, plural, UNIT_LABEL } from "@/shared/format";
 
 export default function NovoOrcamentoPage() {
   return (
@@ -98,7 +99,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     <Screen title={quote ? `Editar orçamento nº ${quote.number}` : "Orçamento"} back={quote ? `/orcamentos/${quote.id}` : visit ? `/visitas/${visit.id}` : "/orcamentos"}>
       <div className="flex flex-col gap-4 pb-36">
         {quote ? (
-          <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-sm">
+          <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base">
             Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
           </div>
         ) : null}
@@ -115,7 +116,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
           <b>Cliente</b>
           {chosenClient ? (
             <div className="flex items-start justify-between gap-2">
-              <div><div className="text-lg font-semibold">{chosenClient.name}</div>{chosenClient.phone ? <div className="text-slate-600">{chosenClient.phone}</div> : null}</div>
+              <div><div className="text-lg font-semibold">{chosenClient.name}</div>{chosenClient.phone ? <div className="text-support">{chosenClient.phone}</div> : null}</div>
               {!quote ? <button className="min-h-10 px-2 text-brand underline" onClick={() => setClientId("")}>Trocar</button> : null}
             </div>
           ) : (
@@ -125,20 +126,20 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
             </>
           )}
-          <Field label="Endereço da obra"><TextInput value={siteValue} onChange={(e) => { setSite(e.target.value); setNewClient((n) => ({ ...n, address: e.target.value })); }} /></Field>
+          <Field label="Endereço da obra"><TextArea2 value={siteValue} onChange={(e) => { setSite(e.target.value); setNewClient((n) => ({ ...n, address: e.target.value })); }} /></Field>
         </Card>
 
-        <h2 className="text-lg font-bold">Ambientes e serviços</h2>
+        <h2 className="font-display text-[22px] font-bold leading-7">Ambientes e serviços</h2>
         {rooms.map((r, i) => {
           const m = result?.measures[i];
           return (
             <Card key={r.id} className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <b>{r.name}</b>
-                  <div className="text-sm text-slate-600">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m, altura {fmtNum(r.heightM)} m{m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}</div>
+                  <b className="text-lg">{r.name}</b>
+                  <div className="text-base text-support">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m, altura {fmtNum(r.heightM)} m{m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}</div>
                 </div>
-                <button className="h-11 w-11 shrink-0 rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}>✕</button>
+                <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}><X size={20} strokeWidth={2.4} aria-hidden /></button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {db.services.filter((sv) => enabled.includes(sv.id)).map((sv) => (
@@ -147,13 +148,13 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               </div>
               {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
                 <details>
-                  <summary className="cursor-pointer text-sm font-semibold text-brand">Demãos e quantidades</summary>
+                  <summary className="cursor-pointer text-base font-semibold text-brand">Demãos e quantidades</summary>
                   <div className="mt-2 flex flex-col gap-2">
                     {r.services.map((sel) => {
                       const svc = db.services.find((x) => x.id === sel.serviceId);
                       if (!svc) return null;
                       return (
-                        <div key={sel.serviceId} className="flex items-center justify-between gap-2 text-sm">
+                        <div key={sel.serviceId} className="flex items-center justify-between gap-2 text-base">
                           <span>{svc.name}</span>
                           {svc.basis === "fixed" ? (
                             <div className="w-28"><NumberInput value={sel.quantityOverride ?? 1} onChange={(n) => patchSel(r.id, sel.serviceId, { quantityOverride: n })} /></div>
@@ -172,23 +173,23 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         {formOpen ? (
           <>
             <RoomFormCard title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={() => { addRoom(); setShowForm(false); }} />
-            {pending ? <p className="-mt-2 text-sm text-slate-600">✔ Este ambiente já está no preço. Toque em <b>+ Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
+            {pending ? <p className="-mt-2 text-base text-support">Este ambiente já está no preço. Toque em <b>Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
           </>
         ) : (
           <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
         )}
 
         <details className="rounded-2xl border border-slate-200 p-3">
-          <summary className="cursor-pointer text-base font-semibold">⚙️ Ajustes do orçamento (opcional)</summary>
+          <summary className="flex cursor-pointer items-center gap-2 font-display text-lg font-bold"><Settings size={24} strokeWidth={2.2} aria-hidden className="text-brand" />Ajustes do orçamento (opcional)</summary>
           <div className="mt-3 flex flex-col gap-4">
             {result && result.materialLines.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <b>Materiais</b>
-                <p className="text-sm text-slate-600">Quantidade calculada sozinha. Desmarque o que o cliente vai fornecer.</p>
+                <p className="text-base text-support">Quantidade calculada sozinha. Desmarque o que o cliente vai fornecer.</p>
                 {result.materialLines.map((m) => (
                   <Card key={m.materialId} className="flex flex-col gap-2">
                     <div className="flex items-center justify-between gap-2">
-                      <div><b>{m.name}</b><div className="text-sm text-slate-600">Comprar {fmtNum(m.purchaseQty)} {m.unit} · {formatBRL(m.costCents)}</div></div>
+                      <div><b>{m.name}</b><div className="text-base text-support">Comprar {fmtNum(m.purchaseQty)} {m.unit} · {formatBRL(m.costCents)}</div></div>
                       <Chip active={m.included} onClick={() => setIncluded({ ...included, [m.materialId]: !m.included })}>{m.included ? "Incluso" : "Cliente fornece"}</Chip>
                     </div>
                     <Field label={`Rendimento (cobre ${UNIT_LABEL.m2} por ${m.unit})`}>
@@ -199,8 +200,8 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               </div>
             ) : null}
             <div className="flex flex-col gap-3">
-              <b>Desconto ou acréscimo</b>
-              <div className="flex gap-2">
+              <b className="text-lg">Desconto ou acréscimo</b>
+              <div className="flex flex-wrap gap-2">
                 <Chip active={adj.type === "discount"} onClick={() => setAdj({ ...adj, type: "discount" })}>Desconto</Chip>
                 <Chip active={adj.type === "surcharge"} onClick={() => setAdj({ ...adj, type: "surcharge" })}>Acréscimo</Chip>
                 <Chip active={adj.mode === "percent"} onClick={() => setAdj({ ...adj, mode: "percent", value: 0 })}>%</Chip>
@@ -225,7 +226,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         </details>
 
         {result && result.warnings.length > 0 ? (
-          <details className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
+          <details className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-base text-ink">
             <summary className="cursor-pointer font-semibold">Avisos ({result.warnings.length})</summary>
             <ul className="mt-2 list-disc pl-5">{result.warnings.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
             <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>
@@ -234,7 +235,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 
         {t ? (
           <>
-            <Button variant="ghost" className="!min-h-12 !text-base" aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "🙈 Esconder meu custo e lucro" : "👁 Ver meu custo e lucro"}</Button>
+            <Button variant="ghost" icon={showCost ? EyeOff : Eye} aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "Esconder meu custo e lucro" : "Ver meu custo e lucro"}</Button>
             {showCost ? (
               <Card className="border-amber-300 bg-amber-50">
                 <b>Só para você</b>
@@ -248,11 +249,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="min-w-0 flex-1">
-          <div className="text-xs text-slate-500">Preço para o cliente</div>
-          <div className="text-2xl font-bold text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
-          <div className="truncate text-xs text-slate-600">{canSave && result ? `Prazo: ${result.schedule.workDays} dia(s) + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
+          <div className="text-base text-support">Preço para o cliente</div>
+          <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
+          <div className="text-base text-support">{canSave && result ? `Prazo: ${plural(result.schedule.workDays, "dia", "dias")} + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
         </div>
-        <Button variant="success" className="!w-auto shrink-0" disabled={!canSave} onClick={save}>{quote ? "Salvar" : "Salvar orçamento"}</Button>
+        <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} disabled={!canSave} onClick={save}>Salvar</Button>
       </div>
     </Screen>
   );

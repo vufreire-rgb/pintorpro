@@ -35,7 +35,7 @@ await page.getByText("Nome", { exact: true }).locator("..").locator("input").fil
 await page.getByText("Telefone (WhatsApp)").locator("..").locator("input").fill("11 98888-7777");
 await page.getByText("Endereço da visita").locator("..").locator("input").fill("Av. Brasil, 5; ap. 3");
 await page.getByRole("button", { name: "Agendar", exact: true }).click();
-await page.getByText("📅 Visita agendada").waitFor();
+await page.getByText("Visita agendada").waitFor();
 check(await page.getByText("Amanhã, 09:00").isVisible(), "visita agendada para 'Amanhã, 09:00'");
 const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => decodeURIComponent(a.getAttribute("href") ?? "")));
 check(hrefs.some((h) => h.includes("wa.me/5511988887777") && h.includes("Confirmando nossa visita amanhã, 09:00")), "botão 'Confirmar pelo WhatsApp' com a mensagem pronta");
@@ -51,7 +51,7 @@ await page.goto(base + "/visitas");
 check(await page.getByText("Ana Lima").isVisible(), "Agendadas lista a visita agendada");
 await page.getByText("Ana Lima").click();
 await page.getByRole("button", { name: /Começar a visita agora/ }).click();
-check(!(await page.getByText("📅 Visita agendada").isVisible().catch(() => false)), "ao começar, o aviso de agendamento some");
+check(!(await page.getByText("Visita agendada").isVisible().catch(() => false)), "ao começar, o aviso de agendamento some");
 
 // lista: filtros e busca
 await page.goto(base + "/visitas");
@@ -59,7 +59,7 @@ await page.getByRole("tab", { name: /Agendadas/ }).waitFor();
 check(await page.getByRole("tab", { name: /Agendadas \(1\)/ }).getAttribute("aria-selected") === "true", "a aba abre em 'Agendadas (1)'");
 check(await page.getByRole("tab", { name: /Sem orçamento \(1\)/ }).isVisible(), "aba 'Sem orçamento (1)'");
 check(await page.getByRole("tab", { name: /Orçamento feito \(0\)/ }).isVisible(), "aba 'Orçamento feito (0)'");
-check(await page.getByText("⏰ Atrasada").isVisible(), "visita atrasada marcada em vermelho");
+check(await page.getByText(/Atrasada/).isVisible(), "visita atrasada marcada em vermelho");
 await page.getByRole("tab", { name: /Sem orçamento/ }).click();
 check(await page.getByText("Ana Lima").first().isVisible(), "aba 'Sem orçamento' mostra a visita já começada");
 await page.getByRole("tab", { name: /Orçamento feito/ }).click();
@@ -68,17 +68,17 @@ await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 
 // visita rápida pelo painel
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: "GRAVAR VISITA" }).click();
+await page.getByRole("button", { name: /gravar visita/i }).click();
 await page.getByText("Salvar visita").first().waitFor();
 check(/\/visitas\/[0-9a-f-]{36}$/.test(page.url()), "GRAVAR VISITA abre a visita na hora, sem pedir cliente");
 
 // salvar visita: pede nome/telefone só agora
-await page.getByRole("button", { name: "✅ Salvar visita" }).click();
+await page.getByRole("button", { name: "Salvar visita" }).click();
 await page.getByRole("heading", { name: "Quem é o cliente?" }).waitFor();
-check(await page.getByRole("button", { name: "✅ Salvar visita" }).last().isDisabled(), "sem nome, não deixa salvar");
+check(await page.getByRole("button", { name: "Salvar visita" }).last().isDisabled(), "sem nome, não deixa salvar");
 await page.getByLabel(/Nome do cliente|nome/).last().fill("Marta Souza");
 await page.getByLabel("Telefone (WhatsApp)").fill("11988887777");
-await page.getByRole("button", { name: "✅ Salvar visita" }).last().click();
+await page.getByRole("button", { name: "Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
 await page.getByRole("tab", { name: /Sem orçamento/ }).click();
 check(await page.getByText("Marta Souza").first().isVisible(), "visita salva aparece na lista com o cliente");

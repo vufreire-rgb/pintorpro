@@ -39,18 +39,18 @@ export default function Clientes() {
           <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
         </Card>
       ) : <Button onClick={() => open("new")}>+ Novo cliente</Button>}
-      {blocked ? <p className="rounded-xl bg-amber-50 p-3 text-amber-900">{blocked}</p> : null}
-      {db.clients.length === 0 ? <p className="text-slate-500">Nenhum cliente ainda.</p> : null}
+      {blocked ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{blocked}</p> : null}
+      {db.clients.length === 0 ? <p className="text-support">Nenhum cliente ainda.</p> : null}
       {db.clients.map((c) => (
         <Card key={c.id} className="flex flex-col gap-2">
           <div>
             <div className="text-lg font-semibold">{c.name}</div>
-            <div className="text-slate-600">{c.phone}</div>
-            <div className="text-slate-600">{c.address}</div>
+            <div className="text-support">{c.phone}</div>
+            <div className="text-support">{c.address}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" className="text-base" onClick={() => open(c.id)}>Editar</Button>
-            <Button variant="ghost" className="text-base text-red-700" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
+            <Button variant="ghost" className="text-base text-err" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
           </div>
         </Card>
       ))}

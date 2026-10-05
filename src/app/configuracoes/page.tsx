@@ -10,6 +10,7 @@ import { saveCompany, setEnabledServices, updateMaterial, updateService } from "
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
+import { Check, QrCode, Users } from "lucide-react";
 
 function LogoPreview({ id }: { id: string }) {
   const url = useFileUrl(id);
@@ -28,7 +29,7 @@ export default function Configuracoes() {
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
-      <LinkButton href="/clientes" variant="ghost">👥 Meus clientes</LinkButton>
+      <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="WhatsApp"><TextInput value={c.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} /></Field>
@@ -40,10 +41,10 @@ export default function Configuracoes() {
         <div className="flex flex-col gap-3">
           <p className="font-medium">Seu logo</p>
           <div className="flex items-center gap-4">
-            {c.logoId ? <LogoPreview id={c.logoId} /> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-brand text-sm text-white">sem logo</div>}
+            {c.logoId ? <LogoPreview id={c.logoId} /> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-brand text-base text-white">sem logo</div>}
             <div className="flex flex-1 flex-col gap-2">
               <Button variant="ghost" onClick={() => logoInput.current?.click()}>{c.logoId ? "Trocar logo" : "Enviar meu logo"}</Button>
-              {c.logoId ? <button className="min-h-10 text-red-700 underline" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
+              {c.logoId ? <button className="min-h-10 text-err underline" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
             </div>
           </div>
           <input ref={logoInput} type="file" accept="image/*" hidden data-testid="logo-input" onChange={async (e) => {
@@ -53,7 +54,7 @@ export default function Configuracoes() {
             setLogoMsg("");
             try { const old = c.logoId; const id = await storeLogo(f); set({ logoId: id }); if (old) void removePhotoFile(old); } catch { setLogoMsg("Não consegui ler essa imagem. Tente outra (PNG ou JPG)."); }
           }} />
-          {logoMsg ? <p className="text-sm text-red-700">{logoMsg}</p> : <p className="text-sm text-slate-500">Aparece no topo do PDF. Sem logo, usamos as iniciais do seu negócio.</p>}
+          {logoMsg ? <p className="text-base text-err">{logoMsg}</p> : <p className="text-base text-support">Aparece no topo do PDF. Sem logo, usamos as iniciais do seu negócio.</p>}
         </div>
         <div>
           <p className="mb-2 font-medium">Cor do app e do PDF</p>
@@ -68,7 +69,7 @@ export default function Configuracoes() {
                 className={`grid h-12 w-12 place-items-center rounded-full text-xl text-white ${(c.brandColor ?? "#0F3B7A") === col.hex ? "ring-4 ring-slate-300" : ""}`}
                 style={{ backgroundColor: col.hex }}
               >
-                {(c.brandColor ?? "#0F3B7A") === col.hex ? "✓" : ""}
+                {(c.brandColor ?? "#0F3B7A") === col.hex ? <Check size={24} strokeWidth={3} aria-hidden /> : null}
               </button>
             ))}
           </div>
@@ -77,10 +78,10 @@ export default function Configuracoes() {
         <Field label="O que não está incluso" hint="Um item por linha."><TextArea value={c.exclusionsText ?? DEFAULT_PDF_TEXTS.exclusionsText} onChange={(e) => set({ exclusionsText: e.target.value })} /></Field>
         <Field label="Antes de começar (o que o cliente faz)" hint="Um item por linha."><TextArea value={c.beforeStartText ?? DEFAULT_PDF_TEXTS.beforeStartText} onChange={(e) => set({ beforeStartText: e.target.value })} /></Field>
         <Field label="Garantia"><TextArea value={c.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText} onChange={(e) => set({ warrantyText: e.target.value })} /></Field>
-        <p className="text-sm text-slate-500">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
+        <p className="text-base text-support">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
       </Section>
       <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
-        <p className="text-sm text-slate-600">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
+        <p className="text-base text-support">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
         <div className="flex flex-wrap gap-2">
           {(Object.keys(PIX_TYPE_LABEL) as PixKeyType[]).map((t) => (
             <Chip key={t} active={(c.pix?.type ?? "doc") === t} onClick={() => set({ pix: { type: t, key: "", name: c.pix?.name, city: c.pix?.city } })}>{PIX_TYPE_LABEL[t]}</Chip>
@@ -90,15 +91,15 @@ export default function Configuracoes() {
           <TextInput value={c.pix?.key ?? ""} inputMode={(c.pix?.type ?? "doc") === "email" ? "email" : "text"} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: e.target.value, name: c.pix?.name, city: c.pix?.city } })} />
         </Field>
         {c.pix?.key ? (
-          normalizePixKey(c.pix.type, c.pix.key) ? <p className="text-sm text-accent-dark">✓ Chave válida</p> : <p className="text-sm text-red-700">Essa chave não parece certa para o tipo escolhido.</p>
+          normalizePixKey(c.pix.type, c.pix.key) ? <p className="inline-flex items-center gap-1.5 text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden />Chave válida</p> : <p className="text-base text-err">Essa chave não parece certa para o tipo escolhido.</p>
         ) : null}
         <Field label="Nome que aparece para quem paga" hint="Até 25 letras. Se ficar vazio, usamos o nome do seu negócio.">
           <TextInput value={c.pix?.name ?? ""} maxLength={25} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: c.pix?.key ?? "", name: e.target.value, city: c.pix?.city } })} />
         </Field>
         {c.pix?.key && normalizePixKey(c.pix.type, c.pix.key) ? (
           <>
-            <Button variant="ghost" onClick={() => setPixTest(true)}>🔍 Ver o QR de teste (R$ 1,00)</Button>
-            <p className="text-sm text-slate-500">Dica: pague esse R$ 1,00 para você mesmo, para ter certeza de que a chave está certa.</p>
+            <Button variant="ghost" icon={QrCode} onClick={() => setPixTest(true)}>Ver o QR de teste (R$ 1,00)</Button>
+            <p className="text-base text-support">Dica: pague esse R$ 1,00 para você mesmo, para ter certeza de que a chave está certa.</p>
           </>
         ) : null}
         {pixTest && c.pix ? (
@@ -117,7 +118,7 @@ export default function Configuracoes() {
                   <Field label={`Produção (${UNIT_LABEL[s.unit]}/hora)`}><NumberInput value={s.productivityPerHour ?? 0} onChange={(n) => updateService(s.id, { productivityPerHour: n > 0 ? n : null })} /></Field>
                 </div>
               ) : null}
-              {on && s.isDemo ? <span className="text-sm text-amber-700">Valor de exemplo — confira</span> : null}
+              {on && s.isDemo ? <span className="text-base text-[#8A4B00]">Valor de exemplo — confira</span> : null}
             </div>
           );
         })}
@@ -125,7 +126,7 @@ export default function Configuracoes() {
       <Section title="Materiais" hint="Preço, rendimento e perda">
         {db.materials.map((m) => (
           <div key={m.id} className="flex flex-col gap-2 border-b border-slate-100 pb-3">
-            <div className="font-medium">{m.name} ({m.unit}){m.isDemo ? <span className="ml-2 text-sm text-amber-700">exemplo</span> : null}</div>
+            <div className="font-medium">{m.name} ({m.unit}){m.isDemo ? <span className="ml-2 text-base text-[#8A4B00]">exemplo</span> : null}</div>
             <div className="grid grid-cols-3 gap-2">
               <Field label="Preço R$"><NumberInput value={m.priceCents / 100} onChange={(n) => updateMaterial(m.id, { priceCents: toCents(n) })} /></Field>
               <Field label="Rende"><NumberInput value={m.yieldPerUnit} onChange={(n) => updateMaterial(m.id, { yieldPerUnit: n > 0 ? n : 1 })} /></Field>
@@ -133,7 +134,7 @@ export default function Configuracoes() {
             </div>
           </div>
         ))}
-        <p className="text-sm text-slate-500">&quot;Rende&quot; = quantos m² (ou metros/unidades) 1 unidade do material cobre.</p>
+        <p className="text-base text-support">&quot;Rende&quot; = quantos m² (ou metros/unidades) 1 unidade do material cobre.</p>
       </Section>
       <Section title="Avançado: custos e lucro" hint="Diária, margem e jeito de calcular o preço">
         <Field label="Diária que você quer ganhar (R$)"><NumberInput value={c.dailyRateCents / 100} onChange={(n) => set({ dailyRateCents: toCents(n) })} /></Field>
@@ -161,7 +162,7 @@ export default function Configuracoes() {
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Conta</h2>
-          <p className="text-slate-600">{auth.email}</p>
+          <p className="text-support">{auth.email}</p>
           <Button variant="ghost" onClick={() => logout()}>Sair</Button>
         </Card>
       ) : null}

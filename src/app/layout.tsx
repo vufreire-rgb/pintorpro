@@ -13,7 +13,7 @@ export const viewport: Viewport = { themeColor: "#0F3B7A", width: "device-width"
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className="min-h-dvh bg-white text-slate-900 antialiased"><AuthGate>{children}</AuthGate></body>
+      <body className="min-h-dvh bg-white text-ink antialiased"><AuthGate>{children}</AuthGate></body>
     </html>
   );
 }

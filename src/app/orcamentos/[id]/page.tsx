@@ -2,12 +2,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
-import { Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
 import { deleteQuote, duplicateQuote, isExpired, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
-import { fmtDate, fmtNum, UNIT_LABEL } from "@/shared/format";
+import { fmtDate, fmtNum, plural, UNIT_LABEL } from "@/shared/format";
 
 export default function Detalhe({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -29,56 +30,56 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   return (
     <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
       <Card>
-        <div className="text-lg font-semibold">{client?.name}</div>
-        <div className="text-slate-600">{q.siteAddress}</div>
-        <div className="mt-2 text-3xl font-bold text-brand">{formatBRL(t.totalCents)}</div>
-        <div className="text-sm text-slate-600">
-          Prazo: {q.result.schedule.totalDays} dia(s) · Válido até {fmtDate(q.validUntil)}{isExpired(q) ? " (vencido)" : ""}
+        <div className="flex items-start justify-between gap-2"><div className="font-display text-[22px] font-bold leading-7">{client?.name}</div><Badge tone={q.status === "won" ? "ok" : q.status === "lost" ? "lost" : "open"}>{q.status === "won" ? "Fechado" : q.status === "lost" ? "Perdido" : "Aberto"}</Badge></div>
+        <div className="text-lg text-support">{q.siteAddress}</div>
+        <div className="mt-2 font-display text-[40px] font-extrabold leading-[44px] text-brand">{formatBRL(t.totalCents)}</div>
+        <div className="flex flex-wrap items-center gap-2 text-base text-support">
+          Prazo: {plural(q.result.schedule.totalDays, "dia", "dias")} · Válido até {fmtDate(q.validUntil)}{isExpired(q) ? <Badge tone="warn">Vencido</Badge> : null}
         </div>
       </Card>
 
       <div className="flex flex-col gap-3">
-        <Button disabled={busy} onClick={() => run(() => sharePdfOnWhatsApp(db, q))}>{busy ? "Gerando PDF…" : "Enviar pelo WhatsApp"}</Button>
-        <Button variant="ghost" disabled={busy} onClick={() => run(() => downloadPdf(db, q))}>Ver PDF</Button>
-        {msg ? <p className="text-red-600">{msg}</p> : null}
+        <Button icon={Send} disabled={busy} onClick={() => run(() => sharePdfOnWhatsApp(db, q))}>{busy ? "Gerando PDF…" : "Enviar pelo WhatsApp"}</Button>
+        <Button variant="ghost" icon={FileText} disabled={busy} onClick={() => run(() => downloadPdf(db, q))}>Ver PDF</Button>
+        {msg ? <p className="text-base text-err">{msg}</p> : null}
       </div>
 
       <Card className="flex flex-col gap-2">
-        <div className="font-bold">Situação</div>
-        <div className="grid grid-cols-3 gap-2">
-          <Button variant={q.status === "open" ? "primary" : "ghost"} className="text-base" onClick={() => setQuoteStatus(q.id, "open")}>Aberto</Button>
-          <Button variant={q.status === "won" ? "success" : "ghost"} className="text-base" onClick={() => setQuoteStatus(q.id, "won")}>Fechado</Button>
-          <Button variant={q.status === "lost" ? "danger" : "ghost"} className="text-base" onClick={() => setQuoteStatus(q.id, "lost")}>Perdido</Button>
+        <CardTitle>Situação</CardTitle>
+        <div className="flex flex-wrap gap-2">
+          <Chip active={q.status === "open"} onClick={() => setQuoteStatus(q.id, "open")}>Aberto</Chip>
+          <Chip active={q.status === "won"} onClick={() => setQuoteStatus(q.id, "won")}>Fechado</Chip>
+          <Chip active={q.status === "lost"} onClick={() => setQuoteStatus(q.id, "lost")}>Perdido</Chip>
         </div>
         {q.status === "won" ? <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton> : null}
       </Card>
 
       <Card className="border-amber-300 bg-amber-50">
-        <div className="mb-1 font-bold">Só para você (não vai no PDF)</div>
+        <div className="mb-1 font-display text-lg font-bold">Só para você (não vai no PDF)</div>
         <div>Custo estimado: {formatBRL(t.costCents)}</div>
         <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
       </Card>
 
       <Card>
-        <div className="mb-2 font-bold">Serviços</div>
+        <div className="mb-2 font-display text-[22px] font-bold leading-7">Serviços</div>
         {q.input.rooms.map((r) => (
           <div key={r.id} className="mb-2">
-            <div className="font-medium">{r.name}</div>
+            <div className="text-lg font-bold">{r.name}</div>
             {q.result.serviceLines.filter((l) => l.roomId === r.id).map((l) => (
-              <div key={l.serviceId} className="flex justify-between text-sm text-slate-700"><span>{l.name} — {fmtNum(l.quantity)} {UNIT_LABEL[l.unit]}</span><span>{formatBRL(l.totalCents)}</span></div>
+              <div key={l.serviceId} className="flex justify-between gap-2 text-base text-ink"><span>{l.name} — {fmtNum(l.quantity)} {UNIT_LABEL[l.unit]}</span><span>{formatBRL(l.totalCents)}</span></div>
             ))}
           </div>
         ))}
       </Card>
       <Card className="flex flex-col gap-3">
-        <div className="font-bold">Mais opções</div>
+        <CardTitle>Mais opções</CardTitle>
         {q.status === "won" ? (
-          <p className="text-sm text-slate-600">Orçamento fechado não pode ser editado. Para alterar, marque como <b>Aberto</b> antes.</p>
+          <p className="text-base text-support">Orçamento fechado não pode ser editado. Para alterar, marque como <b>Aberto</b> antes.</p>
         ) : (
-          <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost">✏️ Editar orçamento</LinkButton>
+          <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost" icon={Pencil}>Editar orçamento</LinkButton>
         )}
-        <Button variant="ghost" onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>📄 Duplicar orçamento</Button>
-        <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar orçamento</Button>
+        <Button variant="ghost" icon={Copy} onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar orçamento</Button>
+        <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
       </Card>
       <ConfirmDialog
         open={askDelete}
@@ -87,7 +88,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { deleteQuote(q.id); router.replace("/orcamentos"); }}
       />
-      <Link href="/orcamentos/novo" className="text-center text-brand underline">Fazer outro orçamento</Link>
+      <Link href="/orcamentos/novo" className="text-center text-lg font-bold text-brand underline">Fazer outro orçamento</Link>
     </Screen>
   );
 }

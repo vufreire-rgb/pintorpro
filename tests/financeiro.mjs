@@ -27,7 +27,7 @@ await page.getByText("Receber por Pix").click();
 await page.getByLabel(/Sua chave Pix/).fill("123");
 check(await page.getByText("Essa chave não parece certa").isVisible(), "chave inválida é recusada");
 await page.getByLabel(/Sua chave Pix/).fill("123.456.789-09");
-check(await page.getByText("✓ Chave válida").isVisible(), "chave CPF válida");
+check(await page.getByText("Chave válida").isVisible(), "chave CPF válida");
 await page.getByRole("button", { name: /QR de teste/ }).click();
 await page.getByTestId("pix-qr").waitFor();
 const code = await page.getByTestId("pix-code").innerText();
@@ -36,7 +36,7 @@ await page.getByRole("button", { name: "Fechar" }).click();
 
 // 2) plano de pagamento
 await page.goto(base + "/obras/w1");
-await page.getByText("🗓 Plano de pagamento").waitFor();
+await page.getByText("Plano de pagamento").waitFor();
 await page.getByRole("button", { name: "Entrada + 2 parcelas" }).click();
 await page.getByText("Parcela 2").first().waitFor();
 const plan = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).works[0].plan);
@@ -44,11 +44,11 @@ check(plan.length === 3 && plan.reduce((s, p) => s + p.amountCents, 0) === 30000
 check(await page.getByText(/em atraso/).first().isVisible(), "parcelas vencidas aparecem como atraso (obra começou há 20 dias)");
 
 // 3) cobrança por WhatsApp com Pix copia e cola
-const href = decodeURIComponent(await page.getByRole("link", { name: "💬 Cobrar" }).first().getAttribute("href"));
+const href = decodeURIComponent(await page.getByRole("link", { name: "Cobrar" }).first().getAttribute("href"));
 check(href.includes("wa.me/5511977771111") && href.includes("Olá, Carla!") && href.includes("000201010211"), "botão Cobrar abre o WhatsApp com mensagem e Pix copia e cola");
 
 // 3b) cobrança em PDF (com QR do Pix) para mandar pelo WhatsApp
-const [dc] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: "📄 PDF" }).first().click()]);
+const [dc] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: /Cobrança em PDF/ }).first().click()]);
 const cb = await readFile(await dc.path());
 check(cb.slice(0, 4).toString() === "%PDF" && cb.length > 3000 && /^cobranca-/.test(dc.suggestedFilename()), "cobrança em PDF gerada (" + dc.suggestedFilename() + ", " + cb.length + " bytes)");
 await dc.saveAs("/tmp/cobranca.pdf");
@@ -57,7 +57,7 @@ check(true, "aviso claro quando o celular não abre o compartilhamento direto");
 await page.getByText(/O arquivo foi baixado/).click();
 
 // 4) Pix da parcela (QR para mostrar ao cliente)
-await page.getByRole("button", { name: "📱 Pix" }).first().click();
+await page.getByRole("button", { name: /QR do Pix/ }).first().click();
 await page.getByTestId("pix-qr").waitFor();
 check((await page.getByTestId("pix-code").innerText()).includes("540715000.00") || (await page.getByTestId("pix-code").innerText()).includes("5407"), "Pix da parcela vem com o valor");
 await page.getByRole("button", { name: "Fechar" }).click();
@@ -72,15 +72,15 @@ const pay = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro
 check(pay.method === "dinheiro" && !!pay.proofId && pay.amountCents === 150000, "pagamento guardado com forma e comprovante (" + pay.method + ", " + pay.amountCents + ")");
 await page.getByAltText("Comprovante").waitFor();
 check(true, "miniatura do comprovante aparece");
-check(await page.getByText("✓ Paga").first().isVisible(), "a entrada passa a '✓ Paga' sozinha");
+check(await page.getByText("Paga").first().isVisible(), "a entrada passa a '✓ Paga' sozinha");
 
 // 5b) enviar o comprovante (foto) guardado no pagamento
-const [dp] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.getByRole("button", { name: "📤 Enviar comprovante" }).click()]);
+const [dp] = await Promise.all([page.waitForEvent("download", { timeout: 30000 }), page.getByRole("button", { name: "Enviar comprovante" }).click()]);
 check(dp.suggestedFilename() === "comprovante.jpg" && (await readFile(await dp.path())).length > 100, "botão 'Enviar comprovante' manda a foto anexada");
 await page.getByText(/O arquivo foi baixado/).click();
 
 // 6) recibo em PDF
-const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: "🧾 Recibo" }).click()]);
+const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }), page.getByRole("button", { name: "Recibo" }).click()]);
 const path = await dl.path();
 const bytes = await readFile(path);
 check(bytes.slice(0, 4).toString() === "%PDF" && bytes.length > 3000, "recibo gerado em PDF (" + bytes.length + " bytes, arquivo " + dl.suggestedFilename() + ")");

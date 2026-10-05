@@ -26,7 +26,7 @@ const visita = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("pi
 let page = await nova({ geolocation: { latitude: -22.9056, longitude: -47.0608, accuracy: 12 }, permissions: ["geolocation"] });
 await page.route("https://nominatim.openstreetmap.org/**", (r) => r.fulfill({ json: { address: { road: "Rua das Flores", house_number: "120", suburb: "Centro", city: "Campinas", "ISO3166-2-lvl4": "BR-SP" } } }));
 await page.goto(base + "/visitas/v1");
-await page.getByRole("button", { name: "📍 Usar minha localização" }).click();
+await page.getByRole("button", { name: "Usar minha localização" }).click();
 await page.getByText("Endereço preenchido").waitFor();
 let v = await visita(page);
 check(v.siteAddress === "Rua das Flores, 120 - Centro, Campinas - SP", "endereço escrito preenchido (" + v.siteAddress + ")");
@@ -42,7 +42,7 @@ await page.context().close();
 page = await nova({ geolocation: { latitude: -22.9, longitude: -47.0 }, permissions: ["geolocation"] });
 await page.route("https://nominatim.openstreetmap.org/**", (r) => r.abort());
 await page.goto(base + "/visitas/v1");
-await page.getByRole("button", { name: "📍 Usar minha localização" }).click();
+await page.getByRole("button", { name: "Usar minha localização" }).click();
 await page.getByText(/não consegui descobrir o nome da rua/).waitFor();
 v = await visita(page);
 check(v.location && v.siteAddress === "J", "sem serviço de endereço: ponto guardado e endereço digitado preservado");
@@ -51,7 +51,7 @@ await page.context().close();
 // 3) permissão negada: mensagem clara, nada é alterado
 page = await nova({ permissions: [] });
 await page.goto(base + "/visitas/v1");
-await page.getByRole("button", { name: "📍 Usar minha localização" }).click();
+await page.getByRole("button", { name: "Usar minha localização" }).click();
 await page.getByText(/não deixou o app usar a localização/).waitFor();
 v = await visita(page);
 check(!v.location && v.siteAddress === "J", "permissão negada: nada alterado");

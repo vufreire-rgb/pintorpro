@@ -7,12 +7,12 @@ function Item({ note, index }: { note: AudioNote; index: number }) {
   const url = useFileUrl(note.id);
   return (
     <div className="mt-2">
-      <div className="text-sm">Áudio {index + 1} · {fmtClock(note.seconds)}</div>
+      <div className="text-base">Áudio {index + 1} · {fmtClock(note.seconds)}</div>
       {url ? (
         <>
           <audio controls src={url} className="w-full" />
         </>
-      ) : <span className="text-sm text-slate-500">Carregando áudio…</span>}
+      ) : <span className="text-base text-support">Carregando áudio…</span>}
     </div>
   );
 }

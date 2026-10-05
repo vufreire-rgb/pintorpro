@@ -1,4 +1,5 @@
-import { Document, Font, Image, Link, Page, Path, Circle, StyleSheet, Svg, Text, View, pdf } from "@react-pdf/renderer";
+import { Document, Font, Image, Link, Page, Path, Circle, StyleSheet, Svg, Text as PdfText, View, pdf } from "@react-pdf/renderer";
+import { Fragment, type ComponentProps, type ReactNode } from "react";
 import type { QuotePdfData } from "@/modules/pdfData";
 
 /** Fontes livres (OFL) servidas pelo próprio app: Outfit (títulos/valores) e Atkinson Hyperlegible (textos). */
@@ -10,6 +11,7 @@ export function registerFonts() {
   Font.register({
     family: "Outfit",
     fonts: [
+      { src: fontBase() + "Outfit-400.woff", fontWeight: 400 },
       { src: fontBase() + "Outfit-700.ttf", fontWeight: 700 },
       { src: fontBase() + "Outfit-800.ttf", fontWeight: 800 },
     ],
@@ -22,6 +24,35 @@ export function registerFonts() {
     ],
   });
   Font.registerHyphenationCallback((word) => [word]); // sem hifenização estranha
+}
+
+const NUM_RE = /\d+(?:[.,/:\-]\d+)*/g;
+
+/** Números (datas, telefone, valores, medidas) saem em Outfit, no mesmo peso e tamanho do texto ao redor: zero liso, sem o risco da Atkinson. */
+function numbered(node: ReactNode): ReactNode {
+  if (typeof node === "string") {
+    const out: ReactNode[] = [];
+    let last = 0;
+    let k = 0;
+    for (const m of node.matchAll(NUM_RE)) {
+      const at = m.index ?? 0;
+      if (at > last) out.push(node.slice(last, at));
+      out.push(<PdfText key={k++} style={{ fontFamily: "Outfit" }}>{m[0]}</PdfText>);
+      last = at + m[0].length;
+    }
+    if (!out.length) return node;
+    if (last < node.length) out.push(node.slice(last));
+    return out;
+  }
+  if (Array.isArray(node)) return node.map((n, i) => <Fragment key={i}>{numbered(n)}</Fragment>);
+  return node;
+}
+
+/** Texto do PDF com números em Outfit. Use este no lugar do Text do react-pdf. */
+type TextProps = Extract<ComponentProps<typeof PdfText>, { render?: unknown }>;
+export function Text({ children, render, ...rest }: TextProps) {
+  if (render) return <PdfText {...rest} render={(a) => numbered(render(a)) as string} />;
+  return <PdfText {...rest}>{numbered(children)}</PdfText>;
 }
 
 export const INK = "#0E1B2E";
@@ -187,22 +218,24 @@ function Details({ d }: { d: QuotePdfData }) {
       <RunningHeader d={d} />
       <Title>O que será feito</Title>
       {d.rooms.map((r) => (
-        <View key={r.name} wrap={false} style={{ borderWidth: 1, borderColor: LINE, borderRadius: 20, padding: 20, marginBottom: 12 }}>
+        <View key={r.name} wrap={false} style={{ borderWidth: 1, borderColor: LINE, borderRadius: 20, padding: 15, marginBottom: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: 24, lineHeight: 1.25 }}>{r.name}</Text>
             {r.price ? <Text style={{ fontFamily: "Outfit", fontWeight: 800, fontSize: 24, color: d.color }}>{r.price}</Text> : null}
           </View>
-          {r.facts ? <Text style={{ fontSize: 15, lineHeight: 1.33, color: SUPPORT, marginBottom: 8 }}>{r.facts}</Text> : null}
-          {r.items.map((item) => (
-            <View key={item} style={{ flexDirection: "row", marginBottom: 4 }}>
-              <Svg viewBox="0 0 24 24" width={19} height={19} style={{ marginTop: 1.5, marginRight: 12 }}>
-                <Path d="M4.5 12.5l5 5L19.5 7" {...stroke(d.color)} strokeWidth={2.6} />
-              </Svg>
-              <Text style={{ flex: 1, fontSize: 15, lineHeight: 1.4 }}>{item}</Text>
-            </View>
-          ))}
+          {r.facts ? <Text style={{ fontSize: 15, lineHeight: 1.33, color: SUPPORT, marginBottom: 6 }}>{r.facts}</Text> : null}
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {r.items.map((item) => (
+              <View key={item} style={{ flexDirection: "row", marginBottom: 2, width: r.items.length >= 4 ? "50%" : "100%", paddingRight: r.items.length >= 4 ? 10 : 0 }}>
+                <Svg viewBox="0 0 24 24" width={19} height={19} style={{ marginTop: 1.5, marginRight: 10 }}>
+                  <Path d="M4.5 12.5l5 5L19.5 7" {...stroke(d.color)} strokeWidth={2.6} />
+                </Svg>
+                <Text style={{ flex: 1, fontSize: 15, lineHeight: 1.35 }}>{item}</Text>
+              </View>
+            ))}
+          </View>
           {r.materials ? (
-            <View style={{ backgroundColor: d.tint, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 14, marginTop: 8 }}>
+            <View style={{ backgroundColor: d.tint, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 14, marginTop: 6 }}>
               <Text style={[s.caps, { color: d.color, marginBottom: 2 }]}>Materiais inclusos</Text>
               <Text style={{ fontSize: 14, lineHeight: 1.3 }}>{r.materials}</Text>
             </View>

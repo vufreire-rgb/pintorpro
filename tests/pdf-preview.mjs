@@ -32,18 +32,18 @@ async function gerar({ nome, cor, comValores, comLink }) {
 
   // orçamento: 2 ambientes
   await page.getByRole("link", { name: "Montar orçamento" }).click();
-  await page.getByText("Comprim. (m)").waitFor();
+  await page.getByText("Comp.", { exact: true }).waitFor();
   const room = async (n, c, l, cond) => {
-    if (!(await page.getByPlaceholder("Ex.: Sala").isVisible())) await page.getByRole("button", { name: "+ Adicionar ambiente" }).click();
+    if (!(await page.getByPlaceholder("Ex.: Sala").isVisible())) await page.getByRole("button", { name: "Adicionar ambiente" }).click();
     await page.getByPlaceholder("Ex.: Sala").fill(n);
-    await page.getByText("Comprim. (m)").locator("..").locator("input").fill(c);
-    await page.getByText("Largura (m)").locator("..").locator("input").fill(l);
+    await page.getByText("Comp.", { exact: true }).locator("..").locator("input").fill(c);
+    await page.getByText("Larg.", { exact: true }).locator("..").locator("input").fill(l);
     if (cond) await page.getByRole("button", { name: cond }).click();
-    await page.getByRole("button", { name: "+ Adicionar ambiente" }).click();
+    await page.getByRole("button", { name: "Adicionar ambiente" }).click();
   };
   await room("Sala", "6", "5", "Com trincas");
   await room("Quarto", "4", "3,5", "Já pintada, boa");
-  await page.getByText("⚙️ Ajustes do orçamento").click();
+  await page.getByText("Ajustes do orçamento").click();
   await page.getByPlaceholder("Observações").or(page.getByText("Observações (opcional)").locator("..").locator("input")).first().fill("Cliente prefere branco neve nas paredes e no teto. Início a combinar depois do pagamento da entrada.");
   if (comValores) await page.getByRole("button", { name: "Não", exact: true }).click();
   if (comLink) await page.getByPlaceholder("https://").fill("https://pague.exemplo.com.br/0042");

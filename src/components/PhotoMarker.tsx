@@ -4,6 +4,7 @@ import { drawMarks, isTooShort, MARK_COLORS, markAt, moveMark } from "@/modules/
 import { useFileUrl } from "@/modules/photos";
 import { shareMarkedPhoto } from "@/modules/share";
 import type { PhotoMark } from "@/modules/types";
+import { Maximize2, MousePointer2, MoveUpRight, Pencil, Plus, Minus, Ruler, Send, Trash2, Type, Undo2, X, type LucideIcon } from "lucide-react";
 import { Button, Chip } from "./ui";
 
 type Tool = "move" | "text" | "arrow" | "dim";
@@ -225,10 +226,10 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
     <div className="fixed inset-0 z-50 mx-auto flex max-w-md flex-col bg-slate-900" role="dialog" aria-modal="true" aria-label="Marcar a foto">
       <header className="flex items-start justify-between gap-3 bg-brand px-4 py-3 text-white">
         <div>
-          <div className="text-lg font-bold">✏️ Marcar a foto</div>
-          <div className="min-h-10 text-sm text-white/80">{HINT[tool]}</div>
+          <div className="flex items-center gap-2 font-display text-xl font-bold"><Pencil size={22} strokeWidth={2.2} aria-hidden />Marcar a foto</div>
+          <div className="min-h-12 text-base text-white/85">{HINT[tool]}</div>
         </div>
-        <button className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white/15 text-xl" aria-label="Fechar sem salvar" onClick={onClose}>✕</button>
+        <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/15" aria-label="Fechar sem salvar" onClick={onClose}><X size={24} strokeWidth={2.2} aria-hidden /></button>
       </header>
 
       <div ref={stage} className="relative min-h-0 flex-1 touch-none select-none overflow-hidden" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
@@ -241,10 +242,10 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
             onKeyDown={(e) => e.key === "Enter" && confirmPrompt()}
             placeholder={prompt.mark.kind === "dim" ? "Medida (ex.: 4,55 m)" : "Escreva aqui"}
             aria-label={prompt.mark.kind === "dim" ? "Medida" : "Texto da marca"}
-            className="min-h-12 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-lg"
+            className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-field bg-white px-3 text-xl outline-none focus:border-live"
           />
-          <button className="min-h-12 rounded-xl bg-brand px-4 font-semibold text-white" onClick={confirmPrompt}>Incluir</button>
-          <button className="min-h-12 rounded-xl bg-slate-200 px-3" aria-label="Cancelar" onClick={() => setPrompt(null)}>✕</button>
+          <button className="min-h-12 rounded-2xl bg-accent-dark px-4 font-display text-lg font-bold text-white" onClick={confirmPrompt}>Incluir</button>
+          <button className="grid min-h-12 w-12 place-items-center rounded-2xl bg-slate-200" aria-label="Cancelar" onClick={() => setPrompt(null)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
         </div>
       ) : null}
 
@@ -262,19 +263,19 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
           </div>
         ) : <p className="p-6 text-center text-white">Essa foto não está neste aparelho.</p>}
         <div className="absolute bottom-3 right-3 flex flex-col gap-2" onPointerDown={(e) => e.stopPropagation()}>
-          <button className="h-12 w-12 rounded-xl bg-white/90 text-2xl font-bold" aria-label="Aproximar" onClick={() => zoomTo(view.s * 1.5)}>＋</button>
-          <button className="h-12 w-12 rounded-xl bg-white/90 text-2xl font-bold" aria-label="Afastar" onClick={() => zoomTo(view.s / 1.5)}>－</button>
-          <button className="h-12 w-12 rounded-xl bg-white/90 text-xl" aria-label="Ajustar à tela" onClick={() => setView({ s: 1, tx: 0, ty: 0 })}>⤢</button>
+          <button className="grid h-12 w-12 place-items-center rounded-xl bg-white/90" aria-label="Aproximar" onClick={() => zoomTo(view.s * 1.5)}><Plus size={24} strokeWidth={2.4} aria-hidden /></button>
+          <button className="grid h-12 w-12 place-items-center rounded-xl bg-white/90" aria-label="Afastar" onClick={() => zoomTo(view.s / 1.5)}><Minus size={24} strokeWidth={2.4} aria-hidden /></button>
+          <button className="grid h-12 w-12 place-items-center rounded-xl bg-white/90" aria-label="Ajustar à tela" onClick={() => setView({ s: 1, tx: 0, ty: 0 })}><Maximize2 size={22} strokeWidth={2.2} aria-hidden /></button>
         </div>
       </div>
 
       <div className="flex flex-col gap-2 rounded-t-3xl bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="grid grid-cols-6 gap-1.5">
-          {([["move", "↖ Mover"], ["text", "T Texto"], ["arrow", "➚ Seta"], ["dim", "📏 Cota"]] as const).map(([id, label]) => (
-            <ToolButton key={id} active={tool === id} onClick={() => { setTool(id); if (id !== "move") setSel(null); }} label={label} />
+          {([["move", "Mover", MousePointer2], ["text", "Texto", Type], ["arrow", "Seta", MoveUpRight], ["dim", "Cota", Ruler]] as const).map(([id, label, Icon]) => (
+            <ToolButton key={id} active={tool === id} onClick={() => { setTool(id); if (id !== "move") setSel(null); }} label={label} icon={Icon} />
           ))}
-          <button className="min-h-12 rounded-full border border-slate-300 text-lg disabled:opacity-30" aria-label="Desfazer" disabled={history.length === 0} onClick={undo}>↶</button>
-          <button className="min-h-12 rounded-full border border-red-200 text-lg text-red-700 disabled:opacity-30" aria-label="Apagar marca" disabled={!selected} onClick={remove}>🗑</button>
+          <button className="grid min-h-14 place-items-center rounded-2xl border-2 border-field disabled:opacity-40" aria-label="Desfazer" disabled={history.length === 0} onClick={undo}><Undo2 size={24} strokeWidth={2.2} aria-hidden /></button>
+          <button className="grid min-h-14 place-items-center rounded-2xl border-2 border-field text-err disabled:opacity-40" aria-label="Apagar marca" disabled={!selected} onClick={remove}><Trash2 size={24} strokeWidth={2.2} aria-hidden /></button>
         </div>
         <div className="flex items-center gap-2">
           {MARK_COLORS.map((c) => (
@@ -287,22 +288,23 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
               style={{ backgroundColor: c }}
             />
           ))}
-          {selected && selected.kind !== "arrow" ? <Chip active={false} onClick={() => setPrompt({ mark: selected, value: selected.text, isNew: false })}>✎ Editar</Chip> : null}
+          {selected && selected.kind !== "arrow" ? <Chip active={false} onClick={() => setPrompt({ mark: selected, value: selected.text, isNew: false })}>Editar texto</Chip> : null}
         </div>
-        {msg ? <p className="text-sm text-slate-600">{msg}</p> : null}
+        {msg ? <p className="text-base text-support">{msg}</p> : null}
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="ghost" className="!min-h-12 !px-2 !text-base" onClick={onClose}>Cancelar</Button>
-          <Button variant="ghost" className="!min-h-12 !px-2 !text-base" disabled={busy || marks.length === 0} onClick={send}>{busy ? "…" : "📤 Enviar"}</Button>
-          <Button className="!min-h-12 !px-2 !text-base" onClick={() => onSave(marks)}>Salvar</Button>
+          <Button variant="ghost" className="!px-2 !text-lg" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" icon={Send} className="!gap-1 !px-2 !text-lg" disabled={busy || marks.length === 0} onClick={send}>{busy ? "…" : "Enviar"}</Button>
+          <Button className="!px-2 !text-lg" onClick={() => onSave(marks)}>Salvar</Button>
         </div>
       </div>
     </div>
   );
 }
 
-function ToolButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+function ToolButton({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: LucideIcon }) {
   return (
-    <button type="button" aria-pressed={active} onClick={onClick} className={`min-h-12 rounded-full border px-1 text-[13px] font-semibold ${active ? "border-brand bg-brand text-white" : "border-slate-300 bg-white text-slate-900"}`}>
+    <button type="button" aria-pressed={active} onClick={onClick} className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border-2 px-0.5 text-base font-bold leading-4 ${active ? "border-brand bg-brand-soft text-brand" : "border-field bg-white text-ink"}`}>
+      <Icon size={22} strokeWidth={2.2} aria-hidden />
       {label}
     </button>
   );

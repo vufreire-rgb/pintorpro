@@ -7,7 +7,8 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomFormCard } from "@/components/RoomFormCard";
-import { Button, Card, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
+import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
+import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
@@ -16,7 +17,7 @@ import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
 import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
-import { fmtDate, fmtNum } from "@/shared/format";
+import { fmtDate, fmtNum, plural } from "@/shared/format";
 
 export default function Visita({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -72,16 +73,16 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
     <Screen title={client?.name ?? "Visita"} back="/visitas">
       {state !== "done" && v.scheduledAt ? (
         <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
-          <div className="font-bold">{state === "late" ? "⏰ Visita atrasada" : "📅 Visita agendada"}</div>
-          <div className="text-2xl font-bold text-brand">{whenLabel(v.scheduledAt)}</div>
-          <Button onClick={() => startVisit(v.id)}>▶ Começar a visita agora</Button>
-          {client?.phone ? <a className="grid min-h-14 place-items-center rounded-2xl bg-white px-5 text-lg font-semibold" href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer">💬 Confirmar pelo WhatsApp</a> : null}
-          <Button variant="ghost" onClick={() => downloadVisitIcs(v, client)}>🗓 Adicionar à agenda do celular</Button>
+          <CardTitle icon={state === "late" ? AlarmClock : CalendarDays}>{state === "late" ? "Visita atrasada" : "Visita agendada"}</CardTitle>
+          <div className="font-display text-[28px] font-bold leading-[34px] text-brand">{whenLabel(v.scheduledAt)}</div>
+          <Button variant="ghost" icon={Play} onClick={() => startVisit(v.id)}>Começar a visita agora</Button>
+          {client?.phone ? <a className={buttonCls("ghost")} href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer"><MessageCircle size={24} strokeWidth={2.2} aria-hidden />Confirmar pelo WhatsApp</a> : null}
+          <Button variant="ghost" icon={CalendarPlus} onClick={() => downloadVisitIcs(v, client)}>Adicionar à agenda do celular</Button>
           <Field label="Mudar dia e hora"><TextInput type="datetime-local" value={when || toLocalInput(v.scheduledAt)} onChange={(e) => setWhen(e.target.value)} /></Field>
           {when ? <Button variant="ghost" onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
         </Card>
       ) : (
-        <div className="text-sm text-slate-600">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
+        <div className="text-base text-support">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
       )}
 
       <Card className="flex flex-col gap-3">
@@ -90,7 +91,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="text-lg font-bold">{client.name}</div>
-                {client.phone ? <div className="text-slate-600">{client.phone}</div> : null}
+                {client.phone ? <div className="text-support">{client.phone}</div> : null}
               </div>
               <button className="min-h-10 px-2 text-brand underline" onClick={() => setChanging(true)}>Trocar</button>
             </div>
@@ -105,19 +106,19 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               </div>
               <Button variant="ghost" onClick={() => setChanging(false)}>Cancelar</Button>
             </>
-          ) : <p className="text-slate-600">👤 O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
+          ) : <p className="flex items-start gap-2 text-lg text-support"><User size={24} strokeWidth={2.2} aria-hidden className="mt-0.5 shrink-0" />O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
         )}
-        <Field label="Endereço da obra"><TextInput value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} /></Field>
-        <Button variant="ghost" className="!min-h-12 !text-base" disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "📍 Atualizar pela minha localização" : "📍 Usar minha localização"}</Button>
-        {v.location ? <p className="text-sm text-accent-dark">✓ Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
-        {geoMsg ? <p className="text-sm text-slate-700">{geoMsg}</p> : null}
-        {fromOsm ? <p className="text-xs text-slate-500">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
+        <Field label="Endereço da obra"><TextArea2 value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} /></Field>
+        <Button variant="ghost" icon={MapPin} disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "Atualizar pela minha localização" : "Usar minha localização"}</Button>
+        {v.location ? <p className="text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden className="mr-1 inline" />Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
+        {geoMsg ? <p className="text-base text-ink">{geoMsg}</p> : null}
+        {fromOsm ? <p className="text-base text-support">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
       </Card>
 
       <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>
 
       <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Fotos ({v.photoIds.length})</h2>
+        <CardTitle icon={Camera}>Fotos ({v.photoIds.length})</CardTitle>
         <PhotoGrid
           ids={v.photoIds}
           marksOf={(pid) => v.photoMeta?.[pid]?.marks}
@@ -128,32 +129,32 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         />
         {v.photoIds.some((pid) => v.photoMeta?.[pid]?.inPdf) ? (
           <div className="flex flex-col gap-3 rounded-xl bg-slate-50 p-3">
-            <b className="text-sm">Fotos no PDF do cliente</b>
+            <b className="text-base">Fotos no PDF do cliente</b>
             {v.photoIds.filter((pid) => v.photoMeta?.[pid]?.inPdf).map((pid, i) => (
-              <div key={pid} className="grid grid-cols-2 gap-2">
+              <div key={pid} className="flex flex-col gap-2">
                 <TextInput placeholder={`Foto ${i + 1}: ambiente`} value={v.photoMeta?.[pid]?.room ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { room: e.target.value }, MAX_PDF_PHOTOS)} />
-                <TextInput placeholder="Legenda" value={v.photoMeta?.[pid]?.caption ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { caption: e.target.value }, MAX_PDF_PHOTOS)} />
+                <TextArea2 placeholder="Legenda" value={v.photoMeta?.[pid]?.caption ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { caption: e.target.value }, MAX_PDF_PHOTOS)} />
               </div>
             ))}
           </div>
-        ) : v.photoIds.length > 0 ? <p className="text-sm text-slate-500">Toque em <b>+ PDF</b> nas fotos que quer mostrar no orçamento (até {MAX_PDF_PHOTOS}) e em <b>✏️ marcar</b> para desenhar setas, textos e medidas.</p> : null}
-        {msg ? <p className="text-sm text-red-700">{msg}</p> : null}
+        ) : v.photoIds.length > 0 ? <p className="text-base text-support">Toque em <b>+ PDF</b> nas fotos que quer mostrar no orçamento (até {MAX_PDF_PHOTOS}) e no <b>lápis</b> para desenhar setas, textos e medidas.</p> : null}
+        {msg ? <p className="text-base text-err">{msg}</p> : null}
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} data-testid="photo-input" />
-        <Button onClick={() => setCamera(true)}>📷 Tirar fotos (várias)</Button>
-        <Button variant="ghost" disabled={busy} onClick={() => input.current?.click()}>{busy ? "Guardando…" : "🖼 Escolher da galeria"}</Button>
-        <p className="text-sm text-slate-500">{cloudEnabled ? "Suas fotos ficam guardadas na sua conta." : "As fotos ficam guardadas neste aparelho."}</p>
+        <Button variant="ghost" icon={Camera} onClick={() => setCamera(true)}>Tirar fotos (várias)</Button>
+        <Button variant="ghost" icon={ImageIcon} disabled={busy} onClick={() => input.current?.click()}>{busy ? "Guardando…" : "Escolher da galeria"}</Button>
+        <p className="text-base text-support">{cloudEnabled ? "Suas fotos ficam guardadas na sua conta." : "As fotos ficam guardadas neste aparelho."}</p>
       </Card>
 
       <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Medidas ({rooms.length})</h2>
-        {rooms.length === 0 ? <p className="text-sm text-slate-500">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
+        <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
+        {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
         {rooms.map((r) => (
           <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
             <div>
               <b>{r.name}</b>
-              <div className="text-sm text-slate-600">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m · altura {fmtNum(r.heightM)} m · {r.doors} porta(s) · {r.windows} janela(s)</div>
+              <div className="text-base text-support">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m · altura {fmtNum(r.heightM)} m · {plural(r.doors, "porta", "portas")} · {plural(r.windows, "janela", "janelas")}</div>
             </div>
-            <button className="h-10 w-10 shrink-0 rounded-full bg-slate-200" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}>✕</button>
+            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
         ))}
         {showRoomForm ? (
@@ -164,7 +165,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             onAdd={() => { addVisitRoom(v.id, form); setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM }); setShowRoomForm(false); }}
           />
         ) : (
-          <Button variant="ghost" onClick={() => setShowRoomForm(true)}>{rooms.length ? "+ Anotar outro ambiente" : "📐 Anotar as medidas de um ambiente"}</Button>
+          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => setShowRoomForm(true)}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
         )}
       </Card>
 
@@ -174,10 +175,10 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
 
       <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
-      <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar visita</Button>
+      <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>
       <div className="h-20" aria-hidden />
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button onClick={() => (client ? router.push("/visitas") : setSaving(true))}>✅ Salvar visita</Button>
+        <Button icon={Check} onClick={() => (client ? router.push("/visitas") : setSaving(true))}>Salvar visita</Button>
       </div>
       <ConfirmDialog
         open={askDelete}
@@ -197,7 +198,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             ) : null}
             <Field label={db.clients.length > 0 ? "Ou cadastre um novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
             <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Button disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>✅ Salvar visita</Button>
+            <Button disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>Salvar visita</Button>
             <Button variant="ghost" onClick={() => setSaving(false)}>Voltar</Button>
           </div>
         </div>

@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
-import { Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { CalendarDays, ClipboardList } from "lucide-react";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
 import { countByFilter, filterVisits, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
@@ -16,7 +17,7 @@ function Thumb({ id }: { id?: string }) {
       {id && url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" className="h-full w-full object-cover" />
-      ) : "📋"}
+      ) : <ClipboardList size={28} strokeWidth={2} aria-hidden className="text-support" />}
     </div>
   );
 }
@@ -27,11 +28,11 @@ const TABS: { id: VisitFilter; label: string; empty: string }[] = [
   { id: "quoted", label: "Orçamento feito", empty: "Nenhuma visita com orçamento ainda." },
 ];
 
-function Badge({ v }: { v: Visit }) {
+function VisitBadge({ v }: { v: Visit }) {
   const st = visitState(v);
-  if (st === "scheduled") return <span className="text-brand">📅 {whenLabel(v.scheduledAt!)}</span>;
-  if (st === "late") return <span className="text-red-700">⏰ Atrasada · {whenLabel(v.scheduledAt!)}</span>;
-  return v.quoteId ? <span className="text-accent-dark">Orçamento feito</span> : <span className="text-amber-700">Falta orçar</span>;
+  if (st === "scheduled") return <span className="inline-flex items-center gap-1.5 font-bold text-brand"><CalendarDays size={18} strokeWidth={2.2} aria-hidden />{whenLabel(v.scheduledAt!)}</span>;
+  if (st === "late") return <Badge tone="warn">Atrasada · {whenLabel(v.scheduledAt!)}</Badge>;
+  return v.quoteId ? <Badge tone="ok">Orçamento feito</Badge> : <Badge tone="warn">Falta orçar</Badge>;
 }
 
 export default function Visitas() {
@@ -56,8 +57,8 @@ export default function Visitas() {
         }}
       >
       <div className="grid grid-cols-2 gap-3">
-        <QuickVisitButton label="GRAVAR VISITA" className="!min-h-12 !text-base" />
-        <LinkButton href="/visitas/agendar" variant="ghost" className="!min-h-12 !text-base">📅 Agendar</LinkButton>
+        <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
+        <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
       </div>
       <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
         {TABS.map((t) => (
@@ -66,13 +67,13 @@ export default function Visitas() {
             role="tab"
             aria-selected={filter === t.id}
             onClick={() => setFilter(t.id)}
-            className={`min-h-12 rounded-xl px-1 text-sm font-semibold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-slate-700"}`}
+            className={`min-h-12 rounded-xl px-1 text-base font-bold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-ink"}`}
           >
             {t.label} ({counts[t.id]})
           </button>
         ))}
       </div>
-      {list.length === 0 ? <p className="text-slate-500">{db.visits.length === 0 ? "Nenhuma visita ainda. Na obra, toque em GRAVAR VISITA: já começa a guardar fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
+      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque no botão verde para começar: ele já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
@@ -84,12 +85,13 @@ export default function Visitas() {
               <Thumb id={v.photoIds[0]} />
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between gap-2">
-                  <b className="truncate">{client?.name ?? "Cliente a definir"}</b>
-                  <span className="shrink-0 text-sm"><Badge v={v} /></span>
+                  <b className="truncate text-lg">{client?.name ?? "Cliente a definir"}</b>
+                  
                 </div>
-                <div className="truncate text-sm text-slate-600">{v.siteAddress || "Sem endereço"}</div>
-                {bits ? <div className="text-sm text-slate-600">{bits}</div> : null}
-                {v.notes ? <div className="line-clamp-1 text-sm text-slate-700">{v.notes}</div> : null}
+                <div className="mt-1"><VisitBadge v={v} /></div>
+                <div className="mt-1 line-clamp-2 text-base text-support">{v.siteAddress || "Sem endereço"}</div>
+                {bits ? <div className="text-base text-support">{bits}</div> : null}
+                {v.notes ? <div className="line-clamp-1 text-base text-ink">{v.notes}</div> : null}
               </div>
             </Card>
           </Link>

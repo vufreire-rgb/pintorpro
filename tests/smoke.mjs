@@ -22,18 +22,18 @@ await next(); await next(); await next(); await next(); await next(); await next
 await shot("01-onboarding-fim");
 await next();
 await page.waitForURL(base + "/visitas");
-await page.getByRole("button", { name: "GRAVAR VISITA" }).waitFor();
+await page.getByRole("button", { name: /gravar visita/i }).waitFor();
 await shot("02-painel");
 
-await page.getByRole("button", { name: "GRAVAR VISITA" }).click();                       // um toque: a visita já existe, sem cliente
+await page.getByRole("button", { name: /gravar visita/i }).click();                       // um toque: a visita já existe, sem cliente
 await page.getByText("Fotos (0)").waitFor();
-await page.getByText("Endereço da obra").locator("..").locator("input").fill("Rua das Flores, 100");
+await page.getByText("Endereço da obra").locator("..").locator("input, textarea").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)
 await page.getByRole("button", { name: /Anotar as medidas/ }).click();
 await page.getByPlaceholder("Ex.: Sala").fill("Sala");
-await page.getByText("Comprim. (m)").locator("..").locator("input").fill("5");
-await page.getByText("Largura (m)").locator("..").locator("input").fill("4");
-await page.getByText("+ Adicionar ambiente").click();
+await page.getByText("Comp.", { exact: true }).locator("..").locator("input").fill("5");
+await page.getByText("Larg.", { exact: true }).locator("..").locator("input").fill("4");
+await page.getByText("Adicionar ambiente").click();
 await page.getByText("Medidas (1)").waitFor();
 // fotos: galeria (2) + câmera do app (2, com ambiente marcado)
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
@@ -57,22 +57,22 @@ await page.getByText("Você avisou o cliente?").waitFor();
 await page.getByRole("button", { name: /Sim, avisei/ }).click();
 await page.getByRole("button", { name: /Parar e guardar/ }).waitFor();
 await page.waitForTimeout(1200);
-await page.getByRole("button", { name: /📍 Medida/ }).click();
+await page.getByRole("button", { name: /Medida/ }).click();
 await page.waitForTimeout(1300);
-await page.getByRole("button", { name: /⚠️ Problema/ }).click();
+await page.getByRole("button", { name: /Problema/ }).click();
 await page.getByText("2 marcas neste áudio.").waitFor();
 await page.getByRole("button", { name: /Parar e guardar/ }).click();
 await page.getByText("Áudio (1)").waitFor();
 await page.getByText(/Áudio 1 ·/).waitFor();
-await page.getByRole("group", { name: "Marcas do áudio" }).or(page.getByLabel("Marcas do áudio")).getByRole("button", { name: /📍 Medida/ }).waitFor();
+await page.getByRole("group", { name: "Marcas do áudio" }).or(page.getByLabel("Marcas do áudio")).getByRole("button", { name: /Medida/ }).waitFor();
 await page.getByPlaceholder(/Cliente quer cor/).fill("Sala 4x5, mofo perto da janela");
 await shot("03a-visita");
 // salvar a visita: só agora pede nome e telefone do cliente
-await page.getByRole("button", { name: "✅ Salvar visita" }).click();
+await page.getByRole("button", { name: "Salvar visita" }).click();
 await page.getByRole("heading", { name: "Quem é o cliente?" }).waitFor();
 await page.getByText("Nome do cliente").locator("..").locator("input").fill("Maria Souza");
 await page.getByText("Telefone (WhatsApp)").last().locator("..").locator("input").fill("11977776666");
-await page.getByRole("button", { name: "✅ Salvar visita" }).last().click();
+await page.getByRole("button", { name: "Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
 await page.getByRole("tab", { name: /Sem orçamento/ }).click();
 await page.getByText("Maria Souza").first().click();
@@ -89,7 +89,7 @@ await page.getByText("Maria Souza").first().waitFor();                  // clien
 check(await page.getByTestId("total").innerText().then((t) => /R\$\s?[1-9]/.test(t)), "preço aparece na hora, sem passar por etapas");
 check(!(await page.getByRole("button", { name: "Continuar" }).isVisible().catch(() => false)), "não há mais etapas com 'Continuar'");
 check(!(await page.getByText("Lucro estimado").isVisible().catch(() => false)), "custo e lucro começam escondidos");
-await page.getByText("⚙️ Ajustes do orçamento").click();
+await page.getByText("Ajustes do orçamento").click();
 await shot("04-ajustes-opcionais");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
 await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);

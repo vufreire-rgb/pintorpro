@@ -51,7 +51,7 @@ export default function Onboarding() {
     </div>,
     <div key="p" className="flex flex-col gap-3">
       <p className="text-lg font-medium">Quanto você cobra por serviço?</p>
-      <p className="text-sm text-slate-500">Valores de exemplo já preenchidos — ajuste os seus. Você pode mudar depois.</p>
+      <p className="text-base text-support">Valores de exemplo já preenchidos — ajuste os seus. Você pode mudar depois.</p>
       {services.filter((s) => on.includes(s.id)).map((s) => (
         <Field key={s.id} label={`${s.name} (R$ por ${UNIT_LABEL[s.unit]})`}>
           <NumberInput value={prices[s.id] ?? s.salePriceCents / 100} onChange={(n) => setPrices((p) => ({ ...p, [s.id]: n }))} />
@@ -63,9 +63,9 @@ export default function Onboarding() {
     <Field key="m" label="Que margem de lucro você quer? (%)" hint="Ex.: 30 significa 30% do preço final é lucro."><NumberInput autoFocus value={c.marginPct} onChange={(n) => set("marginPct", n)} /></Field>,
     <Field key="pg" label="Como você costuma receber?" hint="Aparece no orçamento. Pode mudar em cada orçamento."><TextInput autoFocus value={c.paymentTerms} onChange={(e) => set("paymentTerms", e.target.value)} /></Field>,
     <div key="ok" className="flex flex-col gap-3 text-lg">
-      <p className="text-2xl font-bold">Tudo pronto! 🎉</p>
+      <p className="text-2xl font-bold">Tudo pronto!</p>
       <p>Sua conta está configurada. Diária: {formatBRL(c.dailyRateCents)}.</p>
-      <p className="text-sm text-slate-500">Os preços e o consumo dos materiais estão com valores de exemplo. Confira em <b>Ajustes</b> quando puder.</p>
+      <p className="text-base text-support">Os preços e o consumo dos materiais estão com valores de exemplo. Confira em <b>Ajustes</b> quando puder.</p>
     </div>,
   ][step];
 
