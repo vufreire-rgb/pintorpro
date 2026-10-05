@@ -1,7 +1,7 @@
 import { updateDb } from "./db";
 import { suggestEnd } from "./workInfo";
 import { removePhotoFile } from "./photos";
-import type { Installment, Payment, WorkStatus, Work } from "./types";
+import type { Expense, Installment, Payment, WorkStatus, Work } from "./types";
 
 export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
   scheduled: "Agendada",
@@ -43,3 +43,9 @@ export const removeInstallment = (id: string, instId: string) =>
   patch(id, (w) => ({ ...w, plan: (w.plan ?? []).filter((p) => p.id !== instId) }));
 
 export const deleteWork = (id: string) => updateDb((db) => ({ ...db, works: db.works.filter((w) => w.id !== id) }));
+
+export const addExpense = (id: string, e: Omit<Expense, "id">) =>
+  patch(id, (w) => ({ ...w, expenses: [...(w.expenses ?? []), { ...e, id: crypto.randomUUID() }] }));
+export const removeExpense = (id: string, expenseId: string) =>
+  patch(id, (w) => ({ ...w, expenses: (w.expenses ?? []).filter((e) => e.id !== expenseId) }));
+export const setDaysWorked = (id: string, daysWorked: number) => patch(id, (w) => ({ ...w, daysWorked: Math.max(0, daysWorked) }));

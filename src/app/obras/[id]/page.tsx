@@ -5,6 +5,7 @@ import { use, useRef, useState } from "react";
 import { CalendarDays, CalendarPlus, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, QrCode, Receipt, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
+import { WorkCostsCard } from "@/components/WorkCostsCard";
 import { PixModal } from "@/components/PixModal";
 import { ACTION_CLS, Badge, Button, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { buildPlan, chargeMessage, lateCents, planGapCents, planView, PLAN_PRESET_LABEL, type InstallmentState, type PlanPreset } from "@/modules/finance";
@@ -203,6 +204,8 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           <Button disabled={amount <= 0 || busy} onClick={register}>Registrar</Button>
         </div>
       </Card>
+
+      <WorkCostsCard w={w} quote={quote} />
 
       <Card className="flex flex-col gap-3">
         <CardTitle icon={ClipboardList}>Orçamento e visita</CardTitle>

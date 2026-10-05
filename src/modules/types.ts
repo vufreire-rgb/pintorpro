@@ -84,6 +84,18 @@ export interface Payment {
   proofId?: string;
 }
 
+export type ExpenseKind = "material" | "ajudante" | "transporte" | "outro";
+
+/** Gasto real da obra (nota de tinta, ajudante, gasolina…). */
+export interface Expense {
+  id: string;
+  /** AAAA-MM-DD */
+  date: string;
+  kind: ExpenseKind;
+  amountCents: number;
+  note: string;
+}
+
 /** Parcela combinada com o cliente. */
 export interface Installment {
   id: string;
@@ -130,6 +142,10 @@ export interface Work {
   endDate?: string;
   /** Pagamentos recebidos do cliente. */
   payments?: Payment[];
+  /** Gastos reais da obra, para comparar lucro previsto × real. */
+  expenses?: Expense[];
+  /** Dias que o pintor realmente trabalhou na obra. */
+  daysWorked?: number;
   /** Plano de pagamento combinado (parcelas). */
   plan?: Installment[];
   /** Campos "realizado" reservados para comparar orçado × realizado no futuro. */

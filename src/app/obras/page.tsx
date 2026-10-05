@@ -7,6 +7,7 @@ import { CalendarDays, Check, ChartColumn, EyeOff, TriangleAlert } from "lucide-
 import { WORK_STATUS_LABEL } from "@/modules/works";
 import { lateCents } from "@/modules/finance";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
+import { workProfit } from "@/modules/workProfit";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
 
@@ -18,6 +19,11 @@ export default function Obras() {
   if (!db) return <Loading />;
   const d = dashboard(db);
   const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
+  // Lucro real × previsto das obras do mês que já têm gastos lançados.
+  const month = new Date().toISOString().slice(0, 7);
+  const tracked = db.works.filter((w) => w.createdAt.startsWith(month) && (w.expenses?.length ?? 0) > 0).map((w) => workProfit(w, db.quotes.find((q) => q.id === w.quoteId)));
+  const realCents = tracked.reduce((a, p) => a + (p.realProfitCents ?? p.realPocketCents), 0);
+  const plannedCents = tracked.reduce((a, p) => a + (p.realProfitCents === null ? p.plannedPocketCents : p.plannedProfitCents), 0);
   return (
     <Screen title="Obras" nav>
       <Button variant="ghost" icon={showPanel ? EyeOff : ChartColumn} aria-expanded={showPanel} onClick={() => setShowPanel((o) => !o)}>
@@ -30,6 +36,7 @@ export default function Obras() {
             ["Lucro estimado do mês", formatBRL(d.profitMonthCents)],
             ["Falta receber", formatBRL(d.receivableCents)],
             ["Em atraso", formatBRL(d.lateCents)],
+            ...(tracked.length ? [["Lucro real do mês", formatBRL(realCents)], ["Previsto dessas obras", formatBRL(plannedCents)]] : []),
             ["Obras em andamento", String(d.worksActive)],
           ].map(([label, value]) => (
             <Card key={label}>
