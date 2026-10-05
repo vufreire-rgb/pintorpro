@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { cloudConfigured, downloadFile, removeCloudFile, uploadFile } from "@/repositories/cloudStore";
 import { deleteFile, getFile, putFile } from "@/repositories/fileStore";
+import { drawMarks } from "./markDraw";
 import { getUserId } from "./session";
+import type { PhotoMark } from "./types";
 
 const MAX_SIDE = 1600;
 const PENDING_KEY = "pintorpro:pending-uploads";
@@ -122,15 +124,59 @@ export async function loadFileBlob(id: string): Promise<Blob | undefined> {
   return remote ?? undefined;
 }
 
-/** Reduz uma foto para o PDF (lado maior 900 px, JPEG) e devolve como data URL. */
-export async function photoForPdf(blob: Blob): Promise<string> {
-  const bmp = await createImageBitmap(blob);
-  const scale = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+/** Desenha a foto reduzida (lado maior `maxSide`) já com as marcações por cima. */
+async function drawPhoto(blob: Blob, maxSide: number, marks?: PhotoMark[]): Promise<HTMLCanvasElement> {
+  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  const scale = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bmp.width * scale);
   canvas.height = Math.round(bmp.height * scale);
-  canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.8);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  if (marks?.length) drawMarks(ctx, canvas.width, canvas.height, marks);
+  return canvas;
+}
+
+/** Reduz uma foto para o PDF (lado maior 900 px, JPEG), com as marcações, e devolve como data URL. */
+export async function photoForPdf(blob: Blob, marks?: PhotoMark[]): Promise<string> {
+  return (await drawPhoto(blob, 900, marks)).toDataURL("image/jpeg", 0.8);
+}
+
+/** Foto com marcações como arquivo JPEG (para mandar pelo WhatsApp). */
+export async function markedPhotoBlob(blob: Blob, marks: PhotoMark[]): Promise<Blob> {
+  const canvas = await drawPhoto(blob, MAX_SIDE, marks);
+  const out = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
+  return out ?? blob;
+}
+
+/** Miniatura com as marcações; null enquanto carrega ou se não há marcações. */
+export function useMarkedUrl(id: string, marks?: PhotoMark[]): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  const key = marks?.length ? JSON.stringify(marks) : "";
+  useEffect(() => {
+    let alive = true;
+    let revoke: string | null = null;
+    if (!key) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUrl(null);
+      return;
+    }
+    loadFileBlob(id)
+      .then(async (blob) => {
+        if (!blob) return;
+        const canvas = await drawPhoto(blob, 600, JSON.parse(key) as PhotoMark[]);
+        const out = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.8));
+        if (!alive || !out) return;
+        revoke = URL.createObjectURL(out);
+        setUrl(revoke);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [id, key]);
+  return url;
 }
 
 /** URL temporária para exibir um arquivo (foto ou áudio); null enquanto carrega ou se não existe neste aparelho. */

@@ -1,8 +1,11 @@
 "use client";
-import { usePhotoUrl } from "@/modules/photos";
+import { useMarkedUrl, usePhotoUrl } from "@/modules/photos";
+import type { PhotoMark } from "@/modules/types";
 
-function Thumb({ id, onRemove, selected, onToggle }: { id: string; onRemove?: () => void; selected?: boolean; onToggle?: () => void }) {
-  const url = usePhotoUrl(id);
+function Thumb({ id, onRemove, selected, onToggle, marks, onMark }: { id: string; onRemove?: () => void; selected?: boolean; onToggle?: () => void; marks?: PhotoMark[]; onMark?: () => void }) {
+  const plain = usePhotoUrl(id);
+  const marked = useMarkedUrl(id, marks);
+  const url = marked ?? plain;
   return (
     <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-200">
       {url ? (
@@ -22,6 +25,11 @@ function Thumb({ id, onRemove, selected, onToggle }: { id: string; onRemove?: ()
           {selected ? "✓ No PDF" : "+ PDF"}
         </button>
       ) : null}
+      {onMark ? (
+        <button onClick={onMark} aria-label="Marcar a foto" className="absolute left-1 top-1 grid h-9 min-w-9 place-items-center rounded-full bg-black/60 px-2 text-sm font-bold text-white">
+          ✏️{marks?.length ? ` ${marks.length}` : ""}
+        </button>
+      ) : null}
       {onRemove ? (
         <button onClick={onRemove} aria-label="Remover foto" className="absolute right-1 top-1 h-9 w-9 rounded-full bg-black/60 text-white">✕</button>
       ) : null}
@@ -29,11 +37,11 @@ function Thumb({ id, onRemove, selected, onToggle }: { id: string; onRemove?: ()
   );
 }
 
-export function PhotoGrid({ ids, onRemove, selectedIds, onToggle }: { ids: string[]; onRemove?: (id: string) => void; selectedIds?: string[]; onToggle?: (id: string) => void }) {
+export function PhotoGrid({ ids, onRemove, selectedIds, onToggle, marksOf, onMark }: { ids: string[]; onRemove?: (id: string) => void; selectedIds?: string[]; onToggle?: (id: string) => void; marksOf?: (id: string) => PhotoMark[] | undefined; onMark?: (id: string) => void }) {
   if (ids.length === 0) return null;
   return (
     <div className="grid grid-cols-3 gap-2">
-      {ids.map((id) => <Thumb key={id} id={id} onRemove={onRemove ? () => onRemove(id) : undefined} selected={selectedIds?.includes(id)} onToggle={onToggle ? () => onToggle(id) : undefined} />)}
+      {ids.map((id) => <Thumb key={id} id={id} onRemove={onRemove ? () => onRemove(id) : undefined} selected={selectedIds?.includes(id)} onToggle={onToggle ? () => onToggle(id) : undefined} marks={marksOf?.(id)} onMark={onMark ? () => onMark(id) : undefined} />)}
     </div>
   );
 }

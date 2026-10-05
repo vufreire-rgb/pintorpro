@@ -2,7 +2,7 @@ import { uid, updateDb } from "./db";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
 import type { RoomForm } from "./rooms";
-import type { AudioMarker, Db, Visit } from "./types";
+import type { AudioMarker, Db, PhotoMark, Visit } from "./types";
 
 const blankVisit = (): Visit => ({ id: uid(), siteAddress: "", notes: "", photoIds: [], createdAt: new Date().toISOString() });
 
@@ -88,6 +88,10 @@ export async function deleteVisit(id: string, visits: Visit[]): Promise<void> {
 export type PhotoMeta = NonNullable<Visit["photoMeta"]>[string];
 
 /** Marca/desmarca a foto para o PDF (até 6) e guarda legenda/ambiente. Retorna false se já há 6. */
+/** Guarda (ou limpa) as marcações desenhadas na foto. A foto original não muda. */
+export const setPhotoMarks = (visitId: string, photoId: string, marks: PhotoMark[]) =>
+  patch(visitId, (v) => ({ ...v, photoMeta: { ...(v.photoMeta ?? {}), [photoId]: { ...(v.photoMeta ?? {})[photoId], marks: marks.length ? marks : undefined } } }));
+
 export function setPhotoMeta(visitId: string, photoId: string, meta: Partial<PhotoMeta>, maxInPdf: number): boolean {
   let ok = true;
   patch(visitId, (v) => {

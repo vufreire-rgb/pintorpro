@@ -89,7 +89,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           <>
             {visit.notes ? <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-slate-700">{visit.notes}</p> : null}
             {(visit.rooms ?? []).length > 0 ? <p className="text-sm text-slate-600">{visit.rooms!.map((r) => r.name).join(" · ")}</p> : null}
-            <PhotoGrid ids={visit.photoIds} />
+            <PhotoGrid ids={visit.photoIds} marksOf={(pid) => visit.photoMeta?.[pid]?.marks} />
             {(visit.audios ?? []).map((a) => <Player key={a.id} id={a.id} />)}
             <Link href={`/visitas/${visit.id}`} className="text-brand underline">Abrir a visita completa</Link>
           </>

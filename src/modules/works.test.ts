@@ -76,3 +76,32 @@ describe("lembrete de revisão", () => {
     expect(buildReviewIcs({ time: "08:00", days: [0, 1, 2, 3, 4, 5, 6] }, "u", now)).toContain("RRULE:FREQ=DAILY");
   });
 });
+
+import { hitMark, isTooShort, markAt, moveMark } from "./markDraw";
+import type { PhotoMark } from "./types";
+describe("marcações na foto", () => {
+  const arrow: PhotoMark = { id: "a", kind: "arrow", color: "#EF4444", x1: 0.2, y1: 0.2, x2: 0.6, y2: 0.6, text: "" };
+  const text: PhotoMark = { id: "t", kind: "text", color: "#3B82F6", x1: 0.5, y1: 0.8, x2: 0.5, y2: 0.8, text: "Mofo" };
+  it("acerta o toque na linha e erra longe dela", () => {
+    expect(hitMark(arrow, 0.4, 0.4, 1000, 1000)).toBe(true);
+    expect(hitMark(arrow, 0.4, 0.9, 1000, 1000)).toBe(false);
+    expect(hitMark(text, 0.5, 0.8, 1000, 1000)).toBe(true);
+    expect(hitMark(text, 0.1, 0.1, 1000, 1000)).toBe(false);
+  });
+  it("pega a marca de cima quando há sobreposição", () => {
+    const over = { ...text, id: "t2", x1: 0.4, y1: 0.4, x2: 0.4, y2: 0.4 };
+    expect(markAt([arrow, over], 0.4, 0.4, 1000, 1000)?.id).toBe("t2");
+    expect(markAt([arrow, over], 0.9, 0.1, 1000, 1000)).toBeUndefined();
+  });
+  it("mover não deixa a marca sair da foto", () => {
+    const m = moveMark(arrow, 0.1, -0.5);
+    expect(m.x1).toBeCloseTo(0.3);
+    expect(m.y1).toBeCloseTo(0);
+    expect(m.y2 - m.y1).toBeCloseTo(0.4);
+    expect(moveMark(arrow, 5, 0).x2).toBeCloseTo(1);
+  });
+  it("descarta seta de um toque só", () => {
+    expect(isTooShort({ ...arrow, x2: 0.2005, y2: 0.2 }, 1000, 1000)).toBe(true);
+    expect(isTooShort(arrow, 1000, 1000)).toBe(false);
+  });
+});

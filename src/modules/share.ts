@@ -2,8 +2,8 @@ import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
 import { buildIcs } from "./visitList";
 import { buildReviewIcs, type ReviewReminder } from "./reminder";
 import { buildWorkIcs } from "./workInfo";
-import type { Client, Visit, Work } from "./types";
-import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
+import type { Client, PhotoMark, Visit, Work } from "./types";
+import { loadFileBlob, logoForPdf, markedPhotoBlob, photoForPdf } from "./photos";
 import type { Db, Quote } from "./types";
 
 const onlyDigits = (s: string) => s.replace(/\D/g, "");
@@ -18,7 +18,7 @@ async function loadPdfPhotos(db: Db, q: Quote): Promise<QuotePdfData["photos"]> 
     const blob = await loadFileBlob(id);
     if (!blob) continue;
     try {
-      out.push({ src: await photoForPdf(blob), room: visit.photoMeta?.[id]?.room ?? "", caption: visit.photoMeta?.[id]?.caption ?? "" });
+      out.push({ src: await photoForPdf(blob, visit.photoMeta?.[id]?.marks), room: visit.photoMeta?.[id]?.room ?? "", caption: visit.photoMeta?.[id]?.caption ?? "" });
     } catch {
       /* foto ilegível: pula */
     }
@@ -93,4 +93,27 @@ export function downloadReviewIcs(r: ReviewReminder): void {
   a.download = "lembrete-revisao.ics";
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+/** Manda a foto com as marcações: abre o compartilhamento do celular; se não houver, baixa o arquivo. */
+export async function shareMarkedPhoto(photoId: string, marks: PhotoMark[]): Promise<"shared" | "downloaded" | "missing"> {
+  const original = await loadFileBlob(photoId);
+  if (!original) return "missing";
+  const blob = await markedPhotoBlob(original, marks);
+  const file = new File([blob], "foto-marcada.jpg", { type: "image/jpeg" });
+  if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "shared";
+    } catch {
+      return "shared"; // o usuário fechou a janela de compartilhar
+    }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "foto-marcada.jpg";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return "downloaded";
 }

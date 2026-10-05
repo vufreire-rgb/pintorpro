@@ -76,6 +76,20 @@ export interface Payment {
   note: string;
 }
 
+/** Marca desenhada pelo pintor em cima de uma foto. Coordenadas de 0 a 1 (independem do tamanho da foto). */
+export interface PhotoMark {
+  id: string;
+  kind: "text" | "arrow" | "dim";
+  color: string;
+  x1: number;
+  y1: number;
+  /** Seta e cota: ponto final. Texto: igual ao ponto inicial. */
+  x2: number;
+  y2: number;
+  /** Texto escrito, ou o valor da medida (cota). */
+  text: string;
+}
+
 export interface Work {
   id: string;
   quoteId: string;
@@ -139,7 +153,7 @@ export interface Visit {
   /** Ids das fotos (arquivos ficam no aparelho; ver repositories/photoStore.ts). */
   photoIds: string[];
   /** Fotos escolhidas para o PDF (por id), com legenda e ambiente. */
-  photoMeta?: Record<string, { inPdf?: boolean; caption?: string; room?: string }>;
+  photoMeta?: Record<string, { inPdf?: boolean; caption?: string; room?: string; marks?: PhotoMark[] }>;
   /** Gravações de áudio (arquivos ficam no aparelho). */
   audios?: AudioNote[];
   createdAt: string;

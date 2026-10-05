@@ -4,6 +4,7 @@ import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
 import { CameraCapture } from "@/components/CameraCapture";
 import { ContactActions } from "@/components/ContactActions";
+import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomFormCard } from "@/components/RoomFormCard";
 import { Button, Card, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextInput } from "@/components/ui";
@@ -12,7 +13,7 @@ import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
 import { EMPTY_ROOM, type RoomForm } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
-import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMeta, setVisitAddress, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
+import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
 import { confirmationText, fromLocalInput, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum } from "@/shared/format";
 
@@ -25,6 +26,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [msg, setMsg] = useState("");
   const [askDelete, setAskDelete] = useState(false);
   const [camera, setCamera] = useState(false);
+  const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
@@ -92,6 +94,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <h2 className="text-lg font-bold">Fotos ({v.photoIds.length})</h2>
         <PhotoGrid
           ids={v.photoIds}
+          marksOf={(pid) => v.photoMeta?.[pid]?.marks}
+          onMark={setMarking}
           onRemove={(pid) => removeVisitPhoto(v.id, pid)}
           selectedIds={v.photoIds.filter((pid) => v.photoMeta?.[pid]?.inPdf)}
           onToggle={(pid) => setPhotoMeta(v.id, pid, { inPdf: !v.photoMeta?.[pid]?.inPdf }, MAX_PDF_PHOTOS) || setMsg(`Máximo de ${MAX_PDF_PHOTOS} fotos no PDF.`)}
@@ -106,7 +110,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               </div>
             ))}
           </div>
-        ) : v.photoIds.length > 0 ? <p className="text-sm text-slate-500">Toque em <b>+ PDF</b> nas fotos que quer mostrar no orçamento (até {MAX_PDF_PHOTOS}).</p> : null}
+        ) : v.photoIds.length > 0 ? <p className="text-sm text-slate-500">Toque em <b>+ PDF</b> nas fotos que quer mostrar no orçamento (até {MAX_PDF_PHOTOS}) e em <b>✏️ marcar</b> para desenhar setas, textos e medidas.</p> : null}
         {msg ? <p className="text-sm text-red-700">{msg}</p> : null}
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} data-testid="photo-input" />
         <Button onClick={() => setCamera(true)}>📷 Tirar fotos (várias)</Button>
@@ -164,6 +168,15 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <Button variant="ghost" onClick={() => setSaving(false)}>Voltar</Button>
           </div>
         </div>
+      ) : null}
+      {marking ? (
+        <PhotoMarker
+          key={marking}
+          photoId={marking}
+          initial={v.photoMeta?.[marking]?.marks ?? []}
+          onSave={(marks) => { setPhotoMarks(v.id, marking, marks); setMarking(null); }}
+          onClose={() => setMarking(null)}
+        />
       ) : null}
       {camera ? (
         <CameraCapture
