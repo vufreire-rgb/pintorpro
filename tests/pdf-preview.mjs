@@ -21,7 +21,7 @@ async function gerar({ nome, cor, comValores, comLink }) {
 
   // visita: 3 fotos, todas "No PDF", com ambiente e legenda
   await page.goto(base + "/visitas/v1");
-  await page.getByTestId("photo-input").setInputFiles(["/tmp/photos/foto1.jpg", "/tmp/photos/foto2.jpg", "/tmp/photos/foto3.jpg"]);
+  await page.getByTestId("photo-input").setInputFiles(["tests/foto-teste.png", "tests/foto-teste.png", "tests/foto-teste.png"]);
   await page.getByText("Fotos (3)").waitFor();
   for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Pôr no PDF" }).first().click();
   const salas = ["Sala", "Sala", "Quarto"], legs = ["Rachadura perto da janela", "Tinta descascando", "Canto do teto com mofo"];
@@ -34,6 +34,7 @@ async function gerar({ nome, cor, comValores, comLink }) {
   await page.getByRole("link", { name: "Montar orçamento" }).click();
   await page.getByText("Comprim. (m)").waitFor();
   const room = async (n, c, l, cond) => {
+    if (!(await page.getByPlaceholder("Ex.: Sala").isVisible())) await page.getByRole("button", { name: "+ Adicionar ambiente" }).click();
     await page.getByPlaceholder("Ex.: Sala").fill(n);
     await page.getByText("Comprim. (m)").locator("..").locator("input").fill(c);
     await page.getByText("Largura (m)").locator("..").locator("input").fill(l);
@@ -42,13 +43,10 @@ async function gerar({ nome, cor, comValores, comLink }) {
   };
   await room("Sala", "6", "5", "Com trincas");
   await room("Quarto", "4", "3,5", "Já pintada, boa");
-  await page.getByRole("button", { name: "Continuar" }).click(); // serviços
-  await page.getByRole("button", { name: "Continuar" }).click(); // materiais
-  await page.getByRole("button", { name: "Continuar" }).click(); // preço
+  await page.getByText("⚙️ Ajustes do orçamento").click();
   await page.getByPlaceholder("Observações").or(page.getByText("Observações (opcional)").locator("..").locator("input")).first().fill("Cliente prefere branco neve nas paredes e no teto. Início a combinar depois do pagamento da entrada.");
   if (comValores) await page.getByRole("button", { name: "Não", exact: true }).click();
   if (comLink) await page.getByPlaceholder("https://").fill("https://pague.exemplo.com.br/0042");
-  await page.getByRole("button", { name: "Continuar" }).click(); // revisão
   await page.getByRole("button", { name: "Salvar orçamento" }).click();
   await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);
 

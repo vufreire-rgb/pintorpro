@@ -10,6 +10,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 const shot = (n) => page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/${n}.png` });
+const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) throw new Error(msg); };
 const next = () => page.getByRole("button", { name: /Continuar|Ir para o painel/ }).click();
 
 await page.goto(base);
@@ -79,18 +80,16 @@ await page.getByText("Fotos (4)").waitFor();
 const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
 if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsWith("https://wa.me/5511977776666")) || !hrefs.some((h) => h?.includes("google.com/maps"))) throw new Error("atalhos de contato ausentes: " + hrefs);
 await page.getByRole("link", { name: "Montar orçamento" }).click();
-await page.getByText("Suas anotações da visita").waitFor();
+await page.getByText("Suas anotações da visita").click();
 await page.getByText("Sala 4x5, mofo perto da janela").waitFor();
 await page.getByText("5 × 4 m, altura 2,7 m").waitFor();                // o ambiente anotado na visita já veio
-await shot("03-ambientes");
-await next();
-await shot("04-servicos");
-await next();
-await shot("05-materiais");
-await next();
-await shot("06-preco");
-await next();
-await shot("07-revisao");
+await shot("03-orcamento-uma-tela");
+await page.getByText("Maria Souza").first().waitFor();                  // cliente da visita já veio
+check(await page.getByTestId("total").innerText().then((t) => /R\$\s?[1-9]/.test(t)), "preço aparece na hora, sem passar por etapas");
+check(!(await page.getByRole("button", { name: "Continuar" }).isVisible().catch(() => false)), "não há mais etapas com 'Continuar'");
+check(!(await page.getByText("Lucro estimado").isVisible().catch(() => false)), "custo e lucro começam escondidos");
+await page.getByText("⚙️ Ajustes do orçamento").click();
+await shot("04-ajustes-opcionais");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
 await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);
 await page.getByText("Enviar pelo WhatsApp").waitFor();
@@ -101,11 +100,10 @@ const quoteUrl = page.url();
 await page.getByRole("button", { name: /Duplicar orçamento/ }).click();
 await page.getByText("Orçamento nº 2").waitFor();
 await page.getByRole("link", { name: /Editar orçamento/ }).click();
-await page.getByText("Editando o orçamento nº 2").waitFor();
+await page.getByText("Editar orçamento nº 2").first().waitFor();
 await shot("08a-editar");
 await page.getByText("Sala", { exact: true }).first().waitFor();       // dados do orçamento vieram preenchidos
-for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "Continuar" }).click(); // até a revisão
-await page.getByRole("button", { name: "Salvar alterações" }).click();
+await page.getByRole("button", { name: "Salvar", exact: true }).click();
 await page.getByText(/Orçamento nº 2 · rev\. 2/).waitFor();
 await page.getByRole("button", { name: /Apagar orçamento/ }).click();
 await shot("08b-confirmar-apagar");

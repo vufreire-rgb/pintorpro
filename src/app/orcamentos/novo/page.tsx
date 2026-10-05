@@ -13,8 +13,6 @@ import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/t
 import { formatBRL } from "@/shared/money";
 import { fmtNum, UNIT_LABEL } from "@/shared/format";
 
-const TITLES = ["Cliente", "Ambientes", "Serviços", "Materiais", "Preço", "Revisão"];
-
 export default function NovoOrcamentoPage() {
   return (
     <Suspense fallback={<Loading />}>
@@ -35,13 +33,14 @@ function NovoOrcamento() {
 /** Monta ou edita um orçamento. Com `quote`, abre os dados dele para alterar. */
 function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) {
   const router = useRouter();
-  const [step, setStep] = useState(quote || visit?.clientId ? 1 : 0);
-  const [pickedClient, setClientId] = useState("");
-  const clientId = pickedClient || quote?.clientId || visit?.clientId || "";
+  const [pickedClient, setClientId] = useState<string | null>(null);
+  const clientId = pickedClient ?? quote?.clientId ?? visit?.clientId ?? "";
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: visit?.siteAddress ?? "" });
   const [site, setSite] = useState(quote?.siteAddress ?? "");
   const [rooms, setRooms] = useState<Room[]>(() => quote?.input.rooms ?? (visit?.rooms ?? []).map((r) => roomFromForm(r, db.enabledServiceIds, r.id, r.name)));
   const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
+  const [showForm, setShowForm] = useState(false);
+  const [showCost, setShowCost] = useState(false);
   const [included, setIncluded] = useState<Record<string, boolean>>(quote?.input.materialsIncluded ?? {});
   const [yields, setYields] = useState<Record<string, number>>(quote?.input.yieldOverrides ?? {});
   const [adj, setAdj] = useState<Adjustment>(quote?.input.adjustment ?? { type: "discount", mode: "percent", value: 0 });
@@ -69,24 +68,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     setRooms(rooms.map((r) => r.id !== roomId ? r : { ...r, services: r.services.map((s) => s.serviceId === serviceId ? { ...s, ...patch } : s) }));
 
   const chosenClient = db.clients.find((c) => c.id === clientId);
-  const siteValue = site || visit?.siteAddress || chosenClient?.address || "";
-  const canNext = [
-    (clientId || newClient.name.trim()) && true,
-    rooms.length > 0,
-    (result?.serviceLines.length ?? 0) > 0,
-    true,
-    true,
-    true,
-  ][step];
-
-  const goNext = () => {
-    if (step === 0 && !clientId) {
-      const c = addClient(newClient);
-      setClientId(c.id);
-      if (!site) setSite(c.address);
-    } else if (step === 0 && !site) setSite(chosenClient?.address ?? "");
-    setStep(step + 1);
-  };
+  const siteValue = site || visit?.siteAddress || chosenClient?.address || newClient.address || "";
+  const hasClient = !!clientId || !!newClient.name.trim();
+  const hasServices = (result?.serviceLines.length ?? 0) > 0;
+  const canSave = hasClient && rooms.length > 0 && hasServices;
+  const missing = [!hasClient && "o cliente", rooms.length === 0 && "um ambiente", rooms.length > 0 && !hasServices && "um serviço"].filter(Boolean).join(" e ");
 
   const save = () => {
     const paymentTerms = payment ?? db.company!.paymentTerms;
@@ -95,181 +81,169 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
-    const id = saveQuote(db, { clientId, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
+    const cid = clientId || addClient({ ...newClient, address: newClient.address || siteValue }).id;
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
     router.replace(`/orcamentos/${id}`);
   };
 
   const t = result?.totals;
   return (
-    <Screen title={`${step + 1}/${TITLES.length} · ${TITLES[step]}`} back={quote ? `/orcamentos/${quote.id}` : "/orcamentos"}>
-      {quote ? (
-        <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-sm">
-          <b>Editando o orçamento nº {quote.number}.</b> Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
-        </div>
-      ) : null}
-      {visit && step >= 1 && step <= 3 && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
-        <details className="rounded-2xl border border-brand/25 bg-brand-soft p-3" open={step === 1}>
-          <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
-          {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
-          <div className="mt-2"><PhotoGrid ids={visit.photoIds} /></div>
-          <AudioList audios={visit.audios ?? []} />
-        </details>
-      ) : null}
+    <Screen title={quote ? `Editar orçamento nº ${quote.number}` : "Orçamento"} back={quote ? `/orcamentos/${quote.id}` : visit ? `/visitas/${visit.id}` : "/orcamentos"}>
+      <div className="flex flex-col gap-4 pb-36">
+        {quote ? (
+          <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-sm">
+            Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
+          </div>
+        ) : null}
+        {visit && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
+          <details className="rounded-2xl border border-brand/25 bg-brand-soft p-3" open={rooms.length === 0}>
+            <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
+            {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
+            <div className="mt-2"><PhotoGrid ids={visit.photoIds} marksOf={(pid) => visit.photoMeta?.[pid]?.marks} /></div>
+            <AudioList audios={visit.audios ?? []} />
+          </details>
+        ) : null}
 
-      {step === 0 && (
-        <>
-          {db.clients.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="font-medium">Escolha um cliente</p>
-              <div className="flex flex-wrap gap-2">
-                {db.clients.map((c) => <Chip key={c.id} active={clientId === c.id} onClick={() => setClientId(clientId === c.id ? "" : c.id)}>{c.name}</Chip>)}
-              </div>
-              <p className="pt-2 font-medium">ou cadastre um novo</p>
+        <Card className="flex flex-col gap-3">
+          <b>Cliente</b>
+          {chosenClient ? (
+            <div className="flex items-start justify-between gap-2">
+              <div><div className="text-lg font-semibold">{chosenClient.name}</div>{chosenClient.phone ? <div className="text-slate-600">{chosenClient.phone}</div> : null}</div>
+              {!quote ? <button className="min-h-10 px-2 text-brand underline" onClick={() => setClientId("")}>Trocar</button> : null}
             </div>
-          )}
-          {!clientId && (
-            <Card className="flex flex-col gap-3">
-              <Field label="Nome do cliente"><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
+          ) : (
+            <>
+              {db.clients.length > 0 ? <div className="flex flex-wrap gap-2">{db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => setClientId(c.id)}>{c.name}</Chip>)}</div> : null}
+              <Field label={db.clients.length > 0 ? "Ou cliente novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
               <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-              <Field label="Endereço da obra"><TextInput value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} /></Field>
-            </Card>
+            </>
           )}
-          {clientId && <Field label="Endereço da obra"><TextInput value={siteValue} onChange={(e) => setSite(e.target.value)} /></Field>}
-        </>
-      )}
+          <Field label="Endereço da obra"><TextInput value={siteValue} onChange={(e) => { setSite(e.target.value); setNewClient((n) => ({ ...n, address: e.target.value })); }} /></Field>
+        </Card>
 
-      {step === 1 && (
-        <>
-          {rooms.map((r) => (
-            <Card key={r.id} className="flex items-center justify-between">
-              <div><b>{r.name}</b><div className="text-sm text-slate-600">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m, altura {fmtNum(r.heightM)} m</div></div>
-              <button className="h-11 w-11 rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label="Remover">✕</button>
-            </Card>
-          ))}
-          <RoomFormCard title={rooms.length ? "Adicionar outro ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={addRoom} />
-        </>
-      )}
-
-      {step === 2 && (
-        <>
-          <p className="text-slate-600">Já sugerimos os serviços pelo estado da parede. Toque para incluir ou tirar.</p>
-          {rooms.map((r, i) => {
-            const m = result?.measures[i];
-            return (
-              <Card key={r.id} className="flex flex-col gap-3">
-                <div><b>{r.name}</b>{m ? <div className="text-sm text-slate-600">Paredes {fmtNum(m.wallsNetM2)} m² · Teto {fmtNum(m.ceilingM2)} m²</div> : null}</div>
-                <div className="flex flex-wrap gap-2">
-                  {db.services.filter((s) => enabled.includes(s.id)).map((s) => (
-                    <Chip key={s.id} active={r.services.some((x) => x.serviceId === s.id)} onClick={() => toggleService(r.id, s.id)}>{s.name}</Chip>
-                  ))}
+        <h2 className="text-lg font-bold">Ambientes e serviços</h2>
+        {rooms.map((r, i) => {
+          const m = result?.measures[i];
+          return (
+            <Card key={r.id} className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <b>{r.name}</b>
+                  <div className="text-sm text-slate-600">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m, altura {fmtNum(r.heightM)} m{m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}</div>
                 </div>
-                {r.services.map((sel) => {
-                  const svc = db.services.find((s) => s.id === sel.serviceId);
-                  if (!svc) return null;
-                  return (
-                    <div key={sel.serviceId} className="flex items-center justify-between gap-2 text-sm">
-                      <span>{svc.name}</span>
-                      {svc.basis === "fixed" ? (
-                        <div className="w-28"><NumberInput value={sel.quantityOverride ?? 1} onChange={(n) => patchSel(r.id, sel.serviceId, { quantityOverride: n })} /></div>
-                      ) : svc.usesCoats ? (
-                        <div className="flex items-center gap-2"><span>demãos</span><Stepper min={1} max={5} value={sel.coats ?? svc.defaultCoats} onChange={(n) => patchSel(r.id, sel.serviceId, { coats: n })} /></div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </Card>
-            );
-          })}
-        </>
-      )}
-
-      {step === 3 && result && (
-        <>
-          <p className="text-slate-600">Quantidade calculada automaticamente. Desmarque o que o cliente vai fornecer; edite o rendimento se precisar.</p>
-          {result.materialLines.length === 0 ? <p>Nenhum material necessário.</p> : null}
-          {result.materialLines.map((m) => (
-            <Card key={m.materialId} className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div><b>{m.name}</b><div className="text-sm text-slate-600">Comprar {fmtNum(m.purchaseQty)} {m.unit} · {formatBRL(m.costCents)}</div></div>
-                <Chip active={m.included} onClick={() => setIncluded({ ...included, [m.materialId]: !m.included })}>{m.included ? "Incluso" : "Cliente fornece"}</Chip>
+                <button className="h-11 w-11 shrink-0 rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}>✕</button>
               </div>
-              <Field label={`Rendimento (cobre ${UNIT_LABEL.m2} por ${m.unit})`}>
-                <NumberInput value={m.yieldUsed} onChange={(n) => setYields({ ...yields, [m.materialId]: n > 0 ? n : m.yieldUsed })} />
+              <div className="flex flex-wrap gap-2">
+                {db.services.filter((sv) => enabled.includes(sv.id)).map((sv) => (
+                  <Chip key={sv.id} active={r.services.some((x) => x.serviceId === sv.id)} onClick={() => toggleService(r.id, sv.id)}>{sv.name}</Chip>
+                ))}
+              </div>
+              {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
+                <details>
+                  <summary className="cursor-pointer text-sm font-semibold text-brand">Demãos e quantidades</summary>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {r.services.map((sel) => {
+                      const svc = db.services.find((x) => x.id === sel.serviceId);
+                      if (!svc) return null;
+                      return (
+                        <div key={sel.serviceId} className="flex items-center justify-between gap-2 text-sm">
+                          <span>{svc.name}</span>
+                          {svc.basis === "fixed" ? (
+                            <div className="w-28"><NumberInput value={sel.quantityOverride ?? 1} onChange={(n) => patchSel(r.id, sel.serviceId, { quantityOverride: n })} /></div>
+                          ) : svc.usesCoats ? (
+                            <div className="flex items-center gap-2"><span>demãos</span><Stepper min={1} max={5} value={sel.coats ?? svc.defaultCoats} onChange={(n) => patchSel(r.id, sel.serviceId, { coats: n })} /></div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : null}
+            </Card>
+          );
+        })}
+        {rooms.length === 0 || showForm ? (
+          <RoomFormCard title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={() => { addRoom(); setShowForm(false); }} />
+        ) : (
+          <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
+        )}
+
+        <details className="rounded-2xl border border-slate-200 p-3">
+          <summary className="cursor-pointer text-base font-semibold">⚙️ Ajustes do orçamento (opcional)</summary>
+          <div className="mt-3 flex flex-col gap-4">
+            {result && result.materialLines.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <b>Materiais</b>
+                <p className="text-sm text-slate-600">Quantidade calculada sozinha. Desmarque o que o cliente vai fornecer.</p>
+                {result.materialLines.map((m) => (
+                  <Card key={m.materialId} className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div><b>{m.name}</b><div className="text-sm text-slate-600">Comprar {fmtNum(m.purchaseQty)} {m.unit} · {formatBRL(m.costCents)}</div></div>
+                      <Chip active={m.included} onClick={() => setIncluded({ ...included, [m.materialId]: !m.included })}>{m.included ? "Incluso" : "Cliente fornece"}</Chip>
+                    </div>
+                    <Field label={`Rendimento (cobre ${UNIT_LABEL.m2} por ${m.unit})`}>
+                      <NumberInput value={m.yieldUsed} onChange={(n) => setYields({ ...yields, [m.materialId]: n > 0 ? n : m.yieldUsed })} />
+                    </Field>
+                  </Card>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex flex-col gap-3">
+              <b>Desconto ou acréscimo</b>
+              <div className="flex gap-2">
+                <Chip active={adj.type === "discount"} onClick={() => setAdj({ ...adj, type: "discount" })}>Desconto</Chip>
+                <Chip active={adj.type === "surcharge"} onClick={() => setAdj({ ...adj, type: "surcharge" })}>Acréscimo</Chip>
+                <Chip active={adj.mode === "percent"} onClick={() => setAdj({ ...adj, mode: "percent", value: 0 })}>%</Chip>
+                <Chip active={adj.mode === "cents"} onClick={() => setAdj({ ...adj, mode: "cents", value: 0 })}>R$</Chip>
+              </div>
+              <NumberInput value={adj.mode === "cents" ? adj.value / 100 : adj.value} onChange={(n) => setAdj({ ...adj, value: adj.mode === "cents" ? Math.round(n * 100) : n })} />
+            </div>
+            <Field label="Condição de pagamento"><TextInput value={payment ?? db.company!.paymentTerms} onChange={(e) => setPayment(e.target.value)} /></Field>
+            <Field label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados."><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+            <div className="flex flex-col gap-3">
+              <b>No PDF do cliente</b>
+              <div className="flex items-center justify-between gap-3">
+                <span>Mostrar o valor de cada ambiente</span>
+                <Chip active={showRoomPrices} onClick={() => setShowRoomPrices(!showRoomPrices)}>{showRoomPrices ? "Sim" : "Não"}</Chip>
+              </div>
+              <Field label="Link para o cliente pagar a entrada (opcional)" hint="Cole o link de pagamento (Pix, cartão) que você já usa. Sem link, o botão de pagar não aparece.">
+                <TextInput type="url" inputMode="url" placeholder="https://" value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
               </Field>
-            </Card>
-          ))}
-        </>
-      )}
-
-      {step === 4 && t && (
-        <>
-          <Card className="flex flex-col gap-1">
-            <div className="flex justify-between"><span>Serviços</span><span>{formatBRL(t.servicesCents)}</span></div>
-            <div className="flex justify-between"><span>Materiais</span><span>{formatBRL(t.materialsCents)}</span></div>
-            <div className="flex justify-between font-bold"><span>Subtotal</span><span>{formatBRL(t.subtotalCents)}</span></div>
-          </Card>
-          <Card className="flex flex-col gap-3">
-            <b>Desconto ou acréscimo</b>
-            <div className="flex gap-2">
-              <Chip active={adj.type === "discount"} onClick={() => setAdj({ ...adj, type: "discount" })}>Desconto</Chip>
-              <Chip active={adj.type === "surcharge"} onClick={() => setAdj({ ...adj, type: "surcharge" })}>Acréscimo</Chip>
+              {paymentLink.trim() ? <Field label="Entrada (% do valor total)"><NumberInput value={depositPct} onChange={(n) => setDepositPct(Math.min(100, Math.max(1, n || 50)))} /></Field> : null}
             </div>
-            <div className="flex gap-2">
-              <Chip active={adj.mode === "percent"} onClick={() => setAdj({ ...adj, mode: "percent", value: 0 })}>%</Chip>
-              <Chip active={adj.mode === "cents"} onClick={() => setAdj({ ...adj, mode: "cents", value: 0 })}>R$</Chip>
-            </div>
-            <NumberInput value={adj.mode === "cents" ? adj.value / 100 : adj.value} onChange={(n) => setAdj({ ...adj, value: adj.mode === "cents" ? Math.round(n * 100) : n })} />
-          </Card>
-          <Field label="Condição de pagamento"><TextInput value={payment ?? db.company!.paymentTerms} onChange={(e) => setPayment(e.target.value)} /></Field>
-          <Field label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados."><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-          <Card className="flex flex-col gap-3">
-            <b>No PDF do cliente</b>
-            <div className="flex items-center justify-between gap-3">
-              <span>Mostrar o valor de cada ambiente</span>
-              <Chip active={showRoomPrices} onClick={() => setShowRoomPrices(!showRoomPrices)}>{showRoomPrices ? "Sim" : "Não"}</Chip>
-            </div>
-            <Field label="Link para o cliente pagar a entrada (opcional)" hint="Cole o link de pagamento (Pix, cartão) que você já usa. Sem link, o botão de pagar não aparece.">
-              <TextInput type="url" inputMode="url" placeholder="https://" value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
-            </Field>
-            {paymentLink.trim() ? <Field label="Entrada (% do valor total)"><NumberInput value={depositPct} onChange={(n) => setDepositPct(Math.min(100, Math.max(1, n || 50)))} /></Field> : null}
-          </Card>
-        </>
-      )}
+          </div>
+        </details>
 
-      {step === 5 && t && result && (
-        <>
-          <Card>
-            <div className="text-sm text-slate-600">Preço para o cliente</div>
-            <div className="text-4xl font-bold text-brand">{formatBRL(t.totalCents)}</div>
-            <div className="text-slate-600">Prazo: {result.schedule.workDays} dia(s) de trabalho + {result.schedule.safetyDays} de segurança</div>
-          </Card>
-          <Card className="border-amber-300 bg-amber-50">
-            <b>Só para você</b>
-            <div>Custo estimado: {formatBRL(t.costCents)}</div>
-            <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
-          </Card>
-          {result.warnings.length > 0 && (
-            <Card className="border-slate-300 bg-slate-50 text-sm text-slate-700">
-              <b>Avisos</b>
-              <ul className="list-disc pl-5">{result.warnings.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
-              <Link2 />
-            </Card>
-          )}
-          <Button variant="success" onClick={save}>{quote ? "Salvar alterações" : "Salvar orçamento"}</Button>
-        </>
-      )}
+        {result && result.warnings.length > 0 ? (
+          <details className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-700">
+            <summary className="cursor-pointer font-semibold">Avisos ({result.warnings.length})</summary>
+            <ul className="mt-2 list-disc pl-5">{result.warnings.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
+            <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>
+          </details>
+        ) : null}
 
-      {step < 5 && (
-        <div className="mt-auto flex gap-3 pt-4">
-          {step > (quote ? 1 : 0) && <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button>}
-          <Button disabled={!canNext} onClick={goNext}>Continuar</Button>
+        {t ? (
+          <>
+            <Button variant="ghost" className="!min-h-12 !text-base" aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "🙈 Esconder meu custo e lucro" : "👁 Ver meu custo e lucro"}</Button>
+            {showCost ? (
+              <Card className="border-amber-300 bg-amber-50">
+                <b>Só para você</b>
+                <div>Custo estimado: {formatBRL(t.costCents)}</div>
+                <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
+              </Card>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="min-w-0 flex-1">
+          <div className="text-xs text-slate-500">Preço para o cliente</div>
+          <div className="text-2xl font-bold text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
+          <div className="truncate text-xs text-slate-600">{canSave && result ? `Prazo: ${result.schedule.workDays} dia(s) + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
         </div>
-      )}
-      {step === 5 && <Button variant="ghost" onClick={() => setStep(4)}>Voltar</Button>}
+        <Button variant="success" className="!w-auto shrink-0" disabled={!canSave} onClick={save}>{quote ? "Salvar" : "Salvar orçamento"}</Button>
+      </div>
     </Screen>
   );
-}
-
-function Link2() {
-  return <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>;
 }
