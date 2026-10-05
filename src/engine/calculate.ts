@@ -1,4 +1,7 @@
 import { measureRoom, quantityForBasis } from "./measure";
+import type { PaintType } from "./types";
+
+export const PAINT_LABEL: Record<PaintType, string> = { acrilica: "Acrílica", esmalte: "Esmalte", piso: "Piso", grafiato: "Grafiato", cimento_queimado: "Cimento queimado" };
 import type {
   EngineConfig,
   MaterialLine,
@@ -32,7 +35,7 @@ export function calculateQuote(input: QuoteInput, config: EngineConfig): QuoteRe
         warnings.push(`Serviço "${sel.serviceId}" não existe na configuração.`);
         continue;
       }
-      const quantity = sel.quantityOverride ?? quantityForBasis(svc.basis, m);
+      const quantity = sel.quantityOverride ?? quantityForBasis(svc.basis, m, svc);
       if (quantity <= 0) continue;
       const coats = svc.usesCoats ? (sel.coats ?? svc.defaultCoats) : 1;
 
@@ -61,6 +64,18 @@ export function calculateQuote(input: QuoteInput, config: EngineConfig): QuoteRe
       for (const materialId of svc.materialIds) {
         needed.set(materialId, (needed.get(materialId) ?? 0) + (quantity * coats) / yieldOf(materialId));
       }
+    }
+  });
+
+  // Superfície medida com um tipo de pintura que nenhum serviço escolhido cobre: avisa, para não ficar de fora do preço.
+  input.rooms.forEach((room, i) => {
+    const by = measures[i]!.byPaint;
+    if (!by) return;
+    for (const p of Object.keys(by) as (keyof typeof by)[]) {
+      const total = by[p].walls + by[p].ceiling + by[p].floor;
+      if (total <= 0) continue;
+      const covered = room.services.some((sel) => services.get(sel.serviceId)?.paint === p);
+      if (!covered) warnings.push(`${room.name}: há medidas em ${PAINT_LABEL[p]} sem o serviço correspondente escolhido.`);
     }
   });
 

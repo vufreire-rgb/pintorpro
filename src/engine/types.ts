@@ -3,9 +3,14 @@
 export type BillingUnit = "m2" | "ml" | "un" | "diaria" | "fechado";
 
 /** De onde vem a quantidade de um serviço. Novas bases entram em `quantityForBasis`. */
+/** Tipo de pintura de uma superfície. */
+export type PaintType = "acrilica" | "esmalte" | "piso" | "grafiato" | "cimento_queimado";
+
 export type QuantityBasis =
   | "walls_area"
   | "ceiling_area"
+  | "floor_area"
+  | "paint_area"
   | "baseboard_length"
   | "door_count"
   | "window_count"
@@ -39,6 +44,8 @@ export interface ServiceConfig {
   usesCoats: boolean;
   defaultCoats: number;
   materialIds: string[];
+  /** Quando definido, o serviço só conta as superfícies medidas com este tipo de pintura. */
+  paint?: PaintType;
   /** Frase mostrada ao cliente no PDF. Aceita {demaos} (ex.: "2 demãos"). */
   clientText?: string;
   isDemo?: boolean;
@@ -74,6 +81,16 @@ export interface ServiceSelection {
   quantityOverride?: number;
 }
 
+/** Uma superfície medida pelo pintor: parede (largura × altura), teto ou piso (comprimento × largura). */
+export interface Surface {
+  id: string;
+  kind: "wall" | "ceiling" | "floor";
+  label: string;
+  widthM: number;
+  heightM: number;
+  paint: PaintType;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -84,6 +101,8 @@ export interface Room {
   wallCondition?: string;
   openings: Opening[];
   services: ServiceSelection[];
+  /** Medidas por superfície. Quando existem, valem no lugar de comprimento × largura × altura. */
+  surfaces?: Surface[];
 }
 
 export interface ExtraItem {
@@ -113,10 +132,13 @@ export interface RoomMeasures {
   wallsGrossM2: number;
   wallsNetM2: number;
   ceilingM2: number;
+  floorM2: number;
   baseboardM: number;
   doorCount: number;
   windowCount: number;
   openingPerimeterM: number;
+  /** Só quando o ambiente foi medido por superfície: área líquida por tipo de pintura. */
+  byPaint?: Record<PaintType, { walls: number; ceiling: number; floor: number }>;
 }
 
 export interface ServiceLine {

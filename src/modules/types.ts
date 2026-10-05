@@ -1,7 +1,7 @@
-import type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment } from "@/engine";
+import type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment, Surface, PaintType } from "@/engine";
 import type { PixConfig } from "./pix";
 
-export type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment };
+export type { EngineConfig, QuoteInput, QuoteResult, Room, ServiceConfig, MaterialConfig, ServiceSelection, Opening, ExtraItem, Adjustment, Surface, PaintType };
 
 export interface Company {
   name: string;
@@ -160,6 +160,8 @@ export interface VisitRoom {
   condition: string;
   doors: number;
   windows: number;
+  /** Medidas por parede/teto/piso. Sem isto, vale comprimento × largura × altura (visitas antigas). */
+  surfaces?: Surface[];
 }
 
 export interface Visit {

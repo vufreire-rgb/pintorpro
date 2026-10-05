@@ -31,9 +31,10 @@ await page.getByText("Endereço da obra").locator("..").locator("input, textarea
 // medidas na visita (viram ambientes do orçamento)
 await page.getByRole("button", { name: /Anotar as medidas/ }).click();
 await page.getByPlaceholder("Ex.: Sala").fill("Sala");
-await page.getByText("Comp.", { exact: true }).locator("..").locator("input").fill("5");
-await page.getByText("Larg.", { exact: true }).locator("..").locator("input").fill("4");
-await page.getByText("Adicionar ambiente").click();
+await page.getByLabel("Parede 1 largura").fill("5");
+await page.getByRole("button", { name: "Parede", exact: true }).click();
+await page.getByLabel("Parede 2 largura").fill("4");
+await page.getByRole("button", { name: "Salvar ambiente" }).click();
 await page.getByText("Medidas (1)").waitFor();
 // fotos: galeria (2) + câmera do app (2, com ambiente marcado)
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
@@ -83,7 +84,7 @@ if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsW
 await page.getByRole("link", { name: "Montar orçamento" }).click();
 await page.getByText("Suas anotações da visita").click();
 await page.getByText("Sala 4x5, mofo perto da janela").waitFor();
-await page.getByText("5 × 4 m, altura 2,7 m").waitFor();                // o ambiente anotado na visita já veio
+await page.getByText(/Paredes \d/).first().waitFor();                   // as paredes anotadas na visita já vieram, sem digitar de novo
 await shot("03-orcamento-uma-tela");
 await page.getByText("Maria Souza").first().waitFor();                  // cliente da visita já veio
 check(await page.getByTestId("total").innerText().then((t) => /R\$\s?[1-9]/.test(t)), "preço aparece na hora, sem passar por etapas");

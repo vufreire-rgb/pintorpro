@@ -16,9 +16,12 @@ export const DEFAULT_SERVICES: ServiceConfig[] = [
   svc({ id: "massa_acrilica", clientText: "Aplicar massa acrílica nas paredes", name: "Massa acrílica", unit: "m2", basis: "walls_area", salePriceCents: 1000, productivityPerHour: 6, usesCoats: true, defaultCoats: 2, materialIds: ["massa_acrilica"] }),
   svc({ id: "lixamento", clientText: "Lixar as paredes", name: "Lixamento", unit: "m2", basis: "walls_area", salePriceCents: 400, productivityPerHour: 15, usesCoats: false, defaultCoats: 1, materialIds: ["lixa"] }),
   svc({ id: "selador", clientText: "Aplicar selador nas paredes", name: "Selador / fundo preparador", unit: "m2", basis: "walls_area", salePriceCents: 500, productivityPerHour: 20, usesCoats: true, defaultCoats: 1, materialIds: ["selador"] }),
-  svc({ id: "pintura_parede", clientText: "Pintar as paredes, {demaos}", name: "Pintura de paredes", unit: "m2", basis: "walls_area", salePriceCents: 1800, productivityPerHour: 12, usesCoats: true, defaultCoats: 2, materialIds: ["tinta"] }),
-  svc({ id: "pintura_teto", clientText: "Pintar o teto, {demaos}", name: "Pintura de teto", unit: "m2", basis: "ceiling_area", salePriceCents: 2000, productivityPerHour: 10, usesCoats: true, defaultCoats: 2, materialIds: ["tinta"] }),
-  svc({ id: "textura", clientText: "Aplicar textura nas paredes", name: "Textura / grafiato", unit: "m2", basis: "walls_area", salePriceCents: 2500, productivityPerHour: 5, usesCoats: false, defaultCoats: 1, materialIds: ["textura"] }),
+  svc({ id: "pintura_parede", paint: "acrilica", clientText: "Pintar as paredes, {demaos}", name: "Pintura de paredes", unit: "m2", basis: "walls_area", salePriceCents: 1800, productivityPerHour: 12, usesCoats: true, defaultCoats: 2, materialIds: ["tinta"] }),
+  svc({ id: "pintura_teto", paint: "acrilica", clientText: "Pintar o teto, {demaos}", name: "Pintura de teto", unit: "m2", basis: "ceiling_area", salePriceCents: 2000, productivityPerHour: 10, usesCoats: true, defaultCoats: 2, materialIds: ["tinta"] }),
+  svc({ id: "textura", paint: "grafiato", clientText: "Aplicar textura nas paredes", name: "Textura / grafiato", unit: "m2", basis: "paint_area", salePriceCents: 2500, productivityPerHour: 5, usesCoats: false, defaultCoats: 1, materialIds: ["textura"] }),
+  svc({ id: "esmalte_m2", paint: "esmalte", clientText: "Pintar em esmalte, {demaos}", name: "Pintura em esmalte", unit: "m2", basis: "paint_area", salePriceCents: 2500, productivityPerHour: 8, usesCoats: true, defaultCoats: 2, materialIds: ["esmalte"] }),
+  svc({ id: "pintura_piso", paint: "piso", clientText: "Pintar o piso, {demaos}", name: "Pintura de piso", unit: "m2", basis: "paint_area", salePriceCents: 2200, productivityPerHour: 10, usesCoats: true, defaultCoats: 2, materialIds: ["tinta_piso"] }),
+  svc({ id: "cimento_queimado", paint: "cimento_queimado", clientText: "Aplicar cimento queimado", name: "Cimento queimado", unit: "m2", basis: "paint_area", salePriceCents: 6000, productivityPerHour: 3, usesCoats: false, defaultCoats: 1, materialIds: ["cimento_queimado"] }),
   svc({ id: "portas", clientText: "Pintar as portas, {demaos}", name: "Pintura de portas", unit: "un", basis: "door_count", salePriceCents: 12000, productivityPerHour: 0.5, usesCoats: true, defaultCoats: 2, materialIds: ["esmalte"] }),
   svc({ id: "janelas", clientText: "Pintar as janelas, {demaos}", name: "Pintura de janelas", unit: "un", basis: "window_count", salePriceCents: 10000, productivityPerHour: 0.5, usesCoats: true, defaultCoats: 2, materialIds: ["esmalte"] }),
   svc({ id: "rodape", clientText: "Pintar os rodapés, {demaos}", name: "Rodapés", unit: "ml", basis: "baseboard_length", salePriceCents: 800, productivityPerHour: 15, usesCoats: true, defaultCoats: 2, materialIds: ["esmalte"] }),
@@ -32,6 +35,8 @@ export const DEFAULT_MATERIALS: MaterialConfig[] = [
   mat({ id: "massa_acrilica", name: "Massa acrílica", unit: "kg", priceCents: 800, yieldPerUnit: 2.5, wastePct: 10 }),
   mat({ id: "selador", name: "Selador", unit: "L", priceCents: 1200, yieldPerUnit: 12, wastePct: 10 }),
   mat({ id: "textura", name: "Textura", unit: "kg", priceCents: 500, yieldPerUnit: 1.5, wastePct: 10 }),
+  mat({ id: "tinta_piso", name: "Tinta para piso", unit: "L", priceCents: 2500, yieldPerUnit: 8, wastePct: 10 }),
+  mat({ id: "cimento_queimado", name: "Cimento queimado", unit: "kg", priceCents: 700, yieldPerUnit: 1.2, wastePct: 10 }),
   mat({ id: "lixa", name: "Lixa", unit: "un", priceCents: 300, yieldPerUnit: 10, wastePct: 0, packSize: 1 }),
   mat({ id: "fita", name: "Fita crepe", unit: "rolo", priceCents: 1000, yieldPerUnit: 50, wastePct: 0, packSize: 1 }),
   mat({ id: "lona", name: "Lona / plástico", unit: "un", priceCents: 1500, yieldPerUnit: 1, wastePct: 0, packSize: 1 }),
@@ -79,3 +84,39 @@ export const DEFAULT_PDF_TEXTS = {
   beforeStartText: "Liberar o acesso aos ambientes.\nRetirar ou cobrir móveis e objetos frágeis.",
   warrantyText: "12 meses para o serviço executado, exceto em caso de infiltração, umidade ou mau uso.",
 } as const;
+
+/** Tipos de pintura que o pintor escolhe ao medir cada superfície. */
+export const PAINT_OPTIONS = [
+  { id: "acrilica", label: "Acrílica" },
+  { id: "esmalte", label: "Esmalte" },
+  { id: "piso", label: "Piso" },
+  { id: "grafiato", label: "Grafiato" },
+  { id: "cimento_queimado", label: "Cimento queimado" },
+] as const;
+
+/** Serviço de pintura que corresponde a cada tipo de pintura e superfície. */
+export const PAINT_SERVICE: Record<string, { wall?: string; ceiling?: string; floor?: string }> = {
+  acrilica: { wall: "pintura_parede", ceiling: "pintura_teto" },
+  esmalte: { wall: "esmalte_m2", ceiling: "esmalte_m2", floor: "esmalte_m2" },
+  piso: { floor: "pintura_piso", wall: "pintura_piso", ceiling: "pintura_piso" },
+  grafiato: { wall: "textura", ceiling: "textura", floor: "textura" },
+  cimento_queimado: { wall: "cimento_queimado", ceiling: "cimento_queimado", floor: "cimento_queimado" },
+};
+
+/** Serviços de preparo que mudam conforme o estado das paredes (trocados quando o pintor escolhe outro estado). */
+export const CONDITION_SERVICE_IDS: string[] =[...new Set(WALL_CONDITIONS.flatMap((w) => w.services.filter((id) => id !== "pintura_parede")))];
+
+/** Atualiza contas antigas: serviços e materiais novos do catálogo e o tipo de pintura dos serviços de pintura. */
+export function withCatalogUpdates<T extends { services: ServiceConfig[]; materials: MaterialConfig[]; enabledServiceIds: string[] }>(db: T): T {
+  const have = new Set(db.services.map((s) => s.id));
+  const missing = DEFAULT_SERVICES.filter((s) => !have.has(s.id));
+  const haveMat = new Set(db.materials.map((m) => m.id));
+  const missingMat = DEFAULT_MATERIALS.filter((m) => !haveMat.has(m.id));
+  const needsPaint = db.services.some((s) => !s.paint && DEFAULT_SERVICES.find((d) => d.id === s.id)?.paint);
+  if (!missing.length && !missingMat.length && !needsPaint) return db;
+  const services = db.services.map((s) => {
+    const def = DEFAULT_SERVICES.find((d) => d.id === s.id);
+    return def?.paint && !s.paint ? { ...s, paint: def.paint, basis: s.id === "textura" ? def.basis : s.basis } : s;
+  });
+  return { ...db, services: [...services, ...missing], materials: [...db.materials, ...missingMat], enabledServiceIds: [...db.enabledServiceIds, ...missing.map((s) => s.id)] };
+}

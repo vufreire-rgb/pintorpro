@@ -6,16 +6,16 @@ import { CameraCapture } from "@/components/CameraCapture";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
-import { RoomFormCard } from "@/components/RoomFormCard";
+import { RoomEditor } from "@/components/RoomEditor";
 import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
 import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
-import { EMPTY_ROOM, type RoomForm } from "@/modules/rooms";
+import { blankRoom, legacyToSurfaces, surfacesSummary, type RoomDraft } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
-import { addVisitPhotos, addVisitRoom, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, setVisitNotes, startVisit } from "@/modules/visits";
+import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit } from "@/modules/visits";
 import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum, plural } from "@/shared/format";
 
@@ -31,12 +31,13 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [locating, setLocating] = useState(false);
   const [geoMsg, setGeoMsg] = useState("");
   const [fromOsm, setFromOsm] = useState(false);
-  const [showRoomForm, setShowRoomForm] = useState(false);
+  /** Ambiente aberto para anotar: "novo" ou o id de um já anotado. */
+  const [editing, setEditing] = useState<string | null>(null);
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
-  const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
+  const [draft, setDraft] = useState<RoomDraft>({ name: "", surfaces: [], doors: 1, windows: 1 });
   const [when, setWhen] = useState("");
   if (!db) return <Loading />;
   const v = db.visits.find((x) => x.id === id);
@@ -148,24 +149,25 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
         {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
-        {rooms.map((r) => (
+        {rooms.map((r) => editing === r.id ? null : (
           <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
-            <div>
+            <button className="min-w-0 flex-1 text-left" onClick={() => { setDraft({ name: r.name, surfaces: r.surfaces?.length ? r.surfaces : legacyToSurfaces(r.lengthM, r.widthM, r.heightM), doors: r.doors, windows: r.windows }); setEditing(r.id); }} aria-label={`Editar ${r.name}`}>
               <b>{r.name}</b>
-              <div className="text-base text-support">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m · altura {fmtNum(r.heightM)} m · {plural(r.doors, "porta", "portas")} · {plural(r.windows, "janela", "janelas")}</div>
-            </div>
+              <div className="text-base text-support">{r.surfaces?.length ? `${plural(r.surfaces.filter((s) => s.kind === "wall").length, "parede", "paredes")} · ${surfacesSummary(r.surfaces, r.doors, r.windows)}` : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m · altura ${fmtNum(r.heightM)} m`} · {plural(r.doors, "porta", "portas")} · {plural(r.windows, "janela", "janelas")}</div>
+            </button>
             <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
         ))}
-        {showRoomForm ? (
-          <RoomFormCard
-            title={rooms.length ? "Adicionar outro ambiente" : "Anotar o primeiro ambiente"}
-            form={form}
-            onChange={setForm}
-            onAdd={() => { addVisitRoom(v.id, form); setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM }); setShowRoomForm(false); }}
+        {editing ? (
+          <RoomEditor
+            title={editing === "novo" ? (rooms.length ? "Outro ambiente" : "Primeiro ambiente") : "Editar ambiente"}
+            draft={draft}
+            onChange={setDraft}
+            onSave={() => { saveVisitRoom(v.id, draft, editing === "novo" ? undefined : editing); setEditing(null); }}
+            onCancel={() => setEditing(null)}
           />
         ) : (
-          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => setShowRoomForm(true)}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
+          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
         )}
       </Card>
 

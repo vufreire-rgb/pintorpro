@@ -1,0 +1,52 @@
+// Medidas por parede: Parede 1, 2, 3 numeradas sozinhas, tipo de pintura e orçamento já com as medidas.
+import { chromium, devices } from "playwright-core";
+const base = process.env.BASE ?? "http://localhost:3000";
+const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const browser = await chromium.launch({ executablePath: exe });
+const ctx = await browser.newContext({ ...devices["Pixel 7"] });
+const page = await ctx.newPage();
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+const fails = [];
+const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
+const next = () => page.getByRole("button", { name: /Continuar|Ir para o painel/ }).click();
+await page.goto(base);
+await page.waitForURL("**/onboarding");
+await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
+await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
+await page.getByPlaceholder("Ex.: Campinas - SP").fill("Campinas - SP"); await next();
+await next(); await next(); await next(); await next(); await next(); await next();
+await next();
+await page.waitForURL(base + "/visitas");
+await page.evaluate(() => {
+  const d = JSON.parse(localStorage.getItem("pintorpro:v1"));
+  d.clients = [{ id: "c1", name: "Jessica", phone: "11 99999-1111", address: "Rua A, 1" }];
+  d.visits = [{ id: "v1", clientId: "c1", siteAddress: "Rua A, 1", notes: "", photoIds: [], createdAt: new Date().toISOString() }];
+  localStorage.setItem("pintorpro:v1", JSON.stringify(d));
+});
+
+await page.goto(base + "/visitas/v1");
+await page.getByRole("button", { name: /Anotar as medidas/ }).click();
+await page.getByPlaceholder("Ex.: Sala").fill("Sala");
+await page.getByLabel("Parede 1 largura").fill("4");
+await page.getByRole("button", { name: "Parede", exact: true }).click();
+await page.getByRole("button", { name: "Parede", exact: true }).click();
+check(await page.getByTestId("surface").count() === 3, "cada toque em Parede cria Parede 2 e Parede 3");
+check(await page.getByLabel("Parede 3 altura").inputValue() === "2,7", "parede nova repete a altura");
+await page.getByLabel("Parede 2 largura").fill("5");
+await page.getByLabel("Parede 3 largura").fill("4");
+await page.getByLabel("Parede 3 tipo de pintura").selectOption("esmalte");
+await page.getByRole("button", { name: "Piso", exact: true }).click();
+await page.getByLabel("Piso largura").fill("5"); await page.getByLabel("Piso altura").fill("4");
+await page.getByRole("button", { name: "Salvar ambiente" }).click();
+await page.getByText("Medidas (1)").waitFor();
+await page.goto(base + "/orcamentos/novo?visita=v1");
+await page.getByText(/Paredes \d/).first().waitFor();
+check(await page.getByRole("button", { name: "Editar medidas" }).isVisible(), "orçamento já nasce com as medidas da visita");
+check(await page.getByText("Esmalte", { exact: false }).first().isVisible(), "pintura esmalte virou serviço do ambiente");
+check(await page.getByText("Pintura de piso", { exact: false }).first().isVisible().catch(() => false) || await page.getByText(/piso/i).first().isVisible(), "piso virou serviço do ambiente");
+check(/R\$\s?[1-9]/.test(await page.getByTestId("total").innerText()), "preço calculado sem digitar medidas de novo");
+console.log(errors.length ? "ERROS DE CONSOLE: " + errors.join("; ") : "erros de console: nenhum");
+await browser.close();
+if (fails.length) { console.log("\n" + fails.length + " falha(s)"); process.exit(1); }
+console.log("\nTudo certo.");

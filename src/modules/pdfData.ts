@@ -1,3 +1,4 @@
+import { PAINT_LABEL } from "@/engine";
 import { formatBRL } from "@/shared/money";
 import { fmtDate } from "@/shared/format";
 import { clientTextFor, DEFAULT_PDF_TEXTS, PREP_SERVICE_IDS, serviceOrder } from "./catalog";
@@ -91,9 +92,17 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
         })
         .filter((t): t is string => !!t);
       const bases = new Set(sel.map((s) => services.get(s.serviceId)?.basis));
+      const paintFacts = sel.flatMap((s) => {
+        const svc = services.get(s.serviceId);
+        const b = svc?.paint ? m.byPaint?.[svc.paint] : undefined;
+        const a = b ? b.walls + b.ceiling + b.floor : 0;
+        return svc?.basis === "paint_area" && svc.paint && a > 0 ? [`${area(a)} de ${PAINT_LABEL[svc.paint].toLowerCase()}`] : [];
+      });
       const facts = [
         bases.has("walls_area") && m.wallsNetM2 > 0 ? `${area(m.wallsNetM2)} de parede` : null,
         bases.has("ceiling_area") && m.ceilingM2 > 0 ? `${area(m.ceilingM2)} de teto` : null,
+        bases.has("floor_area") && m.floorM2 > 0 ? `${area(m.floorM2)} de piso` : null,
+        ...paintFacts,
         m.doorCount ? `${m.doorCount} ${m.doorCount === 1 ? "porta" : "portas"}` : null,
         m.windowCount ? `${m.windowCount} ${m.windowCount === 1 ? "janela" : "janelas"}` : null,
       ].filter((x): x is string => !!x);

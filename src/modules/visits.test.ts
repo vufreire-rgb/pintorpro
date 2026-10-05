@@ -11,8 +11,8 @@ vi.mock("@/repositories/fileStore", () => ({ putFile: vi.fn(async () => undefine
 
 import { newDb } from "./db";
 import { saveQuote } from "./quotes";
-import { EMPTY_ROOM, roomFromForm } from "./rooms";
-import { addVisitAudio, addVisitRoom, createClientForVisit, createQuickVisit, createScheduledVisit, rescheduleVisit, removeVisitRoom, setVisitClient, startVisit } from "./visits";
+import { addSurface, EMPTY_ROOM, roomFromForm } from "./rooms";
+import { addVisitAudio, saveVisitRoom, createClientForVisit, createQuickVisit, createScheduledVisit, rescheduleVisit, removeVisitRoom, setVisitClient, startVisit } from "./visits";
 import { buildIcs, confirmationText, countByFilter, filterVisits, fromLocalInput, mapsUrl, telUrl, toLocalInput, visitState, waUrl, whenLabel } from "./visitList";
 import type { Client, Db, Visit } from "./types";
 
@@ -165,8 +165,9 @@ describe("datas, contato e calendário", () => {
 describe("medidas na visita viram ambientes do orçamento", () => {
   it("anota, nomeia automaticamente e remove", () => {
     const id = createQuickVisit();
-    addVisitRoom(id, { ...EMPTY_ROOM, name: "Sala", lengthM: 5, widthM: 4 });
-    addVisitRoom(id, { ...EMPTY_ROOM, name: "  ", lengthM: 3, widthM: 3 });
+    const wall = addSurface([], "wall");
+    saveVisitRoom(id, { name: "Sala", surfaces: wall, doors: 1, windows: 1 });
+    saveVisitRoom(id, { name: "  ", surfaces: wall, doors: 1, windows: 1 });
     expect(read().visits[0]!.rooms!.map((r) => r.name)).toEqual(["Sala", "Ambiente 2"]);
     removeVisitRoom(id, read().visits[0]!.rooms![0]!.id);
     expect(read().visits[0]!.rooms!.map((r) => r.name)).toEqual(["Ambiente 2"]);

@@ -1,7 +1,7 @@
 import { uid, updateDb } from "./db";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
-import type { RoomForm } from "./rooms";
+import type { RoomDraft } from "./rooms";
 import type { AudioMarker, Db, GeoPoint, PhotoMark, Visit } from "./types";
 
 const blankVisit = (): Visit => ({ id: uid(), siteAddress: "", notes: "", photoIds: [], createdAt: new Date().toISOString() });
@@ -43,8 +43,15 @@ export const startVisit = (id: string) => patch(id, (v) => ({ ...v, startedAt: n
 export const rescheduleVisit = (id: string, scheduledAt: string) => patch(id, (v) => ({ ...v, scheduledAt, startedAt: undefined }));
 export const setRecordingConsent = (id: string) => patch(id, (v) => ({ ...v, recordingConsent: true }));
 
-export function addVisitRoom(id: string, form: RoomForm): void {
-  patch(id, (v) => ({ ...v, rooms: [...(v.rooms ?? []), { ...form, id: uid(), name: form.name.trim() || `Ambiente ${(v.rooms?.length ?? 0) + 1}` }] }));
+/** Cria (sem `roomId`) ou atualiza um ambiente da visita com as paredes anotadas. */
+export function saveVisitRoom(id: string, draft: RoomDraft, roomId?: string): void {
+  patch(id, (v) => {
+    const rooms = v.rooms ?? [];
+    const name = draft.name.trim() || `Ambiente ${rooms.length + 1}`;
+    const prev = rooms.find((r) => r.id === roomId);
+    const room = { lengthM: 0, widthM: 0, heightM: 2.7, condition: "pintada", ...prev, id: roomId ?? uid(), name, surfaces: draft.surfaces, doors: draft.doors, windows: draft.windows };
+    return { ...v, rooms: prev ? rooms.map((r) => (r.id === roomId ? room : r)) : [...rooms, room] };
+  });
 }
 export const removeVisitRoom = (id: string, roomId: string) => patch(id, (v) => ({ ...v, rooms: (v.rooms ?? []).filter((r) => r.id !== roomId) }));
 

@@ -4,10 +4,10 @@ import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
-import { Eye, EyeOff, Settings, X } from "lucide-react";
+import { Eye, EyeOff, Ruler, Settings, X } from "lucide-react";
 import { addClient } from "@/modules/clients";
-import { RoomFormCard } from "@/components/RoomFormCard";
-import { EMPTY_ROOM, isRoomValid, roomFromForm, type RoomForm } from "@/modules/rooms";
+import { RoomEditor } from "@/components/RoomEditor";
+import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
 import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/types";
@@ -38,9 +38,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const clientId = pickedClient ?? quote?.clientId ?? visit?.clientId ?? "";
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: visit?.siteAddress ?? "" });
   const [site, setSite] = useState(quote?.siteAddress ?? "");
-  const [rooms, setRooms] = useState<Room[]>(() => quote?.input.rooms ?? (visit?.rooms ?? []).map((r) => roomFromForm(r, db.enabledServiceIds, r.id, r.name)));
-  const [form, setForm] = useState<RoomForm>(EMPTY_ROOM);
+  const [rooms, setRooms] = useState<Room[]>(() => quote?.input.rooms ?? (visit?.rooms ?? []).map((r) => visitRoomToRoom(r, db.enabledServiceIds)));
+  const [draft, setDraft] = useState<RoomDraft>(() => { const b = blankRoom(1); return { name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }; });
   const [showForm, setShowForm] = useState(false);
+  /** Ambiente do orçamento aberto para mexer nas medidas. */
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [showCost, setShowCost] = useState(false);
   const [included, setIncluded] = useState<Record<string, boolean>>(quote?.input.materialsIncluded ?? {});
   const [yields, setYields] = useState<Record<string, number>>(quote?.input.yieldOverrides ?? {});
@@ -55,8 +57,10 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const formOpen = rooms.length === 0 || showForm;
   // O ambiente que está sendo digitado já entra no preço, sem precisar tocar em "Adicionar".
   const pending = useMemo(
-    () => (formOpen && isRoomValid(form) ? roomFromForm(form, enabled, "pendente", `Ambiente ${rooms.length + 1}`) : null),
-    [formOpen, form, enabled, rooms.length],
+    () => (formOpen && !editingId && draft.surfaces.some((s) => s.widthM > 0 && s.heightM > 0)
+      ? visitRoomToRoom({ id: "pendente", name: draft.name.trim() || `Ambiente ${rooms.length + 1}`, lengthM: 0, widthM: 0, heightM: 2.7, condition: "pintada", doors: draft.doors, windows: draft.windows, surfaces: draft.surfaces }, enabled)
+      : null),
+    [formOpen, editingId, draft, enabled, rooms.length],
   );
   const allRooms = useMemo(() => (pending ? [...rooms, pending] : rooms), [rooms, pending]);
   const input: QuoteInput = useMemo(
@@ -64,10 +68,17 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     [allRooms, included, yields, adj],
   );
   const result = useMemo(() => (allRooms.length ? previewQuote(input, db) : null), [db, input, allRooms.length]);
+  const freshDraft = (n: number): RoomDraft => { const b = blankRoom(n); return { name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }; };
   const addRoom = () => {
-    setRooms([...rooms, roomFromForm(form, enabled, crypto.randomUUID(), `Ambiente ${rooms.length + 1}`)]);
-    setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM });
+    setRooms([...rooms, { ...pending!, id: crypto.randomUUID() }]);
+    setDraft(freshDraft(rooms.length + 2));
   };
+  const openEdit = (r: Room) => {
+    const d = draftOf(r);
+    setDraft(d.surfaces.length ? d : { ...d, surfaces: legacyToSurfaces(r.lengthM, r.widthM, r.heightM) });
+    setEditingId(r.id);
+  };
+  const saveEdit = () => { setRooms(rooms.map((r) => (r.id === editingId ? applyDraft(r.surfaces?.length ? r : { ...r, lengthM: 0, widthM: 0 }, draft, enabled) : r))); setEditingId(null); setDraft(freshDraft(rooms.length + 1)); };
 
   const toggleService = (roomId: string, serviceId: string) =>
     setRooms(rooms.map((r) => r.id !== roomId ? r : { ...r, services: r.services.some((s) => s.serviceId === serviceId) ? r.services.filter((s) => s.serviceId !== serviceId) : [...r.services, { serviceId }] }));
@@ -137,10 +148,13 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <b className="text-lg">{r.name}</b>
-                  <div className="text-base text-support">{fmtNum(r.lengthM)} × {fmtNum(r.widthM)} m, altura {fmtNum(r.heightM)} m{m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}</div>
+                  <div className="text-base text-support">{r.surfaces?.length ? surfacesSummary(r.surfaces, openingCount(r, "door"), openingCount(r, "window")) : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m, altura ${fmtNum(r.heightM)} m${m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}`}</div>
                 </div>
                 <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}><X size={20} strokeWidth={2.4} aria-hidden /></button>
               </div>
+              {editingId === r.id ? (
+                <RoomEditor title="Medidas do ambiente" draft={draft} onChange={setDraft} onSave={saveEdit} onCancel={() => setEditingId(null)} saveLabel="Salvar medidas" />
+              ) : <Button variant="ghost" icon={Ruler} onClick={() => openEdit(r)}>Editar medidas</Button>}
               <div className="flex flex-wrap gap-2">
                 {db.services.filter((sv) => enabled.includes(sv.id)).map((sv) => (
                   <Chip key={sv.id} active={r.services.some((x) => x.serviceId === sv.id)} onClick={() => toggleService(r.id, sv.id)}>{sv.name}</Chip>
@@ -172,8 +186,8 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         })}
         {formOpen ? (
           <>
-            <RoomFormCard title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={() => { addRoom(); setShowForm(false); }} />
-            {pending ? <p className="-mt-2 text-base text-support">Este ambiente já está no preço. Toque em <b>Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
+            {editingId ? null : <RoomEditor title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} draft={draft} onChange={setDraft} onSave={() => { addRoom(); setShowForm(false); }} saveLabel="Adicionar ambiente" />}
+            {pending && !editingId ? <p className="-mt-2 text-base text-support">Este ambiente já está no preço. Toque em <b>Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
           </>
         ) : (
           <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>

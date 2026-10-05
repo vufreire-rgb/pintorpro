@@ -1,7 +1,7 @@
 "use client";
 import { useSyncExternalStore } from "react";
 import { readRaw, subscribe, writeRaw } from "@/repositories/localStore";
-import { DEFAULT_MATERIALS, DEFAULT_SERVICES } from "./catalog";
+import { DEFAULT_MATERIALS, DEFAULT_SERVICES, withCatalogUpdates } from "./catalog";
 import type { Db } from "./types";
 
 export const newDb = (): Db => ({
@@ -25,7 +25,7 @@ function getSnapshot(): Db {
   let db = newDb();
   if (raw) {
     try {
-      db = { ...db, ...(JSON.parse(raw) as Partial<Db>) };
+      db = withCatalogUpdates({ ...db, ...(JSON.parse(raw) as Partial<Db>) });
     } catch {
       /* dados corrompidos: começa vazio */
     }

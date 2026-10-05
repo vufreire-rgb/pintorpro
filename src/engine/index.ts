@@ -1,3 +1,3 @@
 export * from "./types";
-export { calculateQuote, ENGINE_VERSION } from "./calculate";
-export { measureRoom, quantityForBasis } from "./measure";
+export { calculateQuote, ENGINE_VERSION, PAINT_LABEL } from "./calculate";
+export { measureRoom, PAINT_TYPES, quantityForBasis } from "./measure";
