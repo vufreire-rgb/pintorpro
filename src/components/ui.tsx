@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { fmtNum, parseNum } from "@/shared/format";
 
@@ -28,13 +29,23 @@ const NAV = [
 ] as const;
 
 export function BottomNav() {
+  const path = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto flex max-w-md border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
-      {NAV.map(([href, label]) => (
-        <Link key={href} href={href} className="flex-1 py-4 text-center text-sm font-medium text-slate-700 active:bg-slate-100">
-          {label}
-        </Link>
-      ))}
+      {NAV.map(([href, label]) => {
+        const here = path === href || path.startsWith(href + "/");
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-current={here ? "page" : undefined}
+            className={`relative flex-1 py-4 text-center text-sm active:bg-slate-100 ${here ? "font-bold text-brand" : "font-medium text-slate-600"}`}
+          >
+            {here ? <span className="absolute inset-x-6 top-0 h-1 rounded-b-full bg-brand" /> : null}
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -44,13 +55,13 @@ const VARIANT = {
   primary: "bg-brand text-white active:bg-brand-dark",
   success: "bg-accent-dark text-white active:bg-accent-dark/90",
   danger: "bg-red-600 text-white active:bg-red-700",
-  ghost: "bg-slate-100 text-slate-900 active:bg-slate-200",
+  ghost: "bg-slate-100 text-slate-900 active:bg-slate-200 disabled:text-slate-700",
 };
 export function Button({ variant = "primary", className = "", ...p }: BtnProps) {
   return (
     <button
       {...p}
-      className={`min-h-14 w-full rounded-2xl px-5 text-lg font-semibold disabled:opacity-40 ${VARIANT[variant]} ${className}`}
+      className={`min-h-14 w-full rounded-2xl px-5 text-lg font-semibold disabled:opacity-50 ${VARIANT[variant]} ${className}`}
     />
   );
 }
@@ -60,6 +71,22 @@ export function LinkButton({ href, children, variant = "primary", className = ""
     <Link href={href} className={`grid min-h-14 w-full place-items-center rounded-2xl px-5 text-lg font-semibold ${VARIANT[variant]} ${className}`}>
       {children}
     </Link>
+  );
+}
+
+/** Bloco que abre e fecha (para telas longas, como Ajustes). */
+export function Section({ title, hint, open = false, children }: { title: string; hint?: string; open?: boolean; children: React.ReactNode }) {
+  return (
+    <details open={open} className="group rounded-2xl border border-slate-200 bg-white">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2">
+        <span>
+          <span className="block text-lg font-bold">{title}</span>
+          {hint ? <span className="block text-sm text-slate-500">{hint}</span> : null}
+        </span>
+        <span aria-hidden className="text-xl text-slate-500 transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <div className="flex flex-col gap-4 p-4 pt-0">{children}</div>
+    </details>
   );
 }
 

@@ -29,6 +29,7 @@ await page.getByRole("button", { name: "GRAVAR VISITA" }).click();              
 await page.getByText("Fotos (0)").waitFor();
 await page.getByText("Endereço da obra").locator("..").locator("input").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)
+await page.getByRole("button", { name: /Anotar as medidas/ }).click();
 await page.getByPlaceholder("Ex.: Sala").fill("Sala");
 await page.getByText("Comprim. (m)").locator("..").locator("input").fill("5");
 await page.getByText("Largura (m)").locator("..").locator("input").fill("4");

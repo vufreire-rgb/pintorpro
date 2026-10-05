@@ -85,6 +85,7 @@ check(await page.getByText("Marta Souza").first().isVisible(), "visita salva apa
 
 // cor do app segue a cor escolhida + logo
 await page.goto(base + "/configuracoes");
+await page.getByText("Seu orçamento em PDF").click();
 await page.getByRole("button", { name: "Vermelho" }).or(page.locator("button[aria-pressed]").nth(2)).first().click();
 const brand = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--color-brand").trim());
 check(brand.toLowerCase() === "#b3261e", "cor do app muda para a cor escolhida (" + brand + ")");

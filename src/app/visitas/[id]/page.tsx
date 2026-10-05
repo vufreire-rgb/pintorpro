@@ -30,6 +30,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [locating, setLocating] = useState(false);
   const [geoMsg, setGeoMsg] = useState("");
   const [fromOsm, setFromOsm] = useState(false);
+  const [showRoomForm, setShowRoomForm] = useState(false);
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -155,22 +156,29 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <button className="h-10 w-10 shrink-0 rounded-full bg-slate-200" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}>✕</button>
           </div>
         ))}
-        <RoomFormCard
-          title={rooms.length ? "Adicionar outro ambiente" : "Anotar o primeiro ambiente"}
-          form={form}
-          onChange={setForm}
-          onAdd={() => { addVisitRoom(v.id, form); setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM }); }}
-        />
+        {showRoomForm ? (
+          <RoomFormCard
+            title={rooms.length ? "Adicionar outro ambiente" : "Anotar o primeiro ambiente"}
+            form={form}
+            onChange={setForm}
+            onAdd={() => { addVisitRoom(v.id, form); setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM }); setShowRoomForm(false); }}
+          />
+        ) : (
+          <Button variant="ghost" onClick={() => setShowRoomForm(true)}>{rooms.length ? "+ Anotar outro ambiente" : "📐 Anotar as medidas de um ambiente"}</Button>
+        )}
       </Card>
 
       <Field label="Observações" hint="O que o cliente pediu, problemas que viu…">
         <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </Field>
 
-      <Button onClick={() => (client ? router.push("/visitas") : setSaving(true))}>✅ Salvar visita</Button>
       <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
       <Button variant="ghost" className="text-red-700" onClick={() => setAskDelete(true)}>🗑 Apagar visita</Button>
+      <div className="h-20" aria-hidden />
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Button onClick={() => (client ? router.push("/visitas") : setSaving(true))}>✅ Salvar visita</Button>
+      </div>
       <ConfirmDialog
         open={askDelete}
         title="Apagar esta visita?"

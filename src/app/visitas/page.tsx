@@ -75,7 +75,9 @@ export default function Visitas() {
       {list.length === 0 ? <p className="text-slate-500">{db.visits.length === 0 ? "Nenhuma visita ainda. Na obra, toque em GRAVAR VISITA: já começa a guardar fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
-        const bits = [`${v.photoIds.length} foto(s)`, `${(v.audios ?? []).length} áudio(s)`, (v.rooms ?? []).length ? `${v.rooms!.length} ambiente(s)` : null].filter(Boolean).join(" · ");
+        const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
+        const scheduled = visitState(v) !== "done";
+        const bits = [!scheduled ? fmtDate(v.startedAt ?? v.createdAt) : null, n(v.photoIds.length, "foto", "fotos"), n((v.audios ?? []).length, "áudio", "áudios"), n((v.rooms ?? []).length, "ambiente", "ambientes")].filter(Boolean).join(" · ");
         return (
           <Link key={v.id} href={`/visitas/${v.id}`}>
             <Card className="flex gap-3">
@@ -86,7 +88,7 @@ export default function Visitas() {
                   <span className="shrink-0 text-sm"><Badge v={v} /></span>
                 </div>
                 <div className="truncate text-sm text-slate-600">{v.siteAddress || "Sem endereço"}</div>
-                <div className="text-sm text-slate-600">{fmtDate(v.startedAt ?? v.createdAt)} · {bits}</div>
+                {bits ? <div className="text-sm text-slate-600">{bits}</div> : null}
                 {v.notes ? <div className="line-clamp-1 text-sm text-slate-700">{v.notes}</div> : null}
               </div>
             </Card>

@@ -1,0 +1,69 @@
+// Navegação com aba atual, "Salvar visita" fixo, medidas recolhidas, Ajustes em blocos e listas sem ruído.
+import { chromium, devices } from "playwright-core";
+const base = process.env.BASE ?? "http://localhost:3000";
+const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const browser = await chromium.launch({ executablePath: exe });
+const page = await (await browser.newContext({ ...devices["Pixel 7"] })).newPage();
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+const fails = [];
+const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
+const next = () => page.getByRole("button", { name: /Continuar|Ir para o painel/ }).click();
+await page.goto(base);
+await page.waitForURL("**/onboarding");
+await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
+await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
+await page.getByPlaceholder("Ex.: Campinas - SP").fill("Campinas - SP"); await next();
+await next(); await next(); await next(); await next(); await next(); await next();
+await next();
+await page.waitForURL(base + "/visitas");
+const now = Date.now();
+await page.evaluate((now) => {
+  const d = JSON.parse(localStorage.getItem("pintorpro:v1"));
+  d.clients = [{ id: "c1", name: "Jessica Lima", phone: "11 99999-1111", address: "" }];
+  d.visits = [{ id: "v1", clientId: "c1", siteAddress: "Rua A, 1", notes: "", photoIds: [], createdAt: new Date(now - 86400000).toISOString(), startedAt: new Date(now - 86400000).toISOString() }];
+  localStorage.setItem("pintorpro:v1", JSON.stringify(d));
+}, now);
+
+// menu: aba atual destacada
+await page.goto(base + "/visitas");
+const cur = async () => page.locator('nav a[aria-current="page"]').allInnerTexts();
+check((await cur()).join() === "Visitas", "menu destaca 'Visitas' na tela de visitas");
+await page.getByRole("link", { name: "Obras" }).click();
+await page.waitForURL("**/obras");
+check((await cur()).join() === "Obras", "menu destaca 'Obras' ao trocar de aba");
+await page.goto(base + "/visitas/v1");
+check((await page.locator('nav a[aria-current="page"]').count()) === 0, "dentro de uma visita não há menu (tela de trabalho)");
+
+// lista sem ruído: abre a aba "Sem orçamento" e confere o card
+await page.goto(base + "/visitas");
+await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+const card = await page.locator("a[href='/visitas/v1']").innerText();
+check(!/0 foto|0 áudio|\(s\)/.test(card), "card sem '0 foto(s)' nem '(s)': " + JSON.stringify(card.replace(/\n/g, " | ")));
+
+// visita: salvar fixo + medidas recolhidas
+await page.goto(base + "/visitas/v1");
+await page.getByText("Fotos (0)").waitFor();
+check(!(await page.getByPlaceholder("Ex.: Sala").isVisible()), "formulário de medidas começa recolhido");
+const save = page.getByRole("button", { name: "✅ Salvar visita" });
+const box = await save.boundingBox();
+const vh = page.viewportSize().height;
+check(box && box.y + box.height > vh - 120, "'Salvar visita' fica fixo na parte de baixo da tela mesmo sem rolar");
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.getByRole("button", { name: /Anotar as medidas/ }).click();
+check(await page.getByPlaceholder("Ex.: Sala").isVisible(), "tocar no botão abre o formulário de medidas");
+
+// ajustes em blocos
+await page.goto(base + "/configuracoes");
+await page.getByText("Seu negócio").first().waitFor();
+const h = await page.evaluate(() => document.documentElement.scrollHeight);
+check(h < 2200, "Ajustes ficou curto (" + h + " px de altura, antes eram ~7.000 px no celular)");
+check(await page.getByPlaceholder("(11) 99999-9999").or(page.locator('input[value="Silva Pinturas"]')).first().isVisible(), "'Seu negócio' começa aberto");
+check(!(await page.getByText("Valor de exemplo — confira").first().isVisible().catch(() => false)), "serviços começam recolhidos");
+await page.getByText("Serviços e preços").click();
+check(await page.getByText("Valor de exemplo — confira").first().isVisible(), "tocar em 'Serviços e preços' abre o bloco");
+
+console.log("erros de console:", errors.length ? errors : "nenhum");
+await browser.close();
+if (fails.length || errors.length) { console.log("\nFALHARAM:", fails); process.exit(1); }
+console.log("\nTudo certo.");
