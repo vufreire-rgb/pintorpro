@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
+import { FechouNotice } from "@/components/FechouNotice";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
 import { deleteQuote, duplicateQuote, isExpired, setQuoteStatus } from "@/modules/quotes";
@@ -16,6 +17,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [askDelete, setAskDelete] = useState(false);
+  const [fechou, setFechou] = useState(false);
   const router = useRouter();
   if (!db) return <Loading />;
   const q = db.quotes.find((x) => x.id === id);
@@ -48,7 +50,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         <CardTitle>Situação</CardTitle>
         <div className="flex flex-wrap gap-2">
           <Chip active={q.status === "open"} onClick={() => setQuoteStatus(q.id, "open")}>Aberto</Chip>
-          <Chip active={q.status === "won"} onClick={() => setQuoteStatus(q.id, "won")}>Fechado</Chip>
+          <Chip active={q.status === "won"} onClick={() => { if (q.status !== "won") setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechado</Chip>
           <Chip active={q.status === "lost"} onClick={() => setQuoteStatus(q.id, "lost")}>Perdido</Chip>
         </div>
         {q.status === "won" ? <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton> : null}
@@ -81,6 +83,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         <Button variant="ghost" icon={Copy} onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar orçamento</Button>
         <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
       </Card>
+      {fechou ? <FechouNotice owner={db.company?.ownerName} number={String(q.number).padStart(4, "0")} onClose={() => setFechou(false)} /> : null}
       <ConfirmDialog
         open={askDelete}
         title={`Apagar o orçamento nº ${q.number}?`}

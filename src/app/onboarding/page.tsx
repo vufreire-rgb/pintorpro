@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, Chip, Field, Loading, NumberInput, TextInput } from "@/components/ui";
+import { Button, Chip, Field, Loading, NumberInput, Ruler, TextInput } from "@/components/ui";
 import { useDb } from "@/modules/db";
 import { DEFAULT_COMPANY, saveCompany, setEnabledServices, updateService } from "@/modules/settings";
 import type { Company } from "@/modules/types";
@@ -9,6 +9,7 @@ import { formatBRL, toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
 
 const STEPS = 10;
+const STEP_NAMES = ["Negócio", "WhatsApp", "Cidade", "Serviços", "Preços", "Diária", "Horas", "Margem", "Pagamento", "Pronto"];
 
 export default function Onboarding() {
   const db = useDb();
@@ -71,7 +72,7 @@ export default function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col p-4">
-      <div className="mb-6 h-2 rounded-full bg-slate-200"><div className="h-2 rounded-full bg-brand transition-all" style={{ width: `${((step + 1) / STEPS) * 100}%` }} /></div>
+      <div className="mb-6"><Ruler total={STEPS} current={step} label={STEP_NAMES[step]} /></div>
       <div className="flex flex-1 flex-col justify-center gap-4">{body}</div>
       <div className="flex gap-3 pt-6">
         {step > 0 ? <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button> : null}

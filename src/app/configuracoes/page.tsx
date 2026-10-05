@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
+import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
@@ -10,6 +11,7 @@ import { saveCompany, setEnabledServices, updateMaterial, updateService } from "
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
+import { APP_NAME } from "@/shared/brand";
 import { Check, QrCode, Users } from "lucide-react";
 
 function LogoPreview({ id }: { id: string }) {
@@ -29,6 +31,7 @@ export default function Configuracoes() {
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
+      <BrandHeader />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
@@ -36,7 +39,7 @@ export default function Configuracoes() {
         <Field label="Cidade"><TextInput value={c.city} onChange={(e) => set({ city: e.target.value })} /></Field>
         <Field label="Condição de pagamento padrão"><TextInput value={c.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value })} /></Field>
       </Section>
-      <Section title="Seu orçamento em PDF" hint="Logo, cor, entrada e textos do PDF">
+      <Section title="Seu orçamento em PDF" hint="Logo, sua cor, entrada e textos do PDF">
         <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
         <div className="flex flex-col gap-3">
           <p className="font-medium">Seu logo</p>
@@ -57,7 +60,7 @@ export default function Configuracoes() {
           {logoMsg ? <p className="text-base text-err">{logoMsg}</p> : <p className="text-base text-support">Aparece no topo do PDF. Sem logo, usamos as iniciais do seu negócio.</p>}
         </div>
         <div>
-          <p className="mb-2 font-medium">Cor do app e do PDF</p>
+          <p className="mb-2 font-medium">Sua cor (nome no app e no PDF)</p>
           <div className="flex flex-wrap gap-3">
             {PDF_COLORS.map((col) => (
               <button
@@ -166,6 +169,11 @@ export default function Configuracoes() {
           <Button variant="ghost" onClick={() => logout()}>Sair</Button>
         </Card>
       ) : null}
+      <div className="flex items-center justify-center gap-2 pt-2 text-base text-support">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/simbolo-colorido.svg" alt="" className="h-5 w-5" />
+        {APP_NAME} · versão 1.0
+      </div>
     </Screen>
   );
 }

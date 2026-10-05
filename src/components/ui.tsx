@@ -93,6 +93,22 @@ export function Badge({ tone, children }: { tone: Tone; children: React.ReactNod
   return <span className={`inline-block rounded-full px-3 py-0.5 text-base font-bold ${TONE[tone]}`}>{children}</span>;
 }
 
+/** Régua de passos: uma linha fina com uma marca por passo (feitos em verde, o atual com a marca maior). */
+export function Ruler({ total, current, label }: { total: number; current: number; label?: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-base text-support">Passo <b className="text-ink">{current + 1}</b> de <b className="text-ink">{total}</b>{label ? <> · <b className="text-ink">{label}</b></> : null}</div>
+      <div className="flex h-9 items-end" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={current + 1}>
+        {Array.from({ length: total }, (_, i) => (
+          <span key={i} className={`relative h-9 flex-1 border-b-[3px] ${i < current ? "border-[#0A8545]" : "border-[#D3DBE6]"}`}>
+            <span className={`absolute bottom-0 left-0 w-[3px] rounded-sm ${i <= current ? "bg-[#0A8545]" : "bg-[#D3DBE6]"} ${i === current ? "h-[26px]" : "h-[14px]"}`} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Título de cartão com ícone de traço (sem emoji). */
 export function CardTitle({ icon: Icon, children }: { icon?: LucideIcon; children: React.ReactNode }) {
   return (

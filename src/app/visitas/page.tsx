@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
+import { BrandHeader } from "@/components/BrandHeader";
 import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { CalendarDays, ClipboardList } from "lucide-react";
 import { usePhotoUrl } from "@/modules/photos";
@@ -56,6 +57,7 @@ export default function Visitas() {
           if (dx > 60 && i > 0) setFilter(TABS[i - 1]!.id);
         }}
       >
+      <BrandHeader />
       <div className="grid grid-cols-2 gap-3">
         <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
         <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>

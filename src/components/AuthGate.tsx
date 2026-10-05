@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
-import { ThemeApplier } from "./ThemeApplier";
+import { Splash } from "./Splash";
 import { Button, Field, Loading, TextInput } from "./ui";
 
 function LoginScreen() {
@@ -60,7 +60,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     );
   return (
     <>
-      <ThemeApplier />
+      <Splash />
       {sync === "error" ? (
         <div className="bg-amber-100 p-2 text-center text-base text-[#8A4B00]">Sem conexão: salvo só neste aparelho. Vamos tentar de novo.</div>
       ) : null}

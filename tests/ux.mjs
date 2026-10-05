@@ -38,6 +38,10 @@ check((await page.locator('nav a[aria-current="page"]').count()) === 0, "dentro 
 // lista sem ruído: abre a aba "Sem orçamento" e confere o card
 await page.goto(base + "/visitas");
 await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+// topo com o pintor e abertura
+check((await page.getByTestId("brand-name").innerText()) === "Silva Pinturas", "topo de Visitas mostra o nome do pintor");
+check(/^(Bom dia|Boa tarde|Boa noite)/.test(await page.locator("[data-testid=brand-name] + div").innerText()), "saudação por hora do dia");
+
 const card = await page.locator("a[href='/visitas/v1']").innerText();
 check(!/0 foto|0 áudio|\(s\)/.test(card), "card sem '0 foto(s)' nem '(s)': " + JSON.stringify(card.replace(/\n/g, " | ")));
 
