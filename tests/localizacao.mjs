@@ -31,6 +31,7 @@ await page.getByText("Endereço preenchido").waitFor();
 let v = await visita(page);
 check(v.siteAddress === "Rua das Flores, 120 - Centro, Campinas - SP", "endereço escrito preenchido (" + v.siteAddress + ")");
 check(Math.abs(v.location.lat + 22.9056) < 0.001 && v.location.accuracy === 12, "coordenadas e precisão guardadas");
+check(await page.getByText(/colaboradores do/).isVisible(), "crédito do OpenStreetMap aparece (exigência do serviço grátis)");
 check(await page.getByText(/Ponto no mapa salvo \(precisão de cerca de 12 m\)/).isVisible(), "aviso de ponto salvo");
 const maps = await page.locator("a", { hasText: "Mapa" }).first().getAttribute("href");
 check(maps.includes("query=-22.9056,-47.0608"), "botão Mapa abre nas coordenadas exatas");

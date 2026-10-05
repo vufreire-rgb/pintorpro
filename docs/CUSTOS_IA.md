@@ -68,3 +68,10 @@ Supabase Pro ≈ R$ 130 + Vercel Pro ≈ R$ 104 = **≈ R$ 235** (+ domínio).
 - Qualidade real da transcrição em obra (barulho, duas vozes) → medir.
 - Preço final do plano: franquia incluída vs. uso livre.
 - LGPD: aviso/consentimento, retenção e provedor que não treine com os dados → revisão jurídica.
+
+## Custo do serviço de localização (endereço a partir do GPS)
+Uso: 1 consulta por vez que o pintor toca em "Usar minha localização" (cerca de 1 por visita). Hoje: OpenStreetMap/Nominatim, R$ 0, com crédito "© colaboradores do OpenStreetMap" exibido na tela.
+- Nominatim público: grátis, máx. 1 pedido/segundo, uso "não pesado"; a política diz que não serve para alto volume comercial. Alternativa: revendedores do Nominatim (LocationIQ, MapTiler, Geocode Earth) ou instância própria.
+- Google Geocoding: 10 mil consultas grátis/mês; depois ~US$ 5 por mil (cai com volume).
+- Mapbox: 100 mil grátis/mês; depois ~US$ 0,75 por mil. ATENÇÃO: guardar o endereço devolvido exige o modo "permanente" (sem franquia grátis) — conferir os termos antes de usar. Google também restringe guardar resultados.
+- Conferir preços e termos atuais antes de contratar (valores de pesquisa, 2026).

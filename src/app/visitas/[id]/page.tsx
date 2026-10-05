@@ -29,6 +29,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [camera, setCamera] = useState(false);
   const [locating, setLocating] = useState(false);
   const [geoMsg, setGeoMsg] = useState("");
+  const [fromOsm, setFromOsm] = useState(false);
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -52,10 +53,12 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const fillFromLocation = async () => {
     setLocating(true);
     setGeoMsg("");
+    setFromOsm(false);
     try {
       const point = await getPosition();
       const found = await reverseGeocode(point);
       setVisitLocation(v.id, point, found?.text);
+      setFromOsm(!!found);
       setGeoMsg(!found ? "Salvei o ponto no mapa, mas não consegui descobrir o nome da rua. Digite o endereço acima." : found.hasNumber ? "Endereço preenchido. Confira se está certo." : "Preenchi a rua. Falta o número: complete acima.");
     } catch (e) {
       setGeoMsg(e instanceof GeoError ? GEO_MESSAGE[e.reason] : GEO_MESSAGE.unavailable);
@@ -107,6 +110,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <Button variant="ghost" className="!min-h-12 !text-base" disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "📍 Atualizar pela minha localização" : "📍 Usar minha localização"}</Button>
         {v.location ? <p className="text-sm text-accent-dark">✓ Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
         {geoMsg ? <p className="text-sm text-slate-700">{geoMsg}</p> : null}
+        {fromOsm ? <p className="text-xs text-slate-500">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
       </Card>
 
       <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>
