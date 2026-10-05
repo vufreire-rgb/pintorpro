@@ -6,7 +6,7 @@ import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
 import { addClient } from "@/modules/clients";
 import { RoomFormCard } from "@/components/RoomFormCard";
-import { EMPTY_ROOM, roomFromForm, type RoomForm } from "@/modules/rooms";
+import { EMPTY_ROOM, isRoomValid, roomFromForm, type RoomForm } from "@/modules/rooms";
 import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/types";
@@ -50,13 +50,19 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const [paymentLink, setPaymentLink] = useState(quote?.paymentLink ?? "");
   const [depositPct, setDepositPct] = useState(quote?.depositPct ?? db.company?.depositPct ?? 50);
 
-  const input: QuoteInput = useMemo(
-    () => ({ rooms, extras: [], materialsIncluded: included, yieldOverrides: yields, adjustment: adj }),
-    [rooms, included, yields, adj],
-  );
-  const result = useMemo(() => (rooms.length ? previewQuote(input, db) : null), [db, input, rooms.length]);
   const enabled = db.enabledServiceIds;
-
+  const formOpen = rooms.length === 0 || showForm;
+  // O ambiente que está sendo digitado já entra no preço, sem precisar tocar em "Adicionar".
+  const pending = useMemo(
+    () => (formOpen && isRoomValid(form) ? roomFromForm(form, enabled, "pendente", `Ambiente ${rooms.length + 1}`) : null),
+    [formOpen, form, enabled, rooms.length],
+  );
+  const allRooms = useMemo(() => (pending ? [...rooms, pending] : rooms), [rooms, pending]);
+  const input: QuoteInput = useMemo(
+    () => ({ rooms: allRooms, extras: [], materialsIncluded: included, yieldOverrides: yields, adjustment: adj }),
+    [allRooms, included, yields, adj],
+  );
+  const result = useMemo(() => (allRooms.length ? previewQuote(input, db) : null), [db, input, allRooms.length]);
   const addRoom = () => {
     setRooms([...rooms, roomFromForm(form, enabled, crypto.randomUUID(), `Ambiente ${rooms.length + 1}`)]);
     setForm({ ...EMPTY_ROOM, condition: form.condition, heightM: form.heightM });
@@ -71,18 +77,19 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const siteValue = site || visit?.siteAddress || chosenClient?.address || newClient.address || "";
   const hasClient = !!clientId || !!newClient.name.trim();
   const hasServices = (result?.serviceLines.length ?? 0) > 0;
-  const canSave = hasClient && rooms.length > 0 && hasServices;
-  const missing = [!hasClient && "o cliente", rooms.length === 0 && "um ambiente", rooms.length > 0 && !hasServices && "um serviço"].filter(Boolean).join(" e ");
+  const canSave = hasClient && allRooms.length > 0 && hasServices;
+  const missing = [!hasClient && "o cliente", allRooms.length === 0 && "um ambiente (preencha as medidas)", allRooms.length > 0 && !hasServices && "um serviço"].filter(Boolean).join(" e ");
 
   const save = () => {
     const paymentTerms = payment ?? db.company!.paymentTerms;
+    const finalInput: QuoteInput = pending ? { ...input, rooms: [...rooms, { ...pending, id: crypto.randomUUID() }] } : input;
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ ...newClient, address: newClient.address || siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -162,8 +169,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
             </Card>
           );
         })}
-        {rooms.length === 0 || showForm ? (
-          <RoomFormCard title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={() => { addRoom(); setShowForm(false); }} />
+        {formOpen ? (
+          <>
+            <RoomFormCard title={rooms.length ? "Novo ambiente" : "Primeiro ambiente"} form={form} onChange={setForm} onAdd={() => { addRoom(); setShowForm(false); }} />
+            {pending ? <p className="-mt-2 text-sm text-slate-600">✔ Este ambiente já está no preço. Toque em <b>+ Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
+          </>
         ) : (
           <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
         )}
