@@ -321,3 +321,9 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 ## Medidas por parede e custos da obra (implementado)
 - **Medidas:** cada ambiente tem superfícies (Parede 1, 2, 3…, teto, piso) com largura × altura e tipo de pintura (acrílica, esmalte, piso, grafiato, cimento queimado). Parede nova repete altura e tipo da anterior. Sem categorização de estado da parede na visita. O orçamento puxa as medidas da visita (`visitRoomToRoom`) e escolhe os serviços pelo tipo de pintura (`PAINT_SERVICE`). Visitas antigas (comprimento × largura) continuam funcionando e são convertidas ao editar. Serviços novos (esmalte, piso, cimento queimado) têm **valores de exemplo** a confirmar com o pintor.
 - **Custos da obra:** `Work.expenses` (material, ajudante, transporte, outros) e `Work.daysWorked`. `workProfit` compara previsto × real: "sobrou no bolso" (valor combinado − gastos) e "lucro final" (menos a diária = mão de obra prevista ÷ dias previstos × dias trabalhados). Base é o valor combinado; mostra quanto ainda falta receber. Painel de Obras mostra "Lucro real do mês" das obras com gastos.
+
+## Primeiro uso mais leve (implementado)
+- Onboarding caiu de 10 para **2 telas** (nome do negócio e WhatsApp). Cidade, diária, horas, margem, forma de receber e preços ficam com os valores padrão e podem ser ajustados em Ajustes.
+- Ao terminar, o pintor vai direto ao **primeiro orçamento** (`/orcamentos/novo?primeiro=1`), com aviso de boas-vindas.
+- **Confirme seus preços** (`PriceCheck`): no orçamento, os serviços usados que ainda têm valor de exemplo aparecem com a sugestão; o pintor confirma um por um ou todos de uma vez (isso tira a marca de "exemplo").
+- Ideias para depois: cartão "faltam N passos" no painel (logo, Pix, preços) e perguntas em linguagem de pintor (faixa de preço em vez de margem %).

@@ -6,6 +6,7 @@ import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
 import { Eye, EyeOff, Ruler, Settings, X } from "lucide-react";
 import { addClient } from "@/modules/clients";
+import { PriceCheck } from "@/components/PriceCheck";
 import { RoomEditor } from "@/components/RoomEditor";
 import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
 import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
@@ -28,11 +29,11 @@ function NovoOrcamento() {
   if (!db) return <Loading />;
   const quote = db.quotes.find((q) => q.id === params.get("editar"));
   const visit = db.visits.find((v) => v.id === (params.get("visita") ?? quote?.visitId));
-  return <Wizard key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
+  return <Wizard key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} first={params.get("primeiro") === "1"} />;
 }
 
 /** Monta ou edita um orçamento. Com `quote`, abre os dados dele para alterar. */
-function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) {
+function Wizard({ db, quote, visit, first }: { db: Db; quote?: Quote; visit?: Visit; first?: boolean }) {
   const router = useRouter();
   const [pickedClient, setClientId] = useState<string | null>(null);
   const clientId = pickedClient ?? quote?.clientId ?? visit?.clientId ?? "";
@@ -109,6 +110,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   return (
     <Screen title={quote ? `Editar orçamento nº ${quote.number}` : "Orçamento"} back={quote ? `/orcamentos/${quote.id}` : visit ? `/visitas/${visit.id}` : "/orcamentos"}>
       <div className="flex flex-col gap-4 pb-36">
+        {first && !quote ? (
+          <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base">
+            <b className="text-lg">Vamos fazer seu primeiro orçamento!</b>
+            <p className="mt-1">Digite as medidas de uma parede ou de uma sala e veja o preço na hora. Pode usar um cliente de teste.</p>
+          </div>
+        ) : null}
         {quote ? (
           <div className="rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base">
             Os preços serão recalculados com os valores atuais dos Ajustes, e a validade de 7 dias recomeça.
@@ -192,6 +199,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         ) : (
           <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
         )}
+        <PriceCheck services={db.services.filter((sv) => sv.isDemo && allRooms.some((r) => r.services.some((x) => x.serviceId === sv.id)))} />
 
         <details className="rounded-2xl border border-slate-200 p-3">
           <summary className="flex cursor-pointer items-center gap-2 font-display text-lg font-bold"><Settings size={24} strokeWidth={2.2} aria-hidden className="text-brand" />Ajustes do orçamento (opcional)</summary>

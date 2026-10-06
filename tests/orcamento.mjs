@@ -9,15 +9,13 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
-const next = () => page.getByRole("button", { name: /Continuar|Ir para o painel/ }).click();
+const next = () => page.getByRole("button", { name: /Continuar|Fazer meu primeiro orçamento/ }).click();
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
-await page.getByPlaceholder("Ex.: Campinas - SP").fill("Campinas - SP"); await next();
-await next(); await next(); await next(); await next(); await next(); await next();
-await next();
-await page.waitForURL(base + "/visitas");
+await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
+await page.goto(base + "/visitas");
 await page.evaluate(() => {
   const d = JSON.parse(localStorage.getItem("pintorpro:v1"));
   d.clients = [{ id: "c1", name: "Jessica", phone: "11 99999-1111", address: "Rua A, 1" }];

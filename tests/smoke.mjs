@@ -11,17 +11,16 @@ page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 const shot = (n) => page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/${n}.png` });
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) throw new Error(msg); };
-const next = () => page.getByRole("button", { name: /Continuar|Ir para o painel/ }).click();
+const next = () => page.getByRole("button", { name: /Continuar|Fazer meu primeiro orçamento/ }).click();
 
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("João Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
-await page.getByPlaceholder("Ex.: Campinas - SP").fill("Campinas - SP"); await next();
-await next(); await next(); await next(); await next(); await next(); await next();
-await shot("01-onboarding-fim");
-await next();
-await page.waitForURL(base + "/visitas");
+await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
+await page.getByText("Vamos fazer seu primeiro orçamento!").waitFor();
+await shot("01-primeiro-orcamento");
+await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /gravar visita/i }).waitFor();
 await shot("02-painel");
 
@@ -100,7 +99,7 @@ await shot("08-detalhe");
 // ---- Duplicar, editar e apagar ----
 const quoteUrl = page.url();
 await page.getByRole("button", { name: /Duplicar orçamento/ }).click();
-await page.getByText("Orçamento nº 2").waitFor();
+await page.getByRole("heading", { name: "Orçamento nº 2" }).waitFor();
 await page.getByRole("link", { name: /Editar orçamento/ }).click();
 await page.getByText("Editar orçamento nº 2").first().waitFor();
 await shot("08a-editar");
