@@ -158,7 +158,7 @@ Falta: decidir o modelo (assinatura via web ou via loja), CNPJ/gateway, tabela d
 | Criptografia em repouso | O app **não** criptografa nada por conta própria. No servidor depende do Supabase/AWS (**confirmar** na documentação do plano). No aparelho, `localStorage` e IndexedDB ficam sem criptografia |
 | Regras de acesso por usuário (banco) | **Sim.** `user_data` com RLS ativada: select/insert/update só da própria linha (`auth.uid() = user_id`). Não há política de delete (o usuário não apaga a própria linha) |
 | Regras de acesso (fotos/áudios) | **Sim.** Bucket `visit-files` privado, com políticas de select/insert/update/delete restritas à pasta `<auth.uid()>/` |
-| Backups | **não existe** backup próprio. O plano Free do Supabase, em geral, não inclui backups diários (**confirmar** no painel). Há só uma cópia local de segurança quando há conflito de sincronização |
+| Backups | **Preparado em 2026-10-06:** backup semanal criptografado via GitHub Actions (`docs/BACKUP_E_PAUSA_SUPABASE.md`), pendente de configurar os secrets. Antes: **não existia** backup próprio. O plano Free do Supabase, em geral, não inclui backups diários (**confirmar** no painel). Há só uma cópia local de segurança quando há conflito de sincronização |
 | Senhas, chaves ou tokens no repositório | **Nenhum encontrado.** `.env*` está no `.gitignore`; `.env.example` está em branco. As variáveis `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` são públicas por desenho do Supabase. Busca em todo o código e nos 41 commits sem achar chave secreta |
 | "Confirm email" | **Desligado** (testes). Religar antes de vender |
 | Recuperar senha | **não existe** |

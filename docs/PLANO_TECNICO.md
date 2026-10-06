@@ -348,3 +348,6 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 
 ## Privacidade: sair da conta, fotos e beta (implementado)
 - 2026-10-06 — Cadastro diz "Beta gratuito" (o modelo comercial do plano continua R$ 29,90/mês quando houver cobrança). **Sair** apaga do aparelho os dados, as fotos e a fila de envio (`signOutAndWipe`); antes tenta enviar o que falta e, se sobrar algo que só existe no aparelho, avisa e pede confirmação (`prepareLogout`). `signOut` cai para "sair só neste aparelho" quando está sem internet. Foto: `compress` nunca devolve o original; se a imagem não puder ser relida, `storePhotos` a descarta e o app avisa (`PhotoReadError`). Testes: `tests/exif.mjs`, `tests/exclusao.mjs` (este último exige build contra o Supabase falso).
+
+## Supabase Free: pausa e backup (implementado)
+- 2026-10-06 — `.github/workflows/supabase-keepalive.yml` (consulta diária ao banco; o Free pausa após 7 dias sem consultas) e `supabase-backup.yml` (dump semanal, criptografado AES-256, guardado 35 dias como artefato; inclui `public` + `auth.users/identities`; **não inclui o Storage**). Precisam dos secrets `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_DB_URL` (Session pooler) e `BACKUP_PASSPHRASE`; só rodam a partir da `main`. Passo a passo, rotina mensal e restauração em `docs/BACKUP_E_PAUSA_SUPABASE.md`. Não testado contra o Supabase real.
