@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
@@ -44,10 +45,15 @@ function LoginScreen() {
   );
 }
 
+/** Páginas abertas a qualquer pessoa, sem login (exigidas pelas lojas de aplicativos). */
+const PUBLIC_PATHS = ["/privacidade", "/termos", "/excluir-conta"];
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const auth = useAuthState();
   const sync = useSyncStatus();
   useEffect(() => initAuth(), []);
+  if (PUBLIC_PATHS.includes(pathname.replace(/\/$/, ""))) return <>{children}</>;
   if (auth.status === "loading") return <Loading />;
   if (auth.status === "signedOut") return <LoginScreen />;
   if (auth.status === "error")

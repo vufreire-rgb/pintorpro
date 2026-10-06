@@ -4,3 +4,9 @@ next-env.d.ts
 *.tsbuildinfo
 .env*
 !.env.example
+
+# Chaves de assinatura do Android (nunca no repositório)
+*.jks
+*.keystore
+*.p12
+keystore.properties
