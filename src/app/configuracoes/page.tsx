@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { DeleteAccountCard } from "@/components/DeleteAccountCard";
 import { InstallBanner } from "@/components/InstallBanner";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
@@ -194,6 +195,7 @@ export default function Configuracoes() {
           <h2 className="text-lg font-bold">Conta</h2>
           <p className="text-support">{auth.email}</p>
           <Button variant="ghost" onClick={() => logout()}>Sair</Button>
+          <DeleteAccountCard />
         </Card>
       ) : null}
       <div className="flex items-center justify-center gap-2 pt-2 text-base text-support">

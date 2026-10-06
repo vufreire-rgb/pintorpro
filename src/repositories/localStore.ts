@@ -53,6 +53,11 @@ export const saveBackup = (raw: string): void => safe(() => localStorage.setItem
 
 export const readLegacy = (): string | null => safe(() => localStorage.getItem(LEGACY_KEY), null);
 export const clearLegacy = (): void => safe(() => localStorage.removeItem(LEGACY_KEY), undefined);
+/** Apaga tudo o que o app guardou neste aparelho sobre contas (dados, cópias de segurança, fila de envio). */
+export const wipeAllAccountData = (): void =>
+  safe(() => {
+    for (const k of Object.keys(localStorage)) if (k.startsWith("pintorpro:v1") || k === "pintorpro:pending-uploads") localStorage.removeItem(k);
+  }, undefined);
 export const clearCurrent = (): void => {
   safe(() => {
     localStorage.removeItem(key);

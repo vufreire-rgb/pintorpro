@@ -21,6 +21,12 @@ export const signIn = (email: string, password: string) => c().auth.signInWithPa
 export const signUp = (email: string, password: string) => c().auth.signUp({ email, password });
 export const signOut = () => c().auth.signOut();
 
+/** Pede ao servidor para apagar a conta de quem está logado (usuário, dados e arquivos). */
+export async function deleteAccountOnServer(): Promise<void> {
+  const { error } = await c().functions.invoke("delete-account", { method: "POST" });
+  if (error) throw error;
+}
+
 export async function pull(userId: string): Promise<{ data: string; updatedAt: string } | null> {
   const { data, error } = await c().from("user_data").select("data, updated_at").eq("user_id", userId).maybeSingle();
   if (error) throw error;

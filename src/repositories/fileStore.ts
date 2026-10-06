@@ -24,4 +24,6 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
 
 export const putFile = (id: string, blob: Blob) => run("readwrite", (s) => s.put(blob, id)).then(() => undefined);
 export const getFile = (id: string) => run<Blob | undefined>("readonly", (s) => s.get(id));
+/** Apaga todas as fotos e áudios guardados neste aparelho. */
+export const clearAllFiles = () => run("readwrite", (s) => s.clear()).then(() => undefined);
 export const deleteFile = (id: string) => run("readwrite", (s) => s.delete(id)).then(() => undefined);

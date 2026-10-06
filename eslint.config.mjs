@@ -9,7 +9,7 @@ const forbid = (patterns, message) => ({
 const eslintConfig = [
   ...nextVitals,
   ...nextTs,
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts"] },
+  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "supabase/functions/*/index.ts", "supabase/functions/*/COLAR_NO_PAINEL.ts"] },
   {
     // O motor de orçamento é puro: sem UI, banco, integrações ou módulos de negócio.
     files: ["src/engine/**/*.ts"],

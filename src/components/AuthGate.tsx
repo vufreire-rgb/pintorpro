@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { takeAccountDeletedNotice } from "@/modules/account";
 import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
 import { Splash } from "./Splash";
@@ -12,6 +13,7 @@ function LoginScreen() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [deleted] = useState(takeAccountDeletedNotice);
 
   const submit = async () => {
     setBusy(true);
@@ -37,6 +39,7 @@ function LoginScreen() {
         <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
           <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
         </Field>
+        {deleted ? <p className="rounded-xl bg-brand-soft p-3 text-base">Sua conta foi excluída. Todos os seus dados foram apagados.</p> : null}
         {msg ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{msg}</p> : null}
         <Button disabled={busy || !email.includes("@") || password.length < 6} onClick={submit}>{busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}</Button>
         <Button variant="ghost" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>

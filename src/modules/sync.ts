@@ -141,6 +141,22 @@ export function startSync(uid: string): Promise<void> {
   return starting;
 }
 
+/** Para a sincronização SEM enviar nada (usado depois que a conta foi excluída). */
+export function abandonSync(): void {
+  if (timer) clearTimeout(timer);
+  if (retryTimer) clearTimeout(retryTimer);
+  stopWatching?.();
+  stopWatching = null;
+  userId = null;
+  synced = false;
+  starting = null;
+  startedFor = null;
+  setUserId(null);
+  clearCurrent();
+  setNamespace(null);
+  setStatus("idle");
+}
+
 /** Envia o que estiver pendente antes de sair. */
 export async function stopSync(): Promise<void> {
   if (timer) clearTimeout(timer);
