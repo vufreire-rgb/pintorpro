@@ -5,8 +5,8 @@ Tempo: uns 20 minutos no primeiro dia, depois use nas visitas de verdade por 1 o
 Dica: abra o link no celular e, se quiser, salve na tela inicial (menu do navegador → "Adicionar à tela inicial").
 
 ## Antes de começar
-- Crie sua conta (e-mail e senha). São 30 dias grátis.
-- Responda as primeiras telas (nome do seu negócio, WhatsApp, cidade).
+- Crie sua conta (e-mail e senha). O app está em beta gratuito.
+- Responda as primeiras telas (nome do seu negócio e WhatsApp).
 - Em **Ajustes**: escolha a cor, envie seu logo e confira os preços dos serviços. Os valores que vêm prontos são só EXEMPLO. Troque pelos seus.
 
 ## Parte 1: na casa do cliente

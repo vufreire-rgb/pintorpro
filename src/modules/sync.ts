@@ -141,6 +141,15 @@ export function startSync(uid: string): Promise<void> {
   return starting;
 }
 
+/** Tenta enviar agora o que estiver pendente (usado antes de sair da conta). */
+export async function syncNow(): Promise<void> {
+  if (timer) clearTimeout(timer);
+  await flush();
+}
+
+/** Há alterações neste aparelho que ainda não chegaram à nuvem? */
+export const hasUnsentChanges = (): boolean => getMeta("dirty") === "1";
+
 /** Para a sincronização SEM enviar nada (usado depois que a conta foi excluída). */
 export function abandonSync(): void {
   if (timer) clearTimeout(timer);

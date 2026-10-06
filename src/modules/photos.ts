@@ -36,6 +36,9 @@ async function pushToCloud(id: string, blob: Blob): Promise<void> {
   }
 }
 
+/** Quantos arquivos ainda não subiram para a nuvem. */
+export const pendingUploadCount = (): number => readPending().length;
+
 /** Reenvia o que ficou pendente (chamado após o login e quando a internet volta). */
 export async function flushPendingUploads(): Promise<void> {
   for (const id of readPending()) {
@@ -45,33 +48,71 @@ export async function flushPendingUploads(): Promise<void> {
   }
 }
 
-/** Reduz a foto (lado maior 1600 px, JPEG) para não encher a memória do celular. */
-async function compress(file: File): Promise<Blob> {
+/** A foto não pôde ser lida. Nesse caso ela NÃO é guardada (o arquivo original pode ter EXIF/GPS). */
+export class PhotoReadError extends Error {}
+
+interface Decoded { source: CanvasImageSource; width: number; height: number; release: () => void }
+
+/** Abre a imagem já com a rotação certa. Se o navegador não tiver `createImageBitmap` com orientação, usa um <img>. */
+async function decode(file: File): Promise<Decoded> {
   try {
     const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
-    const scale = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bmp.width * scale);
-    canvas.height = Math.round(bmp.height * scale);
-    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.78));
-    return blob ?? file;
+    return { source: bmp, width: bmp.width, height: bmp.height, release: () => bmp.close() };
   } catch {
-    return file;
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return { source: img, width: img.naturalWidth, height: img.naturalHeight, release: () => URL.revokeObjectURL(url) };
+    } catch {
+      URL.revokeObjectURL(url);
+      throw new PhotoReadError("decode");
+    }
   }
 }
 
-export async function storePhotos(files: File[]): Promise<string[]> {
-  const ids: string[] = [];
-  for (const f of files) {
-    const id = crypto.randomUUID();
-    const blob = await compress(f);
-    await putFile(id, blob);
-    void pushToCloud(id, blob);
-    ids.push(id);
+/**
+ * Reduz a foto (lado maior 1600 px) e salva um JPEG NOVO, desenhado do zero: isso remove EXIF e GPS.
+ * Nunca devolve o arquivo original: se não der para reler a foto, avisa com PhotoReadError.
+ */
+async function compress(file: File): Promise<Blob> {
+  const img = await decode(file);
+  try {
+    if (!img.width || !img.height) throw new PhotoReadError("empty");
+    const scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d")!.drawImage(img.source, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.78));
+    if (!blob) throw new PhotoReadError("encode");
+    return blob;
+  } finally {
+    img.release();
   }
-  return ids;
 }
+
+/** Guarda as fotos que foi possível ler. `failed` = quantas não puderam ser lidas (e por isso não foram guardadas). */
+export async function storePhotos(files: File[]): Promise<{ ids: string[]; failed: number }> {
+  const ids: string[] = [];
+  let failed = 0;
+  for (const f of files) {
+    try {
+      const blob = await compress(f);
+      const id = crypto.randomUUID();
+      await putFile(id, blob);
+      void pushToCloud(id, blob);
+      ids.push(id);
+    } catch {
+      failed += 1;
+    }
+  }
+  return { ids, failed };
+}
+
+export const photosFailedMessage = (failed: number): string =>
+  `Não consegui ler ${failed === 1 ? "1 foto" : `${failed} fotos`}, então ${failed === 1 ? "ela não foi guardada" : "elas não foram guardadas"}. Tire de novo ou escolha outra.`;
 
 /** Logo do pintor: reduzido (lado maior 500 px) em PNG, para manter fundo transparente. */
 export async function storeLogo(file: File): Promise<string> {

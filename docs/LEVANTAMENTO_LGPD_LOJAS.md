@@ -8,7 +8,7 @@ Regra deste documento: só consta o que foi verificado no código, nas migraçõ
 1. **O Pintor Pro é um app web (Next.js), não um app nativo.** Não existem AndroidManifest, Info.plist, applicationId, bundle ID, keystore, projeto Android/iOS, `.aab` nem `.ipa`. O PWA (manifest, ícones, service worker) foi desligado no commit `f927971` até o nome ser confirmado.
 2. **Não existe exclusão de conta** (nem no app, nem página web). Apple e Google exigem. Apagar o usuário no Supabase apaga o JSON da conta, mas **não** apaga as fotos e áudios do Storage.
 3. **Faltam o domínio próprio e o nome definitivo.** Hoje o app roda em `pintorpro-gules.vercel.app` e o nome é provisório (Pintor Pro / Medde). Sem isso não dá para fixar applicationId nem o link do `assetlinks.json`.
-4. **Política de privacidade e termos não existem** (as rotas foram criadas vazias). Os dados ficam nos EUA (Supabase, Ohio) e há dados pessoais de terceiros (clientes do pintor: nome, telefone, endereço, fotos da casa, áudio da conversa, GPS). "Confirm email" está desligado e não existe "esqueci a senha". A tela de cadastro diz "30 dias grátis, sem cartão", mas **não existe cobrança nem controle de teste** no código.
+4. **Política de privacidade e termos não existem** (as rotas foram criadas vazias). Os dados ficam nos EUA (Supabase, Ohio) e há dados pessoais de terceiros (clientes do pintor: nome, telefone, endereço, fotos da casa, áudio da conversa, GPS). "Confirm email" está desligado e não existe "esqueci a senha". A tela de cadastro agora diz "Beta gratuito" (antes prometia "30 dias grátis"); **não existe cobrança nem controle de teste** no código.
 5. **O `.aab` não foi gerado.** O ambiente onde trabalho não tem Android SDK e bloqueia o `dl.google.com`; além disso faltam o domínio, o nome, o PWA religado e a conta no Play Console. Estimativa na seção 10.
 
 ---
@@ -17,6 +17,7 @@ Regra deste documento: só consta o que foi verificado no código, nas migraçõ
 
 - **Nome:** Medde. **Domínio:** medde.com.br. **applicationId (Android) e bundle ID (iOS): `br.com.medde.app`** (confirmado; não muda).
 - **PWA religado** (manifest, ícones, service worker `v2`, aviso de instalação em Visitas e Ajustes). `public/.well-known/assetlinks.json` criado com fingerprints vazios; `android/twa-manifest.json` e `docs/ANDROID_BUILD.md` preparados. O `.aab` ainda **não foi gerado** (seção 10; domínio no ar, keystore e conta do Play ainda pendentes).
+- **Ajustes pedidos pelo agente de burocracia (2026-10-06):** (1) cadastro mostra "Beta gratuito"; (2) ao **sair da conta** o app apaga deste aparelho os dados, as fotos e a fila de envio (avisa antes se houver algo ainda não enviado, que seria perdido); (3) **foto nunca é guardada com o original**: se não der para reler a imagem, ela é descartada e a pessoa é avisada (antes, o original com EXIF/GPS podia ser guardado); (4) "Você avisou o cliente?" antes de gravar áudio continua, com o registro da confirmação; (5) **iOS: só como PWA** (sem App Store por enquanto).
 - Onde o texto abaixo disser "Pintor Pro" ou "PWA desligado", vale esta atualização.
 
 ---
@@ -58,10 +59,10 @@ Observações:
 | **Dados de pagamento / cartão** | **não existe** | — | — | — |
 
 Respostas diretas:
-- **As fotos guardam metadados (GPS/EXIF)?** Em geral **não**. Toda foto passa por `compress()` (`src/modules/photos.ts`): o app desenha a imagem num canvas e salva um JPEG novo, o que remove o EXIF e o GPS. As fotos tiradas pela câmera do app também vêm de um quadro de vídeo, sem EXIF. **Exceção:** se a decodificação falhar, o código devolve o arquivo original (`return file`), que pode conter EXIF/GPS. É um ponto a corrigir.
+- **As fotos guardam metadados (GPS/EXIF)?** Em geral **não**. Toda foto passa por `compress()` (`src/modules/photos.ts`): o app desenha a imagem num canvas e salva um JPEG novo, o que remove o EXIF e o GPS. As fotos tiradas pela câmera do app também vêm de um quadro de vídeo, sem EXIF. *(Corrigido em 2026-10-06: se a decodificação falhar, a foto não é guardada e a pessoa é avisada; o original nunca é guardado.)*
 - **As fotos mostram clientes ou imóveis de terceiros?** **Sim.** São fotos de interiores e fachadas de imóveis de clientes e podem mostrar pessoas, documentos ou objetos. Os áudios gravam a voz do cliente. O pintor é quem decide fotografar/gravar; o app só pede a confirmação de aviso no áudio. Isso precisa constar na política (quem é controlador/operador é questão jurídica).
 - **O app toca em dados de cartão?** **Não.** Não existe gateway nem token de cartão. O Pix é um QR estático gerado no aparelho com a chave do pintor; o campo `paymentLink` é um link externo do próprio pintor, que o app apenas imprime no PDF.
-- **Ao sair da conta (Sair)**: `logout` só chama `signOut()`. O cache local da conta (`localStorage` e IndexedDB) **permanece** no aparelho.
+- **Ao sair da conta (Sair)**: *(corrigido em 2026-10-06)* o app apaga o cache local (`localStorage` e IndexedDB) deste aparelho; antes ele permanecia.
 
 ---
 

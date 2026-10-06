@@ -34,7 +34,7 @@ function LoginScreen() {
       </header>
       <section className="flex flex-1 flex-col gap-4 rounded-t-3xl bg-white p-6 pb-10">
         <h2 className="text-2xl font-bold">{mode === "in" ? "Entrar na sua conta" : "Criar sua conta"}</h2>
-        {mode === "up" ? <p className="-mt-2 text-support">30 dias grátis, sem cartão.</p> : null}
+        {mode === "up" ? <p className="-mt-2 text-support">Beta gratuito.</p> : null}
         <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
           <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />

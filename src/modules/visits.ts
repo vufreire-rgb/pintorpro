@@ -71,14 +71,14 @@ export const setVisitLocation = (id: string, location: GeoPoint, address?: strin
 export const setVisitAddress = (id: string, siteAddress: string) => patch(id, (v) => ({ ...v, siteAddress }));
 
 /** Guarda as fotos. `room`: ambiente anotado na hora (vira o rótulo da foto no PDF). Retorna os ids. */
-export async function addVisitPhotos(id: string, files: File[], room?: string): Promise<string[]> {
-  const ids = await storePhotos(files);
+export async function addVisitPhotos(id: string, files: File[], room?: string): Promise<{ ids: string[]; failed: number }> {
+  const { ids, failed } = await storePhotos(files);
   patch(id, (v) => ({
     ...v,
     photoIds: [...v.photoIds, ...ids],
     photoMeta: room ? { ...v.photoMeta, ...Object.fromEntries(ids.map((pid) => [pid, { ...v.photoMeta?.[pid], room }])) } : v.photoMeta,
   }));
-  return ids;
+  return { ids, failed };
 }
 
 export async function removeVisitPhoto(id: string, photoId: string): Promise<void> {

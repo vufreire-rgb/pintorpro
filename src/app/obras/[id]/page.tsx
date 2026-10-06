@@ -97,7 +97,9 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   const register = async () => {
     setBusy(true);
     try {
-      const proofId = proof ? (await storePhotos([proof]))[0] : undefined;
+      const stored = proof ? await storePhotos([proof]) : null;
+      const proofId = stored?.ids[0];
+      if (stored && !proofId) setMsg("Não consegui ler a foto do comprovante. O pagamento foi registrado sem ela.");
       addPayment(w.id, { date: ymd(new Date()), amountCents: toCents(amount), note, method, proofId });
       setAmount(0);
       setProof(null);

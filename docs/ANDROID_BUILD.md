@@ -31,4 +31,4 @@
 Política de privacidade com texto (`/privacidade`), termos (`/termos`), link de exclusão de conta (`/excluir-conta`) e a exclusão funcionando dentro do app, formulário de segurança dos dados, classificação de conteúdo.
 
 ## iOS
-Não coberto aqui. A Apple recusa app que seja só um site embrulhado; exige decisão própria (ver `docs/LEVANTAMENTO_LGPD_LOJAS.md`).
+Decisão do titular (2026-10-06): **sem App Store por enquanto**. Usuários de iPhone usam o Medde como PWA (Safari → Compartilhar → Adicionar à Tela de Início; o aviso de instalação mostra o passo a passo). Não há empacotamento iOS a fazer agora.

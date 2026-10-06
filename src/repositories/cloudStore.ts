@@ -19,7 +19,11 @@ export const onAuthChange = (cb: (s: Session | null) => void): (() => void) => {
 
 export const signIn = (email: string, password: string) => c().auth.signInWithPassword({ email, password });
 export const signUp = (email: string, password: string) => c().auth.signUp({ email, password });
-export const signOut = () => c().auth.signOut();
+/** Sai da conta. Sem internet o servidor não responde; nesse caso sai só neste aparelho (a sessão antiga expira sozinha). */
+export async function signOut(): Promise<void> {
+  const { error } = await c().auth.signOut();
+  if (error) await c().auth.signOut({ scope: "local" });
+}
 
 /** Pede ao servidor para apagar a conta de quem está logado (usuário, dados e arquivos). */
 export async function deleteAccountOnServer(): Promise<void> {

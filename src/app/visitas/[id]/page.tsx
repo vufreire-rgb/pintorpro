@@ -13,6 +13,7 @@ import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIc
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
+import { photosFailedMessage } from "@/modules/photos";
 import { blankRoom, legacyToSurfaces, surfacesSummary, type RoomDraft } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
@@ -57,7 +58,10 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
     setBusy(true);
-    try { await addVisitPhotos(v.id, Array.from(files)); } finally { setBusy(false); }
+    try {
+      const { failed } = await addVisitPhotos(v.id, Array.from(files));
+      setMsg(failed ? photosFailedMessage(failed) : "");
+    } finally { setBusy(false); }
     if (input.current) input.current.value = "";
   };
 
@@ -233,7 +237,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       {camera ? (
         <CameraCapture
           rooms={rooms.map((r) => r.name)}
-          onShot={async (file, room) => { await addVisitPhotos(v.id, [file], room || undefined); }}
+          onShot={async (file, room) => { const { failed } = await addVisitPhotos(v.id, [file], room || undefined); if (failed) setMsg(photosFailedMessage(failed)); }}
           onClose={() => setCamera(false)}
         />
       ) : null}

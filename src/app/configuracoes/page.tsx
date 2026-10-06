@@ -4,9 +4,10 @@ import { useRef, useState } from "react";
 import { DeleteAccountCard } from "@/components/DeleteAccountCard";
 import { InstallBanner } from "@/components/InstallBanner";
 import { AutoTour, type TourStep } from "@/components/Tour";
-import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
+import { LinkButton, Button, Card, ConfirmDialog, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
-import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
+import { cloudEnabled, useAuthState } from "@/modules/auth";
+import { prepareLogout, signOutAndWipe } from "@/modules/account";
 import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
@@ -26,6 +27,8 @@ function LogoPreview({ id }: { id: string }) {
 
 export default function Configuracoes() {
   const router = useRouter();
+  const [leaving, setLeaving] = useState(false);
+  const [askLeave, setAskLeave] = useState(false);
   const db = useAppDb();
   const logoInput = useRef<HTMLInputElement>(null);
   const [logoMsg, setLogoMsg] = useState("");
@@ -194,7 +197,16 @@ export default function Configuracoes() {
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Conta</h2>
           <p className="text-support">{auth.email}</p>
-          <Button variant="ghost" onClick={() => logout()}>Sair</Button>
+          <Button variant="ghost" disabled={leaving} onClick={async () => { setLeaving(true); if ((await prepareLogout()) === "unsent") { setLeaving(false); setAskLeave(true); } else await signOutAndWipe(); }}>{leaving ? "Saindo…" : "Sair"}</Button>
+          <p className="text-base text-support">Ao sair, apagamos os dados e as fotos deste aparelho. Eles continuam guardados na sua conta.</p>
+          <ConfirmDialog
+            open={askLeave}
+            title="Há dados que ainda não foram enviados"
+            text="Sem internet, algumas alterações ainda não chegaram à sua conta. Se sair agora, elas serão apagadas deste aparelho e perdidas. Conecte-se à internet e tente de novo para não perder nada."
+            confirmLabel="Sair e perder"
+            onCancel={() => setAskLeave(false)}
+            onConfirm={async () => { setAskLeave(false); setLeaving(true); await signOutAndWipe(); }}
+          />
           <DeleteAccountCard />
         </Card>
       ) : null}
