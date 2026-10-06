@@ -332,3 +332,10 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 - **Pix:** depois do primeiro orçamento salvo, a tela do orçamento oferece cadastrar a chave Pix (`PixSetupCard`, com validação). "Agora não" grava `Company.pixAsked`; depois dá para cadastrar em Ajustes.
 - **Guia da visita:** na tela Visitas, cartão "Treine uma visita" cria uma visita de exemplo (`Visit.isExample`, com `Client.isExample`). `Tour` destaca cada bloco (cliente, fotos, medidas, observações, montar orçamento); o passo das medidas avança sozinho quando a pessoa anota um ambiente. Estado em `Company.tours.visita` (done/skipped), sincronizado com a conta. Apagar a visita de exemplo apaga o cliente de exemplo. Em Ajustes dá para rever o guia.
 - Próximos: guia do orçamento e guia da obra reaproveitando `Tour`.
+
+## Guias de todas as áreas (implementado)
+- **Primeiro login:** depois das 2 perguntas, vai direto para **Visitas**, onde o guia abre sozinho.
+- **Padrão único** (`Tour` + `AutoTour`): caixa curta embaixo (ou em cima, se o alvo estiver embaixo), bloco destacado, "Pular" e botão do passo. Guardado em `Company.tours` (visitas, visita, orcamento, obras, obra, ajustes) e sincronizado com a conta. Flag de testes: `localStorage["pintorpro:no-tours"]="1"`.
+- **Cadeia:** Visitas (3 passos) → visita de exemplo (5) → orçamento (5) → Obras (2) → obra de exemplo (4) → Ajustes (5). Visita e obra de exemplo ficam marcadas "Exemplo", fora dos números do painel, e apagar a visita/obra apaga o cliente de exemplo.
+- Em Ajustes, "Ver os guias de novo" reabre todos. Convite do Pix continua depois do primeiro orçamento salvo.
+- Teste e2e: `tests/guias.mjs`. (`tests/pwa.mjs` está desatualizado: espera `/manifest.webmanifest`, que será criado quando fizermos o PWA.)

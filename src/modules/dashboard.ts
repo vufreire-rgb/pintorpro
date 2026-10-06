@@ -10,12 +10,13 @@ export function dashboard(db: Db) {
     const d = new Date(iso);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   };
+  const works = db.works.filter((w) => !w.isExample);
   const wonMonth = db.quotes.filter((q) => q.status === "won" && sameMonth(q.closedAt));
   return {
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),
     profitMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.profitCents, 0),
-    receivableCents: db.works.reduce((s, w) => s + remainingCents(w), 0),
-    lateCents: db.works.reduce((s, w) => s + lateCents(w), 0),
-    worksActive: db.works.filter((w) => w.status === "in_progress" || w.status === "issues").length,
+    receivableCents: works.reduce((s, w) => s + remainingCents(w), 0),
+    lateCents: works.reduce((s, w) => s + lateCents(w), 0),
+    worksActive: works.filter((w) => w.status === "in_progress" || w.status === "issues").length,
   };
 }

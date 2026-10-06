@@ -16,6 +16,7 @@ const db = {
 async function nova(opts) {
   const ctx = await browser.newContext({ ...devices["Pixel 7"], ...opts });
   const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   page.on("pageerror", (e) => errors.push(e.message));
   await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
   return page;

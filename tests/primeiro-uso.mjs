@@ -1,22 +1,23 @@
-// Primeiro uso: 2 perguntas, primeiro orçamento guiado e confirmação de preço no próprio orçamento.
+// Primeiro uso: 2 perguntas, ida às Visitas e confirmação de preço no próprio orçamento.
 import { chromium, devices } from "playwright-core";
 const base = process.env.BASE ?? "http://localhost:3000";
 const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 const browser = await chromium.launch({ executablePath: exe });
 const ctx = await browser.newContext({ ...devices["Pixel 7"] });
 const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
-const next = () => page.getByRole("button", { name: /Continuar|Fazer meu primeiro orçamento/ }).click();
+const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).click();
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
-await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
-await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
-check(await page.getByText("Vamos fazer seu primeiro orçamento!").isVisible(), "depois de 2 perguntas o pintor cai no primeiro orçamento");
+await page.waitForURL(base + "/visitas");
+check(page.url().endsWith("/visitas"), "depois de 2 perguntas o pintor cai na tela de Visitas");
+await page.goto(base + "/orcamentos/novo");
 check(!(await page.getByText("Confirme seus preços").isVisible().catch(() => false)), "sem medidas, ainda não pede preço");
 await page.getByLabel("Parede 1 largura").fill("12");
 await page.getByText("Confirme seus preços").waitFor();

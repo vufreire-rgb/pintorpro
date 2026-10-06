@@ -2,12 +2,11 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
+import { AutoTour, type TourStep } from "@/components/Tour";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { BrandHeader } from "@/components/BrandHeader";
-import { Badge, Card, CardTitle, LinkButton, Loading, Screen } from "@/components/ui";
-import { CalendarDays, ClipboardList, GraduationCap } from "lucide-react";
-import { setTour } from "@/modules/settings";
+import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { CalendarDays, ClipboardList } from "lucide-react";
 import { createExampleVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
@@ -46,6 +45,11 @@ export default function Visitas() {
   const router = useRouter();
   const touchX = useRef<number | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
+  const steps: TourStep[] = [
+    { target: "gravar", title: "Gravar ou agendar", text: "Gravar visita começa uma visita agora, com fotos, medidas e áudio. Agendar marca uma visita para outro dia e lembra você." },
+    { target: "abas", title: "Suas visitas em 3 abas", text: "Agendadas, Sem orçamento e Orçamento feito. Toque numa aba ou deslize para os lados." },
+    { target: "lista", title: "Vamos treinar", text: "Cada visita aparece aqui. Vou abrir uma visita de exemplo para você treinar, e depois você apaga.", button: "Abrir visita de exemplo" },
+  ];
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
@@ -63,19 +67,11 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
-      {db.company && !db.company.tours?.visita ? (
-        <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
-          <CardTitle icon={GraduationCap}>Treine uma visita</CardTitle>
-          <p className="text-base">Em 2 minutos eu mostro, passo a passo, como anotar uma visita. Uso um cliente de exemplo que você apaga depois.</p>
-          <Button onClick={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)}>Começar o guia</Button>
-          <Button variant="ghost" onClick={() => setTour("visita", "skipped")}>Agora não</Button>
-        </Card>
-      ) : null}
-      <div className="grid grid-cols-2 gap-3">
+      <div data-tour="gravar" className="grid grid-cols-2 gap-3">
         <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
         <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
       </div>
-      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+      <div data-tour="abas" role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -88,6 +84,7 @@ export default function Visitas() {
           </button>
         ))}
       </div>
+      <div data-tour="lista" className="flex flex-col gap-4">
       {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque no botão verde para começar: ele já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
@@ -113,6 +110,8 @@ export default function Visitas() {
         );
       })}
       </div>
+      </div>
+      <AutoTour id="visitas" steps={steps} onFinish={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)} />
     </Screen>
   );
 }

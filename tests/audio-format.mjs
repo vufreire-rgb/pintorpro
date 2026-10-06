@@ -8,6 +8,7 @@ const browser = await chromium.launch({ executablePath: exe, args: ["--use-fake-
 async function run(forceWebm) {
   const ctx = await browser.newContext({ ...devices["Pixel 7"], permissions: ["microphone", "camera"] });
   const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   if (forceWebm) await page.addInitScript(() => { MediaRecorder.isTypeSupported = (t) => /webm/.test(t); });

@@ -7,8 +7,7 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
-import { Tour, type TourStep } from "@/components/Tour";
-import { setTour } from "@/modules/settings";
+import { AutoTour, type TourStep } from "@/components/Tour";
 import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
 import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
@@ -52,7 +51,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
     { target: "fotos", title: "Fotos da obra", text: "Tire várias fotos. Depois toque no lápis para marcar setas e textos, e em + PDF para a foto aparecer no orçamento." },
     { target: "medidas", title: "Medidas por parede", text: "Toque em Anotar as medidas, escreva a largura e a altura da Parede 1 e use + Parede para as outras. Escolha o tipo de pintura de cada uma e salve.", done: rooms.length > 0 },
     { target: "observacoes", title: "Observações", text: "Escreva o que o cliente pediu e os problemas que viu, como mofo ou trincas. Isso fica guardado com a visita." },
-    { target: "orcar", title: "Montar o orçamento", text: "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo." },
+    { target: "orcar", title: "Montar o orçamento", text: "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo. Vou te mostrar o orçamento agora.", button: "Ir para o orçamento" },
   ];
 
   const onFiles = async (files: FileList | null) => {
@@ -238,7 +237,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           onClose={() => setCamera(false)}
         />
       ) : null}
-      {v.isExample && !db.company?.tours?.visita ? <Tour steps={steps} onFinish={() => setTour("visita", "done")} onSkip={() => setTour("visita", "skipped")} /> : null}
+      <AutoTour id="visita" steps={steps} enabled={!!v.isExample} onFinish={() => router.push(`/orcamentos/novo?visita=${v.id}`)} />
     </Screen>
   );
 }

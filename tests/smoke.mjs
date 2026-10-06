@@ -6,20 +6,20 @@ const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/c
 const browser = await chromium.launch({ executablePath: exe, args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] });
 const ctx = await browser.newContext({ ...devices["Pixel 7"], acceptDownloads: true, permissions: ["microphone", "camera"] });
 const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 const shot = (n) => page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/${n}.png` });
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) throw new Error(msg); };
-const next = () => page.getByRole("button", { name: /Continuar|Fazer meu primeiro orçamento/ }).click();
+const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).click();
 
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("João Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
-await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
-await page.getByText("Vamos fazer seu primeiro orçamento!").waitFor();
-await shot("01-primeiro-orcamento");
+await page.waitForURL(base + "/visitas");
+await shot("01-primeiro-acesso");
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /gravar visita/i }).waitFor();
 await shot("02-painel");

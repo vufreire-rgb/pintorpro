@@ -150,6 +150,8 @@ export interface Work {
   payments?: Payment[];
   /** Gastos reais da obra, para comparar lucro previsto × real. */
   expenses?: Expense[];
+  /** Obra de treino criada pelo guia; fica fora dos números do painel. */
+  isExample?: boolean;
   /** Dias que o pintor realmente trabalhou na obra. */
   daysWorked?: number;
   /** Plano de pagamento combinado (parcelas). */

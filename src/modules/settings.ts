@@ -41,6 +41,10 @@ export const setTour = (id: string, state: "done" | "skipped" | null) =>
     return { ...db, company: { ...db.company, tours } };
   });
 
+/** Faz todos os guias abrirem de novo. */
+export const resetTours = () =>
+  updateDb((db) => (db.company ? { ...db, company: { ...db.company, tours: {} } } : db));
+
 export const saveCompany = (company: Company) => updateDb((db) => ({ ...db, company }));
 export const setEnabledServices = (ids: string[]) => updateDb((db) => ({ ...db, enabledServiceIds: ids }));
 export const updateService = (id: string, patch: Partial<ServiceConfig>) =>

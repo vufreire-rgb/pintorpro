@@ -1,5 +1,7 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { AutoTour, type TourStep } from "@/components/Tour";
 import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, logout, useAuthState } from "@/modules/auth";
@@ -7,7 +9,7 @@ import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
-import { saveCompany, setEnabledServices, setTour, updateMaterial, updateService } from "@/modules/settings";
+import { resetTours, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
@@ -21,24 +23,35 @@ function LogoPreview({ id }: { id: string }) {
 }
 
 export default function Configuracoes() {
+  const router = useRouter();
   const db = useAppDb();
   const logoInput = useRef<HTMLInputElement>(null);
   const [logoMsg, setLogoMsg] = useState("");
   const [pixTest, setPixTest] = useState(false);
   const auth = useAuthState();
   if (!db) return <Loading />;
+  const steps: TourStep[] = [
+    { target: "aj-negocio", title: "Seu negócio", text: "Nome, WhatsApp e cidade. O nome e o WhatsApp aparecem no orçamento que o cliente recebe." },
+    { target: "aj-pdf", title: "Seu orçamento em PDF", text: "Coloque seu logo, escolha a cor e ajuste a entrada e os textos de garantia. É a cara do seu orçamento." },
+    { target: "aj-pix", title: "Receber por Pix", text: "Cadastre sua chave Pix e o orçamento sai com o QR para o cliente pagar a entrada." },
+    { target: "aj-servicos", title: "Serviços e preços", text: "Quanto você cobra por serviço. Os que dizem valor de exemplo precisam da sua confirmação para o orçamento ficar certo." },
+    { target: "aj-guias", title: "Rever os guias", text: "Se quiser ver este passo a passo de novo, é só voltar aqui e tocar em Ver os guias de novo." },
+  ];
   const c = db.company!;
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
+      <div data-tour="aj-negocio">
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="WhatsApp"><TextInput value={c.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} /></Field>
         <Field label="Cidade"><TextInput value={c.city} onChange={(e) => set({ city: e.target.value })} /></Field>
         <Field label="Condição de pagamento padrão"><TextInput value={c.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value })} /></Field>
       </Section>
+      </div>
+      <div data-tour="aj-pdf">
       <Section title="Seu orçamento em PDF" hint="Logo, sua cor, entrada e textos do PDF">
         <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
         <div className="flex flex-col gap-3">
@@ -83,6 +96,8 @@ export default function Configuracoes() {
         <Field label="Garantia"><TextArea value={c.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText} onChange={(e) => set({ warrantyText: e.target.value })} /></Field>
         <p className="text-base text-support">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
       </Section>
+      </div>
+      <div data-tour="aj-pix">
       <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
         <p className="text-base text-support">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
         <div className="flex flex-wrap gap-2">
@@ -109,6 +124,8 @@ export default function Configuracoes() {
           <PixModal code={pixPayload(c.pix, { name: c.name, city: c.city }, 100)} title="QR de teste" amount="R$ 1,00" onClose={() => setPixTest(false)} />
         ) : null}
       </Section>
+      </div>
+      <div data-tour="aj-servicos">
       <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
         {db.services.map((s) => {
           const on = db.enabledServiceIds.includes(s.id);
@@ -126,6 +143,7 @@ export default function Configuracoes() {
           );
         })}
       </Section>
+      </div>
       <Section title="Materiais" hint="Preço, rendimento e perda">
         {db.materials.map((m) => (
           <div key={m.id} className="flex flex-col gap-2 border-b border-slate-100 pb-3">
@@ -162,11 +180,13 @@ export default function Configuracoes() {
 
 
 
+      <div data-tour="aj-guias">
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Guias</h2>
-        <p className="text-base text-support">Quer ver o passo a passo da visita de novo?</p>
-        <Button variant="ghost" onClick={() => setTour("visita", null)}>Ver o guia da visita de novo</Button>
+        <p className="text-base text-support">Quer rever o passo a passo de Visitas, Orçamentos, Obras e Ajustes?</p>
+        <Button variant="ghost" onClick={() => { resetTours(); router.push("/visitas"); }}>Ver os guias de novo</Button>
       </Card>
+      </div>
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Conta</h2>
@@ -179,6 +199,7 @@ export default function Configuracoes() {
         <img src="/brand/simbolo-colorido.svg" alt="" className="h-5 w-5" />
         {APP_NAME} · versão 1.0
       </div>
+      <AutoTour id="ajustes" steps={steps} />
     </Screen>
   );
 }

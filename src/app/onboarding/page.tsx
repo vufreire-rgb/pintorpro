@@ -16,7 +16,7 @@ export default function Onboarding() {
   const [c, setC] = useState<Company>(DEFAULT_COMPANY);
   // Se os dados da conta chegarem da nuvem enquanto o cadastro está aberto, a conta já está configurada.
   const alreadySetUp = Boolean(db?.company);
-  const [finishing, setFinishing] = useState(false); // ao terminar aqui, o destino é o primeiro orçamento, não as Visitas
+  const [finishing, setFinishing] = useState(false); // evita o redirecionamento automático para Visitas competir com o que o cadastro faz ao terminar
   useEffect(() => {
     if (alreadySetUp && !finishing) router.replace("/visitas");
   }, [alreadySetUp, finishing, router]);
@@ -27,7 +27,7 @@ export default function Onboarding() {
     setFinishing(true);
     setEnabledServices(db.services.map((s) => s.id));
     saveCompany(c);
-    router.replace("/orcamentos/novo?primeiro=1");
+    router.replace("/visitas");
   };
 
   const canNext = [c.name.trim(), c.whatsapp.trim()][step];
@@ -44,7 +44,7 @@ export default function Onboarding() {
       <div className="flex flex-1 flex-col justify-center gap-4">{body}</div>
       <div className="flex gap-3 pt-6">
         {step > 0 ? <Button variant="ghost" className="w-28" onClick={() => setStep(step - 1)}>Voltar</Button> : null}
-        <Button disabled={!canNext} onClick={next}>{step === STEPS - 1 ? "Fazer meu primeiro orçamento" : "Continuar"}</Button>
+        <Button disabled={!canNext} onClick={next}>{step === STEPS - 1 ? "Começar" : "Continuar"}</Button>
       </div>
     </div>
   );

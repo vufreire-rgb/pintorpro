@@ -5,16 +5,17 @@ const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/c
 const browser = await chromium.launch({ executablePath: exe });
 const ctx = await browser.newContext({ ...devices["Pixel 7"] });
 const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
-const next = () => page.getByRole("button", { name: /Continuar|Fazer meu primeiro orçamento/ }).click();
+const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).click();
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
-await page.waitForURL(/orcamentos\/novo\?primeiro=1/);
+await page.waitForURL(base + "/visitas");
 await page.goto(base + "/visitas");
 await page.evaluate(() => {
   const d = JSON.parse(localStorage.getItem("pintorpro:v1"));

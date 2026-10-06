@@ -6,6 +6,7 @@ const OUT = process.env.OUT ?? "/tmp";
 const browser = await chromium.launch({ executablePath: exe });
 const ctx = await browser.newContext({ ...devices["Pixel 7"], acceptDownloads: true });
 const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];

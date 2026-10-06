@@ -5,6 +5,7 @@ import { use, useRef, useState } from "react";
 import { CalendarDays, CalendarPlus, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, QrCode, Receipt, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
+import { AutoTour, type TourStep } from "@/components/Tour";
 import { WorkCostsCard } from "@/components/WorkCostsCard";
 import { PixModal } from "@/components/PixModal";
 import { ACTION_CLS, Badge, Button, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
@@ -72,6 +73,12 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   if (!db) return <Loading />;
   const w = db.works.find((x) => x.id === id);
   if (!w) return <Screen title="Obra" back="/obras"><p>Obra não encontrada.</p></Screen>;
+  const steps: TourStep[] = [
+    { target: "obra-datas", title: "Datas da obra", text: "Marque o início. O término sugerido vem dos dias do orçamento. Dá para mandar a obra para a agenda do celular." },
+    { target: "obra-plano", title: "Plano de pagamento", text: "Combine as parcelas com o cliente. O app avisa quando alguma atrasa e monta a mensagem de cobrança." },
+    { target: "obra-dinheiro", title: "Dinheiro da obra", text: "Registre cada pagamento que receber. Para cada um você gera o recibo em PDF e pode anexar o comprovante." },
+    { target: "obra-custos", title: "Custos e lucro", text: "Lance os gastos reais (tinta, ajudante, gasolina) e os dias trabalhados. O app mostra o lucro de verdade e compara com o previsto no orçamento." },
+  ];
   const client = db.clients.find((c) => c.id === w.clientId);
   const quote = db.quotes.find((q) => q.id === w.quoteId);
   const visit = quote?.visitId ? db.visits.find((v) => v.id === quote.visitId) : undefined;
@@ -112,6 +119,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         </div>
       </Card>
 
+      <div data-tour="obra-datas">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={CalendarDays}>Datas</CardTitle>
         <p className="text-base text-support">Previsto no orçamento: {plural(w.plannedDays, "dia", "dias")} de trabalho.</p>
@@ -121,7 +129,9 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         </div>
         {w.startDate ? <Button variant="ghost" icon={CalendarPlus} onClick={() => downloadWorkIcs(w, client, quote?.siteAddress ?? "")}>Adicionar à agenda do celular</Button> : <p className="text-base text-support">Escolha o dia de início para lembrar na agenda.</p>}
       </Card>
+      </div>
 
+      <div data-tour="obra-plano">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Landmark}>Plano de pagamento</CardTitle>
         {late > 0 ? <p className="flex items-center gap-2 rounded-xl bg-[#FFF3D6] p-3 font-bold text-[#8A4B00]"><TriangleAlert size={20} strokeWidth={2.4} aria-hidden />{formatBRL(late)} em atraso</p> : null}
@@ -167,7 +177,9 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         )}
         {!pixOk ? <p className="text-base text-support">Cadastre sua chave Pix em Ajustes para mandar o Pix copia e cola nas cobranças.</p> : null}
       </Card>
+      </div>
 
+      <div data-tour="obra-dinheiro">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Wallet}>Dinheiro da obra</CardTitle>
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -204,8 +216,9 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           <Button disabled={amount <= 0 || busy} onClick={register}>Registrar</Button>
         </div>
       </Card>
+      </div>
 
-      <WorkCostsCard w={w} quote={quote} />
+      <div data-tour="obra-custos"><WorkCostsCard w={w} quote={quote} /></div>
 
       <Card className="flex flex-col gap-3">
         <CardTitle icon={ClipboardList}>Orçamento e visita</CardTitle>
@@ -231,6 +244,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { deleteWork(w.id); router.replace("/obras"); }}
       />
+      <AutoTour id="obra" steps={steps} enabled={!!w.isExample} onFinish={() => router.push("/obras")} />
     </Screen>
   );
 }

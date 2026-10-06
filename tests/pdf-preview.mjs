@@ -9,6 +9,7 @@ const browser = await chromium.launch({ executablePath: exe });
 async function gerar({ nome, cor, comValores, comLink }) {
   const ctx = await browser.newContext({ ...devices["Pixel 7"], acceptDownloads: true });
   const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const db = {
