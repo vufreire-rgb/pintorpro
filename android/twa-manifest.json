@@ -1,0 +1,20 @@
+{
+  "packageId": "br.com.medde.app",
+  "host": "medde.com.br",
+  "name": "Medde",
+  "launcherName": "Medde",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#0F3B7A",
+  "navigationColor": "#0F3B7A",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://medde.com.br/icons/icon-512.png",
+  "maskableIconUrl": "https://medde.com.br/icons/icon-512.png",
+  "webManifestUrl": "https://medde.com.br/manifest.webmanifest",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": { "path": "./upload-keystore.jks", "alias": "upload" },
+  "fallbackType": "customtabs"
+}

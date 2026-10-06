@@ -13,6 +13,14 @@ Regra deste documento: só consta o que foi verificado no código, nas migraçõ
 
 ---
 
+## Atualização (2026-10-06, depois da confirmação do titular)
+
+- **Nome:** Medde. **Domínio:** medde.com.br. **applicationId (Android) e bundle ID (iOS): `br.com.medde.app`** (confirmado; não muda).
+- **PWA religado** (manifest, ícones, service worker `v2`, aviso de instalação em Visitas e Ajustes). `public/.well-known/assetlinks.json` criado com fingerprints vazios; `android/twa-manifest.json` e `docs/ANDROID_BUILD.md` preparados. O `.aab` ainda **não foi gerado** (seção 10; domínio no ar, keystore e conta do Play ainda pendentes).
+- Onde o texto abaixo disser "Pintor Pro" ou "PWA desligado", vale esta atualização.
+
+---
+
 ## 1. Serviços de terceiros
 
 | Serviço | Finalidade | Dados que recebe | País do servidor | Termos / DPA | Custo atual |

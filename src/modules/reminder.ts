@@ -44,7 +44,7 @@ export function buildReviewIcs(r: ReviewReminder, appUrl: string, now = new Date
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Pintor Pro//Revisao//PT",
+    "PRODID:-//Medde//Revisao//PT",
     "BEGIN:VEVENT",
     "UID:revisao-orcamentos@pintorpro",
     `DTSTAMP:${now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,

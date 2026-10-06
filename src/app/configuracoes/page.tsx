@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { InstallBanner } from "@/components/InstallBanner";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { LinkButton, Button, Card, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
@@ -42,6 +43,7 @@ export default function Configuracoes() {
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
+      <InstallBanner always />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
       <div data-tour="aj-negocio">
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>

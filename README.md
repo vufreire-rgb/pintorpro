@@ -1,4 +1,4 @@
-# Pintor Pro
+# Medde
 
 SaaS mobile-first de orçamentos para pintores. Especificação: `docs/Pintor_Pro_Documento_Mestre_v1.0.pdf`.
 Plano, arquitetura, decisões, pendências e changelog: `docs/PLANO_TECNICO.md`.

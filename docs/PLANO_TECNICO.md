@@ -339,3 +339,6 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 - **Cadeia:** Visitas (3 passos) → visita de exemplo (5) → orçamento (5) → Obras (2) → obra de exemplo (4) → Ajustes (5). Visita e obra de exemplo ficam marcadas "Exemplo", fora dos números do painel, e apagar a visita/obra apaga o cliente de exemplo.
 - Em Ajustes, "Ver os guias de novo" reabre todos. Convite do Pix continua depois do primeiro orçamento salvo.
 - Teste e2e: `tests/guias.mjs`. (`tests/pwa.mjs` está desatualizado: espera `/manifest.webmanifest`, que será criado quando fizermos o PWA.)
+
+## Nome Medde e PWA religado (implementado)
+- 2026-10-06 — Nome confirmado: **Medde**, domínio **medde.com.br**, identificador Android/iOS **`br.com.medde.app`** (fixo). `APP_NAME`, `APP_ID`, `APP_DOMAIN` em `src/shared/brand.ts`. Chaves internas `pintorpro:*` do armazenamento local **não mudam** (trocar apagaria o cache dos aparelhos). PWA religado (manifest com `id`, ícones, `public/sw.js` v2, aviso de instalação em Visitas e Ajustes). `assetlinks.json` e `android/twa-manifest.json` preparados; passo a passo em `docs/ANDROID_BUILD.md`. **Pendente:** ligar medde.com.br na Vercel (DNS), consulta de marca no INPI, keystore de upload, conta do Play, fingerprints do `assetlinks.json`.

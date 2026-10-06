@@ -99,7 +99,7 @@ export function buildIcs(v: Visit, client: Client | undefined, now = Date.now())
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Pintor Pro//Visita//PT",
+    "PRODID:-//Medde//Visita//PT",
     "BEGIN:VEVENT",
     `UID:${v.id}@pintorpro`,
     `DTSTAMP:${icsDate(now)}`,

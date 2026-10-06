@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { InstallBanner } from "@/components/InstallBanner";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { BrandHeader } from "@/components/BrandHeader";
@@ -67,6 +68,7 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
+      <InstallBanner />
       <div data-tour="gravar" className="grid grid-cols-2 gap-3">
         <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
         <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>

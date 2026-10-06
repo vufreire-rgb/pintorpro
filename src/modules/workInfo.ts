@@ -53,7 +53,7 @@ export function buildWorkIcs(w: Work, client: Client | undefined, address: strin
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Pintor Pro//Obra//PT",
+    "PRODID:-//Medde//Obra//PT",
     "BEGIN:VEVENT",
     `UID:${w.id}@pintorpro`,
     `DTSTAMP:${new Date(now).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
