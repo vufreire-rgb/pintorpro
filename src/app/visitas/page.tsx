@@ -1,10 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { BrandHeader } from "@/components/BrandHeader";
-import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
-import { CalendarDays, ClipboardList } from "lucide-react";
+import { Badge, Card, CardTitle, LinkButton, Loading, Screen } from "@/components/ui";
+import { CalendarDays, ClipboardList, GraduationCap } from "lucide-react";
+import { setTour } from "@/modules/settings";
+import { createExampleVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
 import { countByFilter, filterVisits, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
@@ -39,6 +43,7 @@ function VisitBadge({ v }: { v: Visit }) {
 export default function Visitas() {
   const db = useAppDb();
   const [filter, setFilter] = useState<VisitFilter>("scheduled");
+  const router = useRouter();
   const touchX = useRef<number | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
   if (!db) return <Loading />;
@@ -58,6 +63,14 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
+      {db.company && !db.company.tours?.visita ? (
+        <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
+          <CardTitle icon={GraduationCap}>Treine uma visita</CardTitle>
+          <p className="text-base">Em 2 minutos eu mostro, passo a passo, como anotar uma visita. Uso um cliente de exemplo que você apaga depois.</p>
+          <Button onClick={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)}>Começar o guia</Button>
+          <Button variant="ghost" onClick={() => setTour("visita", "skipped")}>Agora não</Button>
+        </Card>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
         <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
@@ -90,7 +103,7 @@ export default function Visitas() {
                   <b className="truncate text-lg">{client?.name ?? "Cliente a definir"}</b>
                   
                 </div>
-                <div className="mt-1"><VisitBadge v={v} /></div>
+                <div className="mt-1 flex flex-wrap items-center gap-2"><VisitBadge v={v} />{v.isExample ? <Badge tone="lost">Exemplo</Badge> : null}</div>
                 <div className="mt-1 line-clamp-2 text-base text-support">{v.siteAddress || "Sem endereço"}</div>
                 {bits ? <div className="text-base text-support">{bits}</div> : null}
                 {v.notes ? <div className="line-clamp-1 text-base text-ink">{v.notes}</div> : null}

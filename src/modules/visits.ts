@@ -2,7 +2,7 @@ import { uid, updateDb } from "./db";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
 import type { RoomDraft } from "./rooms";
-import type { AudioMarker, Db, GeoPoint, PhotoMark, Visit } from "./types";
+import type { AudioMarker, Client, Db, GeoPoint, PhotoMark, Visit } from "./types";
 
 const blankVisit = (): Visit => ({ id: uid(), siteAddress: "", notes: "", photoIds: [], createdAt: new Date().toISOString() });
 
@@ -11,6 +11,14 @@ export function createQuickVisit(): string {
   const now = new Date().toISOString();
   const visit: Visit = { ...blankVisit(), startedAt: now };
   updateDb((d) => ({ ...d, visits: [visit, ...d.visits] }));
+  return visit.id;
+}
+
+/** Visita de treino do guia: cliente e endereço de exemplo, já iniciada. Apagar a visita apaga o cliente de exemplo. */
+export function createExampleVisit(): string {
+  const client: Client = { id: uid(), name: "Cliente Exemplo", phone: "(11) 99999-0000", address: "Rua Exemplo, 123", isExample: true };
+  const visit: Visit = { ...blankVisit(), clientId: client.id, siteAddress: client.address, startedAt: new Date().toISOString(), isExample: true };
+  updateDb((d) => ({ ...d, clients: [client, ...d.clients], visits: [visit, ...d.visits] }));
   return visit.id;
 }
 
@@ -91,7 +99,11 @@ export async function removeVisitAudio(id: string, audioId: string): Promise<voi
 /** Apaga a visita e seus arquivos (fotos e áudios), no aparelho e na nuvem. */
 export async function deleteVisit(id: string, visits: Visit[]): Promise<void> {
   const v = visits.find((x) => x.id === id);
-  updateDb((d) => ({ ...d, visits: d.visits.filter((x) => x.id !== id) }));
+  updateDb((d) => ({
+    ...d,
+    visits: d.visits.filter((x) => x.id !== id),
+    clients: v?.isExample ? d.clients.filter((c) => !(c.isExample && c.id === v.clientId)) : d.clients,
+  }));
   if (!v) return;
   await Promise.all([...v.photoIds, ...(v.audios ?? []).map((a) => a.id)].map((fid) => removePhotoFile(fid)));
 }

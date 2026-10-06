@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
+import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
 import { deleteQuote, duplicateQuote, isExpired, setQuoteStatus } from "@/modules/quotes";
@@ -31,6 +32,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   };
   return (
     <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
+      {db.company && !db.company.pix?.key && !db.company.pixAsked ? <PixSetupCard company={db.company} /> : null}
       <Card>
         <div className="flex items-start justify-between gap-2"><div className="font-display text-[22px] font-bold leading-7">{client?.name}</div><Badge tone={q.status === "won" ? "ok" : q.status === "lost" ? "lost" : "open"}>{q.status === "won" ? "Fechado" : q.status === "lost" ? "Perdido" : "Aberto"}</Badge></div>
         <div className="text-lg text-support">{q.siteAddress}</div>

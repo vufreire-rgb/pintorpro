@@ -31,6 +31,10 @@ export interface Company {
   warrantyText?: string;
   /** % da entrada sugerida no botão de pagamento do PDF. */
   depositPct?: number;
+  /** Já oferecemos cadastrar a chave Pix (e a pessoa disse "agora não"). */
+  pixAsked?: boolean;
+  /** Guias passo a passo já vistos ou pulados (ex.: visita). */
+  tours?: Record<string, "done" | "skipped">;
 }
 
 export interface Client {
@@ -38,6 +42,8 @@ export interface Client {
   name: string;
   phone: string;
   address: string;
+  /** Cliente criado pelo guia de treino; some junto com a visita de exemplo. */
+  isExample?: boolean;
 }
 
 export type QuoteStatus = "open" | "won" | "lost";
@@ -204,6 +210,8 @@ export interface Visit {
   audios?: AudioNote[];
   createdAt: string;
   quoteId?: string;
+  /** Visita de treino criada pelo guia. */
+  isExample?: boolean;
 }
 
 export interface Db {

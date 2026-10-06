@@ -7,7 +7,7 @@ import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
-import { saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
+import { saveCompany, setEnabledServices, setTour, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
@@ -162,6 +162,11 @@ export default function Configuracoes() {
 
 
 
+      <Card className="flex flex-col gap-3">
+        <h2 className="text-lg font-bold">Guias</h2>
+        <p className="text-base text-support">Quer ver o passo a passo da visita de novo?</p>
+        <Button variant="ghost" onClick={() => setTour("visita", null)}>Ver o guia da visita de novo</Button>
+      </Card>
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Conta</h2>

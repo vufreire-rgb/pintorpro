@@ -327,3 +327,8 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 - Ao terminar, o pintor vai direto ao **primeiro orçamento** (`/orcamentos/novo?primeiro=1`), com aviso de boas-vindas.
 - **Confirme seus preços** (`PriceCheck`): no orçamento, os serviços usados que ainda têm valor de exemplo aparecem com a sugestão; o pintor confirma um por um ou todos de uma vez (isso tira a marca de "exemplo").
 - Ideias para depois: cartão "faltam N passos" no painel (logo, Pix, preços) e perguntas em linguagem de pintor (faixa de preço em vez de margem %).
+
+## Pix no primeiro orçamento e guia da visita (implementado)
+- **Pix:** depois do primeiro orçamento salvo, a tela do orçamento oferece cadastrar a chave Pix (`PixSetupCard`, com validação). "Agora não" grava `Company.pixAsked`; depois dá para cadastrar em Ajustes.
+- **Guia da visita:** na tela Visitas, cartão "Treine uma visita" cria uma visita de exemplo (`Visit.isExample`, com `Client.isExample`). `Tour` destaca cada bloco (cliente, fotos, medidas, observações, montar orçamento); o passo das medidas avança sozinho quando a pessoa anota um ambiente. Estado em `Company.tours.visita` (done/skipped), sincronizado com a conta. Apagar a visita de exemplo apaga o cliente de exemplo. Em Ajustes dá para rever o guia.
+- Próximos: guia do orçamento e guia da obra reaproveitando `Tour`.

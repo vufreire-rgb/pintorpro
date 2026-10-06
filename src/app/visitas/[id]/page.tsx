@@ -7,6 +7,8 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
+import { Tour, type TourStep } from "@/components/Tour";
+import { setTour } from "@/modules/settings";
 import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
 import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
@@ -45,6 +47,13 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
   const state = visitState(v);
   const rooms = v.rooms ?? [];
+  const steps: TourStep[] = [
+    { target: "cliente", title: "Cliente e endereço", text: "Aqui ficam o cliente e o endereço da obra. Já deixei um cliente de exemplo. Num cliente de verdade, toque em Usar minha localização para preencher o endereço." },
+    { target: "fotos", title: "Fotos da obra", text: "Tire várias fotos. Depois toque no lápis para marcar setas e textos, e em + PDF para a foto aparecer no orçamento." },
+    { target: "medidas", title: "Medidas por parede", text: "Toque em Anotar as medidas, escreva a largura e a altura da Parede 1 e use + Parede para as outras. Escolha o tipo de pintura de cada uma e salve.", done: rooms.length > 0 },
+    { target: "observacoes", title: "Observações", text: "Escreva o que o cliente pediu e os problemas que viu, como mofo ou trincas. Isso fica guardado com a visita." },
+    { target: "orcar", title: "Montar o orçamento", text: "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo." },
+  ];
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -86,6 +95,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <div className="text-base text-support">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
       )}
 
+      <div data-tour="cliente">
       <Card className="flex flex-col gap-3">
         {client && !changing ? (
           <>
@@ -115,9 +125,11 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         {geoMsg ? <p className="text-base text-ink">{geoMsg}</p> : null}
         {fromOsm ? <p className="text-base text-support">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
       </Card>
+      </div>
 
       <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>
 
+      <div data-tour="fotos">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Camera}>Fotos ({v.photoIds.length})</CardTitle>
         <PhotoGrid
@@ -145,7 +157,9 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <Button variant="ghost" icon={ImageIcon} disabled={busy} onClick={() => input.current?.click()}>{busy ? "Guardando…" : "Escolher da galeria"}</Button>
         <p className="text-base text-support">{cloudEnabled ? "Suas fotos ficam guardadas na sua conta." : "As fotos ficam guardadas neste aparelho."}</p>
       </Card>
+      </div>
 
+      <div data-tour="medidas">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
         {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
@@ -170,12 +184,15 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
         )}
       </Card>
+      </div>
 
+      <div data-tour="observacoes">
       <Field label="Observações" hint="O que o cliente pediu, problemas que viu…">
         <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </Field>
+      </div>
 
-      <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
+      <div data-tour="orcar"><LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton></div>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>
       <div className="h-20" aria-hidden />
@@ -221,6 +238,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           onClose={() => setCamera(false)}
         />
       ) : null}
+      {v.isExample && !db.company?.tours?.visita ? <Tour steps={steps} onFinish={() => setTour("visita", "done")} onSkip={() => setTour("visita", "skipped")} /> : null}
     </Screen>
   );
 }

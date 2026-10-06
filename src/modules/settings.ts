@@ -31,6 +31,16 @@ export const DEFAULT_COMPANY: Company = {
   depositPct: 50,
 };
 
+/** Marca um guia como visto/pulado (ou `null` para ver de novo). */
+export const setTour = (id: string, state: "done" | "skipped" | null) =>
+  updateDb((db) => {
+    if (!db.company) return db;
+    const tours = { ...db.company.tours };
+    if (state) tours[id] = state;
+    else delete tours[id];
+    return { ...db, company: { ...db.company, tours } };
+  });
+
 export const saveCompany = (company: Company) => updateDb((db) => ({ ...db, company }));
 export const setEnabledServices = (ids: string[]) => updateDb((db) => ({ ...db, enabledServiceIds: ids }));
 export const updateService = (id: string, patch: Partial<ServiceConfig>) =>
