@@ -20,6 +20,28 @@ Regra deste documento: só consta o que foi verificado no código, nas migraçõ
 - **Ajustes pedidos pelo agente de burocracia (2026-10-06):** (1) cadastro mostra "Beta gratuito"; (2) ao **sair da conta** o app apaga deste aparelho os dados, as fotos e a fila de envio (avisa antes se houver algo ainda não enviado, que seria perdido); (3) **foto nunca é guardada com o original**: se não der para reler a imagem, ela é descartada e a pessoa é avisada (antes, o original com EXIF/GPS podia ser guardado); (4) "Você avisou o cliente?" antes de gravar áudio continua, com o registro da confirmação; (5) **iOS: só como PWA** (sem App Store por enquanto).
 - Onde o texto abaixo disser "Pintor Pro" ou "PWA desligado", vale esta atualização.
 
+## Conferências pedidas pelo agente de burocracia (2026-10-06)
+
+**DPA do Supabase e cláusulas-padrão da ANPD**
+- O DPA do Supabase (https://supabase.com/legal/dpa) incorpora as cláusulas-padrão da **União Europeia** (Decisão 2021/914, módulos 2 e 3), o adendo do **Reino Unido** e o adendo da **Suíça**. Aceitar os termos do Supabase tem o efeito de assinar essas cláusulas.
+- **Não encontrei confirmação de que inclua as cláusulas-padrão da ANPD** (Resolução CD/ANPD nº 19/2024, Anexo II). As cláusulas da UE **não** substituem as da ANPD, que devem ser adotadas sem alteração. O prazo de adaptação de contratos antigos (12 meses) já terminou. **Não consegui ler a página oficial** (o ambiente bloqueia o domínio): vale uma leitura direta do DPA pelo jurídico ou uma pergunta ao suporte do Supabase.
+- Caminhos possíveis (decisão jurídica): (a) pedir ao Supabase um adendo com as cláusulas da ANPD; (b) **recriar o projeto na região de São Paulo** (hoje: Ohio, EUA). Como só há dados de teste, o custo agora é baixo (novo projeto, rodar as 2 migrações, publicar a função de exclusão, trocar as variáveis na Vercel e no GitHub); depois de haver clientes reais fica bem mais difícil; (c) outro mecanismo previsto na LGPD, a critério do jurídico.
+
+**Política de uso do Nominatim (OpenStreetMap)**
+Fonte: https://operations.osmfoundation.org/policies/nominatim/ (lida por resumo; a página oficial está bloqueada neste ambiente).
+
+| Exigência | Situação no Medde |
+|---|---|
+| No máximo 1 pedido por segundo | Cumpre: só dispara quando a pessoa toca no botão, que fica desligado enquanto busca |
+| Identificar o app por `Referer` ou `User-Agent` | Cumpre: o navegador envia o endereço do site (não há `no-referrer`). Ao entrar no ar, será `medde.com.br` |
+| Mostrar atribuição ao OpenStreetMap | Cumpre: "Endereço sugerido com dados © colaboradores do OpenStreetMap", com link |
+| Proibido autocompletar e geocodificar em massa | Cumpre: um pedido por toque, sem sugestão enquanto digita |
+| Guardar respostas em cache | Não é obrigatório; não fazemos |
+| Uso comercial | Permitido em volume **moderado**. Uso intenso exige servidor próprio ou provedor comercial |
+
+- **Precisamos de alternativa agora?** Não: o uso é um pedido por visita. **Precisaremos** se o volume crescer (a política não define "moderado" e pode bloquear o IP). Se falhar, o app já mantém o ponto no mapa e pede o endereço digitado. Opções comerciais citadas pela OSMF: Geofabrik, OpenCage, Stadia Maps, LocationIQ.
+- **Privacidade:** as coordenadas e o IP do aparelho vão ao serviço da OSM Foundation. Deve constar na política de privacidade.
+
 ---
 
 ## 1. Serviços de terceiros
