@@ -95,7 +95,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const sync = useSyncStatus();
   const subs = useSubscription();
   useEffect(() => initAuth(), []);
-  if (PUBLIC_PATHS.includes(pathname.replace(/\/$/, "")) || pathname.startsWith("/o/")) return <>{children}</>;
+  if (PUBLIC_PATHS.includes(pathname.replace(/\/$/, "")) || pathname.startsWith("/o/") || pathname.startsWith("/p/")) return <>{children}</>;
   if (auth.status === "loading") return <Loading />;
   if (auth.status === "signedOut") return <LoginScreen />;
   if (auth.status === "error")

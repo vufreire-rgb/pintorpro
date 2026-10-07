@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Badge, Button, Card, CardTitle, Chip, Field, LinkButton, Loading, Screen, TextInput } from "@/components/ui";
-import { AlarmClock, Eye, Mic, Plus } from "lucide-react";
+import { AlarmClock, Eye, Inbox, Mic, Plus } from "lucide-react";
 import { DAY_SHORT, DEFAULT_REMINDER, isValidTime, reminderLabel, type ReviewReminder } from "@/modules/reminder";
 import { saveCompany } from "@/modules/settings";
 import { downloadReviewIcs } from "@/modules/share";
@@ -10,6 +10,8 @@ import { isExpired } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { usePendingVoice } from "@/modules/voice";
 import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
+import { useRequests } from "@/modules/publicPage";
+import { cloudEnabled } from "@/modules/auth";
 import type { QuoteStatus } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtDate } from "@/shared/format";
@@ -45,6 +47,7 @@ export default function Orcamentos() {
   const db = useAppDb();
   const voicePending = usePendingVoice().length;
   const { links } = useQuoteLinks();
+  const newRequests = useRequests().requests.filter((r) => r.status === "new").length;
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [remOpen, setRemOpen] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -68,6 +71,7 @@ export default function Orcamentos() {
         <LinkButton href="/orcamentos/novo" icon={Plus} className="!px-3 !text-lg">Novo orçamento</LinkButton>
         <Button variant="ghost" icon={AlarmClock} className="!px-3 !text-lg" onClick={() => setRemOpen((o) => !o)}>Lembrete</Button>
         <LinkButton href="/orcamentos/voz" icon={Mic} variant="ghost" className="col-span-2 !px-3 !text-lg">Ditar orçamento por voz{voicePending > 0 ? ` (${voicePending} aguardando)` : ""}</LinkButton>
+        {cloudEnabled ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="col-span-2 !px-3 !text-lg">Pedidos de clientes{newRequests > 0 ? ` (${newRequests} ${newRequests === 1 ? "novo" : "novos"})` : ""}</LinkButton> : null}
       </div>
       {remOpen ? <ReminderCard saved={db.company?.reviewReminder} onSave={(rr) => saveCompany({ ...db.company!, reviewReminder: rr })} onClose={() => setRemOpen(false)} /> : null}
       <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">

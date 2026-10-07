@@ -65,3 +65,15 @@ Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o q
 
 ## Orçamento por voz — status (2026-10-07)
 Construído e testado com servidor falso; **falta ligar de verdade**: chave OpenAI → secret `OPENAI_API_KEY`, rodar `0005_voice_usage.sql`, publicar a função `voice-quote`. Passo a passo em `docs/ORCAMENTO_POR_VOZ.md`. Depois: testar com fala real de obra e ajustar o prompt/modelo.
+
+## Novidades prontas na branch (2026-10-07), faltam só ligar no Supabase
+| Recurso | O que rodar/publicar | Guia |
+|---|---|---|
+| Voz (ditado) | secret `OPENAI_API_KEY`, `0005_voice_usage.sql`, função `voice-quote` | `docs/ORCAMENTO_POR_VOZ.md` |
+| Recibo por foto | `0006_receipt_usage.sql`, função `receipt-scan` (mesma chave) | `docs/ORCAMENTO_POR_VOZ.md` |
+| Link do orçamento (visto pelo cliente) | `0007_shared_quotes.sql`, função `quote-link` | `docs/LINK_DO_ORCAMENTO.md` |
+| Página de pedidos do pintor | `0008_public_pages.sql`, função `public-page` | `docs/PAGINA_DE_PEDIDOS.md` |
+| Resultado do mês, Primeiros passos, modo simples | nada (só app) | — |
+
+Todas as funções: **Verify JWT desligado**. Só voz e recibo usam a chave da OpenAI.
+Próximo da fila: notificações push (inclui avisar "cliente abriu o link" e "novo pedido").

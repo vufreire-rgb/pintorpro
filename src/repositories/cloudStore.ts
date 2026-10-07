@@ -111,6 +111,68 @@ export async function fetchSharedQuote(token: string): Promise<unknown> {
   return (await res.json()).snapshot;
 }
 
+// ---- Página pública do pintor e pedidos de orçamento dos clientes (função public-page) ----
+export interface PageRow { slug: string; enabled: boolean; updated_at: string }
+export interface RequestRow { id: string; name: string; phone: string; address: string; message: string; status: "new" | "contacted" | "converted" | "dismissed"; created_at: string }
+
+/** Código do erro que a função devolveu ("slug_taken", "bad_slug"…), ou "network" se nem chegou lá. */
+async function fnErrorCode(error: unknown): Promise<string> {
+  const res = (error as { context?: Response }).context;
+  if (res && typeof res.json === "function") {
+    const code = (await res.json().catch(() => null))?.error;
+    return typeof code === "string" ? code : "failed";
+  }
+  return "network";
+}
+
+async function invokePage(body: Record<string, unknown>): Promise<void> {
+  const { error } = await c().functions.invoke("public-page", { method: "POST", body });
+  if (error) throw new Error(await fnErrorCode(error));
+}
+export const publishPublicPage = (slug: string, snapshot: unknown): Promise<void> => invokePage({ action: "publish", slug, snapshot });
+export const disablePublicPage = (): Promise<void> => invokePage({ action: "disable" });
+
+export async function getMyPage(): Promise<PageRow | null> {
+  const { data, error } = await c().from("public_pages").select("slug, enabled, updated_at").maybeSingle();
+  if (error) throw error;
+  return data as PageRow | null;
+}
+export async function listRequests(): Promise<RequestRow[]> {
+  const { data, error } = await c().from("quote_requests").select("id, name, phone, address, message, status, created_at").order("created_at", { ascending: false }).limit(200);
+  if (error) throw error;
+  return (data ?? []) as RequestRow[];
+}
+export async function setRequestStatus(id: string, status: RequestRow["status"]): Promise<void> {
+  const { error } = await c().from("quote_requests").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+export async function deleteRequestRow(id: string): Promise<void> {
+  const { error } = await c().from("quote_requests").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Página do cliente: busca a página publicada (sem login). Falha com "not_found" ou "network". */
+export async function fetchPublicPage(slug: string): Promise<unknown> {
+  if (!url) throw new Error("network");
+  let res: Response;
+  try { res = await fetch(`${url}/functions/v1/public-page?s=${encodeURIComponent(slug)}`, { headers: anonKey ? { apikey: anonKey } : {} }); } catch { throw new Error("network"); }
+  if (res.status === 404) throw new Error("not_found");
+  if (!res.ok) throw new Error("network");
+  return (await res.json()).snapshot;
+}
+
+/** Cliente envia o pedido de orçamento (sem login). Falha com "bad_request", "busy", "not_found" ou "network". */
+export async function submitPublicRequest(slug: string, request: Record<string, string>): Promise<void> {
+  if (!url) throw new Error("network");
+  let res: Response;
+  try {
+    res = await fetch(`${url}/functions/v1/public-page`, { method: "POST", headers: { "Content-Type": "application/json", ...(anonKey ? { apikey: anonKey } : {}) }, body: JSON.stringify({ slug, request }) });
+  } catch { throw new Error("network"); }
+  if (res.ok) return;
+  const code = (await res.json().catch(() => null))?.error;
+  throw new Error(typeof code === "string" ? code : "network");
+}
+
 /** Linha de assinatura da pessoa (null se ainda não existe). Só leitura: quem escreve é o servidor. */
 export async function pullSubscription(userId: string): Promise<{ status: string; trial_ends_at: string; current_period_end: string | null } | null> {
   const { data, error } = await c().from("subscriptions").select("status, trial_ends_at, current_period_end").eq("user_id", userId).maybeSingle();

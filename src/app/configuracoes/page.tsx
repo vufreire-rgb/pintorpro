@@ -17,6 +17,7 @@ import { isSimpleMode, resetTours, saveCompany, setEnabledServices, updateMateri
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
+import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
 import { Check, QrCode, Users } from "lucide-react";
@@ -190,6 +191,8 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </>}
+
+      {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
 
       <div data-tour="aj-guias">
       <Card className="flex flex-col gap-3">
