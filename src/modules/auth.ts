@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { cloudConfigured, getSession, onAuthChange, recoveryLink, requestPasswordReset, resendConfirmation, signIn, signOut, signUp, updatePassword } from "@/repositories/cloudStore";
 import { flushPendingUploads } from "./photos";
 import { getSyncStatus, startSync, stopSync, subscribeSync } from "./sync";
+import { startSubscription, stopSubscription } from "./subscription";
 
 export type AuthState =
   | { status: "loading" }
@@ -37,6 +38,7 @@ export function initAuth(): void {
   applyRef = async (session: { user: { id: string; email?: string } } | null) => {
     if (!session) {
       await stopSync();
+      stopSubscription();
       set({ status: "signedOut" });
       return;
     }
@@ -48,6 +50,7 @@ export function initAuth(): void {
       return;
     }
     set({ status: "ready", email: session.user.email ?? "" });
+    startSubscription(session.user.id);
     void flushPendingUploads();
   };
   getSession().then((s) => applyRef!(s)).catch(() => set({ status: "signedOut" }));

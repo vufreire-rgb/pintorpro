@@ -51,6 +51,13 @@ export async function deleteAccountOnServer(): Promise<void> {
   if (error) throw error;
 }
 
+/** Linha de assinatura da pessoa (null se ainda não existe). Só leitura: quem escreve é o servidor. */
+export async function pullSubscription(userId: string): Promise<{ status: string; trial_ends_at: string; current_period_end: string | null } | null> {
+  const { data, error } = await c().from("subscriptions").select("status, trial_ends_at, current_period_end").eq("user_id", userId).maybeSingle();
+  if (error) throw error;
+  return data as { status: string; trial_ends_at: string; current_period_end: string | null } | null;
+}
+
 export async function pull(userId: string): Promise<{ data: string; updatedAt: string } | null> {
   const { data, error } = await c().from("user_data").select("data, updated_at").eq("user_id", userId).maybeSingle();
   if (error) throw error;

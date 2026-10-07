@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { takeAccountDeletedNotice } from "@/modules/account";
 import { forgotPassword, initAuth, login, register, resendConfirmationEmail, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
+import { BillingBanner } from "./BillingBanner";
+import { BlockedScreen } from "./BlockedScreen";
 import { Splash } from "./Splash";
+import { BILLING_ENFORCED, useSubscription } from "@/modules/subscription";
 import { Button, Field, Loading, TextInput } from "./ui";
 
 function LoginScreen() {
@@ -90,6 +93,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const auth = useAuthState();
   const sync = useSyncStatus();
+  const subs = useSubscription();
   useEffect(() => initAuth(), []);
   if (PUBLIC_PATHS.includes(pathname.replace(/\/$/, ""))) return <>{children}</>;
   if (auth.status === "loading") return <Loading />;
@@ -102,12 +106,14 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         <Button onClick={retryLoad}>Tentar de novo</Button>
       </div>
     );
+  if (BILLING_ENFORCED && subs.access?.level === "blocked") return <BlockedScreen />;
   return (
     <>
       <Splash />
       {sync === "error" ? (
         <div className="bg-amber-100 p-2 text-center text-base text-[#8A4B00]">Sem conexão: salvo só neste aparelho. Vamos tentar de novo.</div>
       ) : null}
+      <BillingBanner />
       {children}
     </>
   );

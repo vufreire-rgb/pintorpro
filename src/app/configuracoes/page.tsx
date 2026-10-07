@@ -1,13 +1,14 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { DeleteAccountCard } from "@/components/DeleteAccountCard";
 import { InstallBanner } from "@/components/InstallBanner";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { LinkButton, Button, Card, ConfirmDialog, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, useAuthState } from "@/modules/auth";
-import { prepareLogout, signOutAndWipe } from "@/modules/account";
+import { downloadMyData, prepareLogout, signOutAndWipe } from "@/modules/account";
 import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
@@ -193,6 +194,7 @@ export default function Configuracoes() {
         <Button variant="ghost" onClick={() => { resetTours(); router.push("/visitas"); }}>Ver os guias de novo</Button>
       </Card>
       </div>
+      {cloudEnabled && auth.status === "ready" ? <SubscriptionCard /> : null}
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">
           <h2 className="text-lg font-bold">Conta</h2>
@@ -207,6 +209,7 @@ export default function Configuracoes() {
             onCancel={() => setAskLeave(false)}
             onConfirm={async () => { setAskLeave(false); setLeaving(true); await signOutAndWipe(); }}
           />
+          <Button variant="ghost" onClick={() => downloadMyData()}>Baixar meus dados</Button>
           <DeleteAccountCard />
         </Card>
       ) : null}

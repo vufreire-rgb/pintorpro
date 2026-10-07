@@ -1,7 +1,7 @@
 "use client";
 import { deleteAccountOnServer, signOut } from "@/repositories/cloudStore";
 import { clearAllFiles } from "@/repositories/fileStore";
-import { wipeAllAccountData } from "@/repositories/localStore";
+import { readRaw, wipeAllAccountData } from "@/repositories/localStore";
 import { flushPendingUploads, pendingUploadCount } from "./photos";
 import { abandonSync, hasUnsentChanges, syncNow } from "./sync";
 
@@ -46,6 +46,28 @@ export async function signOutAndWipe(): Promise<void> {
   abandonSync();
   wipeAllAccountData();
   await clearAllFiles().catch(() => undefined);
+}
+
+/** Baixa um arquivo com os dados da conta (clientes, visitas, orçamentos, obras…). Fotos e áudios não vão neste arquivo. */
+export function downloadMyData(): boolean {
+  const raw = readRaw();
+  if (!raw) return false;
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  const blob = new Blob([JSON.stringify({ app: "Medde", exportadoEm: new Date().toISOString(), dados: data }, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `medde-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return true;
 }
 
 /** Lê (e apaga) o aviso "conta excluída" mostrado na tela de login depois da exclusão. */
