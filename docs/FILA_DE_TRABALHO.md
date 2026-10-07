@@ -78,3 +78,7 @@ Construído e testado com servidor falso; **falta ligar de verdade**: chave Open
 
 Todas as funções: **Verify JWT desligado**. Só voz e recibo usam a chave da OpenAI.
 Notificações push: prontas na branch, falta ligar (`docs/NOTIFICACOES.md`: `0009_push.sql`, função `push`, atualizar `quote-link` e `public-page`).
+
+
+## Loja (Google Play)
+Preparação pronta: `docs/LOJA_PLAY_STORE.md` (passo a passo, textos, rascunho de segurança dos dados) e imagens em `docs/loja/`. Falta: conta de desenvolvedor, texto final da política de privacidade, e-mail de contato, 12 testadores e gerar o `.aab` (PWABuilder).

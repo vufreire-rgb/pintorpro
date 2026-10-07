@@ -8,7 +8,7 @@
   "themeColor": "#0F3B7A",
   "navigationColor": "#0F3B7A",
   "backgroundColor": "#FFFFFF",
-  "enableNotifications": false,
+  "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://medde.com.br/icons/icon-512.png",
   "maskableIconUrl": "https://medde.com.br/icons/icon-512.png",
