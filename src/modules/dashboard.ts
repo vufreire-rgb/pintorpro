@@ -1,4 +1,5 @@
 import { lateCents } from "./finance";
+import { isPriceOnly } from "./quotes";
 import { remainingCents } from "./workInfo";
 import type { Db } from "./types";
 
@@ -14,7 +15,7 @@ export function dashboard(db: Db) {
   const wonMonth = db.quotes.filter((q) => q.status === "won" && sameMonth(q.closedAt));
   return {
     soldMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.totalCents, 0),
-    profitMonthCents: wonMonth.reduce((s, q) => s + q.result.totals.profitCents, 0),
+    profitMonthCents: wonMonth.filter((q) => !isPriceOnly(q)).reduce((s, q) => s + q.result.totals.profitCents, 0),
     receivableCents: works.reduce((s, w) => s + remainingCents(w), 0),
     lateCents: works.reduce((s, w) => s + lateCents(w), 0),
     worksActive: works.filter((w) => w.status === "in_progress" || w.status === "issues").length,

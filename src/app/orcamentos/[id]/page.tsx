@@ -6,7 +6,7 @@ import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
-import { deleteQuote, duplicateQuote, isExpired, setQuoteStatus } from "@/modules/quotes";
+import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -25,6 +25,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   if (!q) return <Screen title="Orçamento" back="/orcamentos"><p>Orçamento não encontrado.</p></Screen>;
   const t = q.result.totals;
   const client = db.clients.find((c) => c.id === q.clientId);
+  const priceOnly = isPriceOnly(q);
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     setMsg("");
@@ -38,7 +39,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         <div className="text-lg text-support">{q.siteAddress}</div>
         <div className="mt-2 font-display text-[40px] font-extrabold leading-[44px] text-brand">{formatBRL(t.totalCents)}</div>
         <div className="flex flex-wrap items-center gap-2 text-base text-support">
-          Prazo: {plural(q.result.schedule.totalDays, "dia", "dias")} · Válido até {fmtDate(q.validUntil)}{isExpired(q) ? <Badge tone="warn">Vencido</Badge> : null}
+          {priceOnly ? null : <>Prazo: {plural(q.result.schedule.totalDays, "dia", "dias")} · </>}Válido até {fmtDate(q.validUntil)}{isExpired(q) ? <Badge tone="warn">Vencido</Badge> : null}
         </div>
       </Card>
 
@@ -60,8 +61,14 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
 
       <Card className="border-amber-300 bg-amber-50">
         <div className="mb-1 font-display text-lg font-bold">Só para você (não vai no PDF)</div>
-        <div>Custo estimado: {formatBRL(t.costCents)}</div>
-        <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
+        {priceOnly ? (
+          <p>Este orçamento tem só o preço, sem medidas. Por isso o app não calcula custo, lucro nem prazo. Para ver o lucro, toque em Editar orçamento e coloque as medidas.</p>
+        ) : (
+          <>
+            <div>Custo estimado: {formatBRL(t.costCents)}</div>
+            <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
+          </>
+        )}
       </Card>
 
       <Card>

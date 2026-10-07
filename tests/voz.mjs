@@ -73,6 +73,7 @@ check(calls.length === 2 && calls.every((c) => c.auth.startsWith("Bearer ") && c
 check((await page.getByLabel("Cliente").inputValue()) === "Dona Maria", "nome do cliente preenchido");
 check(await page.getByText("Sem medida, ficaram de fora: Quarto").isVisible(), "ambiente sem medida é avisado");
 check((await page.getByTestId("total").textContent())?.replace(/\s/g, "").includes("2.800,00"), "total = preço fechado ditado: " + (await page.getByTestId("total").textContent()));
+check(await page.getByText(/custo estimado .* lucro estimado|dá prejuízo/).isVisible(), "revisão mostra custo e lucro (ou aviso de prejuízo)");
 await page.getByLabel(/Preço fechado/).fill("3000");
 check((await page.getByTestId("total").textContent())?.replace(/\s/g, "").includes("3.000,00"), "mudar o preço na revisão muda o total");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
@@ -104,6 +105,20 @@ await page.waitForURL(/\/orcamentos\/[^/]+$/);
 await page.waitForTimeout(500);
 const left = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:voice-pending") ?? "[]").length);
 check(left === 0, "salvar o orçamento limpa a fila");
+// 4) só preço, sem medidas: sem custo/lucro/prazo
+draft.rooms = [];
+draft.closedPriceReais = 1500;
+await page.goto(base + "/orcamentos/voz");
+await page.getByRole("button", { name: "Começar a falar" }).click();
+await page.waitForTimeout(1500);
+await page.getByRole("button", { name: /Terminei/ }).click();
+await page.getByText("Só o preço, sem medidas: o app não calcula custo, lucro nem prazo.").waitFor();
+check(true, "revisão avisa que só com preço não há custo/lucro");
+await page.getByRole("button", { name: "Salvar orçamento" }).click();
+await page.waitForURL(/\/orcamentos\/[^/]+$/);
+await page.getByText("tem só o preço, sem medidas").waitFor();
+check(true, "orçamento só com preço: explica por que não há lucro");
+check(!(await page.getByText(/Prazo:/).count()), "orçamento só com preço: não mostra prazo");
 console.log(errors.length ? "ERROS DE CONSOLE: " + errors.join("; ") : "erros de console: nenhum");
 await browser.close();
 server.close();

@@ -5,6 +5,9 @@ import type { Db, Quote, QuoteInput, QuoteResult, QuoteStatus, Work } from "./ty
 
 export const VALIDITY_DAYS = 7;
 
+/** Orçamento só com o preço (sem medidas): não há base para custo, lucro, prazo nem materiais. */
+export const isPriceOnly = (q: Pick<Quote, "input">): boolean => q.input.rooms.length === 0;
+
 export const previewQuote = (input: QuoteInput, db: Db): QuoteResult => calculateQuote(input, buildEngineConfig(db));
 
 interface NewQuote {

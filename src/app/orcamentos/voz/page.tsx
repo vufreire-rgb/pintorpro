@@ -187,6 +187,14 @@ export default function OrcamentoPorVozPage() {
             <div className="rounded-2xl border border-brand/25 bg-brand-soft p-4">
               <div className="text-base text-support">Preço para o cliente</div>
               <div className="font-display text-[32px] font-extrabold leading-9 text-brand" data-testid="total">{quote.totalCents > 0 ? formatBRL(quote.totalCents) : "—"}</div>
+              {quote.totalCents > 0 && !quote.priceOnly ? (
+                <p className={`mt-1 text-base font-semibold ${quote.profitCents < 0 ? "text-err" : "text-support"}`}>
+                  {quote.profitCents < 0
+                    ? `Atenção: com os seus preços, este valor dá prejuízo de ${formatBRL(-quote.profitCents)}. Custo estimado: ${formatBRL(quote.costCents)}.`
+                    : `Só para você: custo estimado ${formatBRL(quote.costCents)}, lucro estimado ${formatBRL(quote.profitCents)}.`}
+                </p>
+              ) : null}
+              {quote.totalCents > 0 && quote.priceOnly ? <p className="mt-1 text-base text-support">Só o preço, sem medidas: o app não calcula custo, lucro nem prazo.</p> : null}
               {!fields.clientName.trim() ? <p className="text-base text-support">Falta o nome do cliente.</p> : quote.totalCents === 0 ? <p className="text-base text-support">Falta o preço ou as medidas.</p> : null}
             </div>
             <Button disabled={!canSave} onClick={save}>Salvar orçamento</Button>

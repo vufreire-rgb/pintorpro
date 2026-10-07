@@ -83,6 +83,10 @@ export interface VoiceQuote {
   /** Ambientes ditados sem medida: ficaram de fora do cálculo. */
   skippedRooms: string[];
   totalCents: number;
+  /** Custo e lucro pelos preços do pintor; só existem quando há medidas. */
+  costCents: number;
+  profitCents: number;
+  priceOnly: boolean;
 }
 
 /**
@@ -102,15 +106,20 @@ export function quoteFromVoice(db: Db, d: VoiceDraft): VoiceQuote {
   const extras: ExtraItem[] = rooms.length === 0 && closedCents > 0 ? [{ description: "Serviço de pintura (preço fechado)", priceCents: closedCents, costCents: 0 }] : [];
   let adjustment: Adjustment | undefined;
   let totalCents = 0;
+  let costCents = 0;
+  let profitCents = 0;
   if (rooms.length > 0 || extras.length > 0) {
     const base = previewQuote({ rooms, extras, adjustment: undefined }, db).totals;
     if (closedCents > 0 && base.subtotalCents !== closedCents) {
       const diff = closedCents - base.subtotalCents;
       adjustment = { type: diff < 0 ? "discount" : "surcharge", mode: "cents", value: Math.abs(diff) };
     }
-    totalCents = previewQuote({ rooms, extras, adjustment }, db).totals.totalCents;
+    const t = previewQuote({ rooms, extras, adjustment }, db).totals;
+    totalCents = t.totalCents;
+    costCents = t.costCents;
+    profitCents = t.profitCents;
   }
-  return { rooms, extras, adjustment, skippedRooms, totalCents };
+  return { rooms, extras, adjustment, skippedRooms, totalCents, costCents, profitCents, priceOnly: rooms.length === 0 };
 }
 
 export interface VoiceSaveInput {

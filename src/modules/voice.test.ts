@@ -53,6 +53,18 @@ describe("quoteFromVoice", () => {
     expect(q.skippedRooms).toEqual(["Quarto"]);
     expect(q.rooms.map((r) => r.name)).toEqual(["Cozinha"]);
   });
+  it("com medidas mostra custo e lucro; preço baixo demais aparece como prejuízo", () => {
+    const ok = quoteFromVoice(setup(), draft());
+    expect(ok.priceOnly).toBe(false);
+    expect(ok.costCents).toBeGreaterThan(0);
+    expect(ok.profitCents).toBe(ok.totalCents - ok.costCents);
+    expect(quoteFromVoice(setup(), draft({ closedPriceReais: 50 })).profitCents).toBeLessThan(0);
+  });
+  it("só preço: sem custo nem lucro", () => {
+    const q = quoteFromVoice(setup(), draft({ rooms: [], closedPriceReais: 1500 }));
+    expect(q.priceOnly).toBe(true);
+    expect(q.costCents).toBe(0);
+  });
   it("sem nada, total zero", () => {
     expect(quoteFromVoice(setup(), draft({ rooms: [] })).totalCents).toBe(0);
   });
