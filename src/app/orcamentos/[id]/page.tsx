@@ -5,7 +5,9 @@ import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
+import { Copy, FileText, Link2, Pencil, Send, Trash2 } from "lucide-react";
+import { cloudEnabled } from "@/modules/auth";
+import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
 import { isSimpleMode } from "@/modules/settings";
 import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
@@ -21,6 +23,8 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const [askDelete, setAskDelete] = useState(false);
   const [fechou, setFechou] = useState(false);
   const router = useRouter();
+  const { links, reload } = useQuoteLinks();
+  const [linkMsg, setLinkMsg] = useState("");
   if (!db) return <Loading />;
   const q = db.quotes.find((x) => x.id === id);
   if (!q) return <Screen title="Orçamento" back="/orcamentos"><p>Orçamento não encontrado.</p></Screen>;
@@ -48,6 +52,22 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         <Button icon={Send} disabled={busy} onClick={() => run(() => sharePdfOnWhatsApp(db, q))}>{busy ? "Gerando PDF…" : "Enviar pelo WhatsApp"}</Button>
         <Button variant="ghost" icon={FileText} disabled={busy} onClick={() => run(() => downloadPdf(db, q))}>Ver PDF</Button>
         {msg ? <p className="text-base text-err">{msg}</p> : null}
+        {cloudEnabled ? (
+          <>
+            <Button variant="ghost" icon={Link2} disabled={busy} onClick={() => run(async () => { setLinkMsg(""); try { await shareLinkOnWhatsApp(db, q); reload(); } catch { setLinkMsg("Não consegui criar o link. Verifique a internet e tente de novo."); } })}>{links[q.id] ? "Enviar o link de novo" : "Enviar link (avisa quando abrir)"}</Button>
+            {linkMsg ? <p className="text-base text-err">{linkMsg}</p> : null}
+            {links[q.id] ? (
+              <div className="flex flex-col gap-2 rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base" data-testid="link-status">
+                <div className="font-semibold">{viewedLabel(links[q.id])}</div>
+                {linkIsStale(q, links[q.id]) ? <div className="text-[#8A4B00]">Você editou o orçamento. Toque em &quot;Enviar o link de novo&quot; para o cliente ver a versão nova.</div> : null}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="ghost" onClick={() => { void navigator.clipboard?.writeText(linkUrl(links[q.id]!.token)); setLinkMsg(""); }}>Copiar link</Button>
+                  <Button variant="danger" onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
       </div>
 
       <Card className="flex flex-col gap-2">
@@ -102,7 +122,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         title={`Apagar o orçamento nº ${q.number}?`}
         text={q.status === "won" ? "Ele está fechado: a obra criada a partir dele também será apagada. Isso não pode ser desfeito." : "Isso não pode ser desfeito."}
         onCancel={() => setAskDelete(false)}
-        onConfirm={() => { deleteQuote(q.id); router.replace("/orcamentos"); }}
+        onConfirm={() => { void unpublishLinkFor(q.id); deleteQuote(q.id); router.replace("/orcamentos"); }}
       />
       <Link href="/orcamentos/novo" className="text-center text-lg font-bold text-brand underline">Fazer outro orçamento</Link>
     </Screen>

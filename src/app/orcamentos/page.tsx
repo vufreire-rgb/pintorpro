@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Badge, Button, Card, CardTitle, Chip, Field, LinkButton, Loading, Screen, TextInput } from "@/components/ui";
-import { AlarmClock, Mic, Plus } from "lucide-react";
+import { AlarmClock, Eye, Mic, Plus } from "lucide-react";
 import { DAY_SHORT, DEFAULT_REMINDER, isValidTime, reminderLabel, type ReviewReminder } from "@/modules/reminder";
 import { saveCompany } from "@/modules/settings";
 import { downloadReviewIcs } from "@/modules/share";
 import { isExpired } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { usePendingVoice } from "@/modules/voice";
+import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
 import type { QuoteStatus } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtDate } from "@/shared/format";
@@ -43,6 +44,7 @@ const TABS: QuoteStatus[] = ["open", "won", "lost"];
 export default function Orcamentos() {
   const db = useAppDb();
   const voicePending = usePendingVoice().length;
+  const { links } = useQuoteLinks();
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [remOpen, setRemOpen] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -87,7 +89,7 @@ export default function Orcamentos() {
         <Link key={q.id} href={`/orcamentos/${q.id}`}>
           <Card>
             <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {db.clients.find((c) => c.id === q.clientId)?.name}</b><b className="font-display">{formatBRL(q.result.totals.totalCents)}</b></div>
-            <div className="mt-1 flex items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}</div>
+            <div className="mt-1 flex items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
           </Card>
         </Link>
       ))}

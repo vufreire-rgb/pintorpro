@@ -74,6 +74,43 @@ export const sendVoice = (audio: Blob): Promise<unknown> =>
 /** Manda a foto do recibo ao servidor (Edge Function receipt-scan). */
 export const sendReceipt = (image: Blob): Promise<unknown> => invokeAi("receipt-scan", "image", image, "recibo.jpg");
 
+/** Linha de um link público de orçamento (só leitura: quem escreve é a função quote-link). */
+export interface QuoteLinkRow { quote_id: string; token: string; views_count: number; first_viewed_at: string | null; last_viewed_at: string | null; updated_at: string }
+
+/** Publica (ou atualiza) o link do orçamento. Devolve o token. */
+export async function publishQuoteLink(quoteId: string, snapshot: unknown): Promise<string> {
+  const { data, error } = await c().functions.invoke("quote-link", { method: "POST", body: { quoteId, snapshot } });
+  if (error || typeof data?.token !== "string") throw new Error(error ? "network" : "failed");
+  return data.token as string;
+}
+
+/** Apaga o link do orçamento: o endereço deixa de funcionar. */
+export async function revokeQuoteLink(quoteId: string): Promise<void> {
+  const { error } = await c().functions.invoke("quote-link", { method: "POST", body: { quoteId, revoke: true } });
+  if (error) throw new Error("network");
+}
+
+/** Links do pintor com as visualizações (leitura protegida pelo RLS: só as linhas dele). */
+export async function listQuoteLinks(): Promise<QuoteLinkRow[]> {
+  const { data, error } = await c().from("shared_quotes").select("quote_id, token, views_count, first_viewed_at, last_viewed_at, updated_at");
+  if (error) throw error;
+  return (data ?? []) as QuoteLinkRow[];
+}
+
+/** Página pública do cliente: busca o orçamento do link (sem login). Falha com "not_found" ou "network". */
+export async function fetchSharedQuote(token: string): Promise<unknown> {
+  if (!url) throw new Error("network");
+  let res: Response;
+  try {
+    res = await fetch(`${url}/functions/v1/quote-link?t=${encodeURIComponent(token)}`, { headers: anonKey ? { apikey: anonKey } : {} });
+  } catch {
+    throw new Error("network");
+  }
+  if (res.status === 404) throw new Error("not_found");
+  if (!res.ok) throw new Error("network");
+  return (await res.json()).snapshot;
+}
+
 /** Linha de assinatura da pessoa (null se ainda não existe). Só leitura: quem escreve é o servidor. */
 export async function pullSubscription(userId: string): Promise<{ status: string; trial_ends_at: string; current_period_end: string | null } | null> {
   const { data, error } = await c().from("subscriptions").select("status, trial_ends_at, current_period_end").eq("user_id", userId).maybeSingle();
