@@ -1,9 +1,11 @@
 "use client";
-import { useState } from "react";
-import { Plus, TrendingUp, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Plus, TrendingUp, X } from "lucide-react";
 import { Button, Card, CardTitle, Chip, Field, NumberInput, Stepper, TextInput } from "./ui";
 import { addExpense, removeExpense, setDaysWorked } from "@/modules/works";
 import { dateBR, ymd } from "@/modules/workInfo";
+import { cloudEnabled } from "@/modules/auth";
+import { readReceipt, receiptFailureText } from "@/modules/receipt";
 import { isPriceOnly } from "@/modules/quotes";
 import { isSimpleMode } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
@@ -23,6 +25,27 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
   const [amount, setAmount] = useState(0);
   const [kind, setKind] = useState<ExpenseKind>("material");
   const [note, setNote] = useState("");
+  const [date, setDate] = useState(() => ymd(new Date()));
+  const [reading, setReading] = useState(false);
+  const [receiptMsg, setReceiptMsg] = useState("");
+  const photoInput = useRef<HTMLInputElement>(null);
+  const scan = async (file: File | undefined) => {
+    if (!file) return;
+    setReading(true);
+    setReceiptMsg("");
+    try {
+      const r = await readReceipt(file);
+      if (r.amountReais > 0) setAmount(r.amountReais);
+      setKind(r.kind);
+      setNote([r.store, r.description].filter(Boolean).join(" · "));
+      if (r.date) setDate(r.date);
+      setReceiptMsg(r.amountReais > 0 ? "Confira os dados abaixo e toque em Lançar gasto." : "Não achei o valor no recibo. Digite o valor abaixo.");
+    } catch (e) {
+      setReceiptMsg(receiptFailureText(e instanceof Error ? e.message : ""));
+    } finally {
+      setReading(false);
+    }
+  };
   const p = workProfit(w, quote);
   const priceOnly = !!quote && isPriceOnly(quote);
   const simple = isSimpleMode(useAppDb()?.company);
@@ -56,10 +79,18 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
       ))}
       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
         <b>Lançar gasto</b>
+        {cloudEnabled ? (
+          <>
+            <Button variant="ghost" icon={Camera} disabled={reading} onClick={() => photoInput.current?.click()}>{reading ? "Lendo o recibo…" : "Fotografar o recibo"}</Button>
+            <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden data-testid="recibo-input" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; void scan(f); }} />
+            {receiptMsg ? <p role="status" className="text-base text-support">{receiptMsg}</p> : null}
+          </>
+        ) : null}
         <div className="flex flex-wrap gap-2">{KINDS.map((k) => <Chip key={k} active={kind === k} onClick={() => setKind(k)}>{EXPENSE_LABEL[k]}</Chip>)}</div>
         <Field label="Valor gasto (R$)"><NumberInput aria-label="Valor gasto" value={amount} onChange={setAmount} /></Field>
+        <Field label="Data do gasto"><TextInput type="date" aria-label="Data do gasto" value={date} max={ymd(new Date())} onChange={(e) => setDate(e.target.value || ymd(new Date()))} /></Field>
         <Field label="O que foi? (opcional)"><TextInput placeholder="Ex.: 2 latas de tinta" value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-        <Button variant="ghost" icon={Plus} disabled={amount <= 0} onClick={() => { addExpense(w.id, { date: ymd(new Date()), kind, amountCents: toCents(amount), note: note.trim() }); setAmount(0); setNote(""); }}>Lançar gasto</Button>
+        <Button variant="ghost" icon={Plus} disabled={amount <= 0} onClick={() => { addExpense(w.id, { date, kind, amountCents: toCents(amount), note: note.trim() }); setAmount(0); setNote(""); setDate(ymd(new Date())); setReceiptMsg(""); }}>Lançar gasto</Button>
       </div>
     </Card>
   );

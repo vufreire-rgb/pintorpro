@@ -59,3 +59,11 @@ No celular, no app: Orçamentos → **Ditar orçamento por voz** → falar um or
 
 ## Próxima etapa (ainda não feita): gravar a conversa inteira
 Ver conversa com o pintor: gravar a conversa com o cliente e a IA ignora o que é desnecessário. Exige comprimir o áudio e enviar em partes (hoje o limite é 6 MB), franquia de minutos por pintor (custo ~R$ 0,43 a 0,55 por visita de 20 min), aviso ao cliente e texto na política de privacidade. Decidir depois do teste real da voz curta.
+
+## Recibo por foto (despesas da obra)
+- Na obra, em **Custos e lucro → Lançar gasto → Fotografar o recibo**: a IA lê valor, data, loja e tipo; o pintor confere e toca em Lançar gasto. A foto **não é guardada** (vai à OpenAI para ser lida e é descartada). Precisa de internet e de conta.
+- **Ligar (depois da chave da OpenAI, que é a mesma da voz):**
+  1. SQL Editor: rodar `supabase/migrations/0006_receipt_usage.sql` (contador diário, limite 60 por pessoa/dia).
+  2. Edge Functions → Deploy new function → Via Editor: nome `receipt-scan`, colar `supabase/functions/receipt-scan/COLAR_NO_PAINEL.ts`, **Verify JWT desligado**.
+- Custo estimado: centavos por foto (a medir com recibos reais). Citar na política de privacidade junto com a voz.
+- O campo **Data do gasto** agora existe também no lançamento manual.

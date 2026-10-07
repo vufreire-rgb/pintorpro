@@ -51,11 +51,11 @@ export async function deleteAccountOnServer(): Promise<void> {
   if (error) throw error;
 }
 
-/** Manda o áudio ditado ao servidor (Edge Function voice-quote). Falha com o código do erro: "daily_limit", "too_big", "ai_failed"… */
-export async function sendVoice(audio: Blob): Promise<unknown> {
+/** Chama uma função de IA do servidor mandando um arquivo. Falha com o código do erro: "daily_limit", "too_big", "ai_failed", "network"… */
+async function invokeAi(fn: string, field: string, blob: Blob, filename: string): Promise<unknown> {
   const body = new FormData();
-  body.append("audio", audio, audio.type.includes("wav") ? "audio.wav" : audio.type.includes("mp4") ? "audio.m4a" : "audio.webm");
-  const { data, error } = await c().functions.invoke("voice-quote", { method: "POST", body });
+  body.append(field, blob, filename);
+  const { data, error } = await c().functions.invoke(fn, { method: "POST", body });
   if (error) {
     const res = (error as { context?: Response }).context;
     if (res && typeof res.json === "function") {
@@ -66,6 +66,13 @@ export async function sendVoice(audio: Blob): Promise<unknown> {
   }
   return data;
 }
+
+/** Manda o áudio ditado ao servidor (Edge Function voice-quote). */
+export const sendVoice = (audio: Blob): Promise<unknown> =>
+  invokeAi("voice-quote", "audio", audio, audio.type.includes("wav") ? "audio.wav" : audio.type.includes("mp4") ? "audio.m4a" : "audio.webm");
+
+/** Manda a foto do recibo ao servidor (Edge Function receipt-scan). */
+export const sendReceipt = (image: Blob): Promise<unknown> => invokeAi("receipt-scan", "image", image, "recibo.jpg");
 
 /** Linha de assinatura da pessoa (null se ainda não existe). Só leitura: quem escreve é o servidor. */
 export async function pullSubscription(userId: string): Promise<{ status: string; trial_ends_at: string; current_period_end: string | null } | null> {
