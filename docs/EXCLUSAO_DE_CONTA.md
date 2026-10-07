@@ -31,3 +31,6 @@ Se alguém editar `logic.ts` ou `index.ts`, rode `node supabase/functions/delete
 ## O que continua fora do app
 - Logs de infraestrutura do Supabase e da Vercel seguem a retenção de cada provedor.
 - O Supabase não mantém backups próprios no plano Free (confirmar no painel).
+
+## Teste real (2026-10-07)
+O titular testou **Excluir minha conta** no app publicado, contra o Supabase real, com a função `delete-account` publicada: funcionou.

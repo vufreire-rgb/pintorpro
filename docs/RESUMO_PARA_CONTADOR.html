@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Medde — resumo para o contador</title>
+<style>
+  @page { size: A4; margin: 13mm 14mm; }
+  body { font-family: "Atkinson Hyperlegible", Arial, sans-serif; font-size: 10.2pt; line-height: 1.32; color: #111; }
+  h1 { font-size: 17pt; margin: 0 0 1mm; color: #0F3B7A; }
+  .sub { color: #555; margin: 0 0 3mm; font-size: 9.5pt; }
+  h2 { font-size: 11.2pt; margin: 3mm 0 1mm; color: #0F3B7A; border-bottom: 1px solid #c9d3e3; padding-bottom: .6mm; }
+  p { margin: 0 0 1.2mm; }
+  ul, ol { margin: 0 0 1mm; padding-left: 5mm; }
+  li { margin: 0 0 .3mm; }
+  table { border-collapse: collapse; width: 100%; font-size: 9.2pt; margin: 1mm 0; }
+  th, td { border: 1px solid #c9d3e3; padding: .8mm 1.6mm; text-align: left; vertical-align: top; }
+  th { background: #eef2f9; }
+  .nota { font-size: 9pt; color: #555; margin-top: 2mm; }
+</style></head><body>
+<h1>Medde — resumo para o contador</h1>
+<p class="sub">Aplicativo para pintores (visitas, orçamento, obras e financeiro) · domínio medde.com.br · 07/10/2026 · titular sem CNPJ</p>
+
+<h2>1. Situação</h2>
+<p>O Medde funciona hoje em <b>beta gratuito</b>, sem cobrança. Não existe CNPJ. O domínio e as contas de serviço (hospedagem, banco de dados, lojas de aplicativos) estão ou ficarão em <b>nome do titular pessoa física</b>, até haver empresa.</p>
+
+<h2>2. Cobrança que se pretende fazer</h2>
+<ul>
+  <li><b>Assinatura mensal</b> de <b>R$ 29,90</b> (valor ainda a confirmar), com <b>30 dias de teste grátis</b> por conta.</li>
+  <li>Quem não paga: aviso 3 dias antes de vencer; depois de vencer, aviso por 3 dias; depois disso o acesso é bloqueado (os dados continuam guardados e a pessoa pode baixá-los ou excluir a conta).</li>
+  <li>Pagamento <b>pela internet</b> (Pix e cartão, de preferência recorrente). Uma cobrança dentro do Google Play também é possível no futuro (a loja retém cerca de 15%).</li>
+</ul>
+
+<h2>3. Como o dinheiro entraria (meios de recebimento)</h2>
+<table>
+  <tr><th>Opção</th><th>Aceita CPF?</th><th>Observação</th></tr>
+  <tr><td>Mercado Pago (assinaturas)</td><td>Sim, segundo comparativos consultados</td><td>Link de assinatura com Pix, cartão e boleto; renovação automática</td></tr>
+  <tr><td>Asaas</td><td>A confirmar</td><td>Feito para cobrança recorrente; apresenta-se como conta PJ</td></tr>
+  <tr><td>Efí</td><td>A confirmar</td><td>Cobrança recorrente por API</td></tr>
+  <tr><td>Stripe</td><td>Não</td><td>Exige CNPJ no Brasil</td></tr>
+</table>
+
+<h2>4. Perguntas para o contador</h2>
+<ol>
+  <li>Posso <b>receber essas assinaturas como pessoa física</b> (autônomo)? Qual imposto incide (carnê-leão, ISS) e como declarar?</li>
+  <li>Qual formato abrir: <b>MEI, ME (Simples Nacional)</b> ou outro? O <b>MEI permite a atividade de software/licenciamento de programas</b>? Qual CNAE usar?</li>
+  <li>Preciso <b>emitir nota fiscal</b> (NFS-e) ao cliente? Os clientes são pintores autônomos e pequenas empresas.</li>
+  <li>Quando abrir o CNPJ, como <b>transferir</b> para a empresa o domínio, o nome (marca no INPI), as contas de serviço e os contratos?</li>
+  <li>Os serviços usados são cobrados em <b>dólar</b> (hospedagem e banco de dados). Como tratar a despesa, o IOF e a dedução?</li>
+  <li>Receita de loja de aplicativos (Google/Apple): como declarar, e vale abrir a empresa antes de publicar nas lojas?</li>
+</ol>
+
+<h2>5. Custos mensais estimados (quando sair do plano gratuito)</h2>
+<table>
+  <tr><th>Item</th><th>Hoje</th><th>Quando for comercial</th></tr>
+  <tr><td>Banco de dados e login (Supabase)</td><td>Gratuito (limites)</td><td>cerca de US$ 25 (≈ R$ 130)</td></tr>
+  <tr><td>Hospedagem do site (Vercel)</td><td>Gratuito (uso comercial não permitido)</td><td>cerca de US$ 20 (≈ R$ 104)</td></tr>
+  <tr><td>Domínio medde.com.br (Hostinger)</td><td>Anual</td><td>Anual</td></tr>
+  <tr><td>Google Play</td><td>—</td><td>US$ 25, taxa única da conta de desenvolvedor</td></tr>
+  <tr><td>Meio de pagamento</td><td>—</td><td>Taxa por cobrança (Pix a partir de cerca de R$ 1; cartão em %)</td></tr>
+</table>
+
+<p class="nota"><b>Jurídico:</b> política de privacidade e termos (LGPD) estão sendo elaborados por outro agente; o app guarda dados de clientes dos pintores (nome, telefone, endereço, fotos, áudios) em servidores nos EUA. Valores de plataforma são estimativas de consulta pública em outubro de 2026 e devem ser confirmados antes de decidir. Este resumo não substitui orientação profissional.</p>
+</body></html>
