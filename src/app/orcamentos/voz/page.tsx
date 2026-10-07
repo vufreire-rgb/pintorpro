@@ -1,6 +1,6 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { Button, Card, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
@@ -17,7 +17,20 @@ const MAX_SECONDS = 180;
 type Phase = { name: "idle" } | { name: "sending" } | { name: "review"; draft: VoiceDraft; transcript: string; pendingId?: string } | { name: "error"; text: string } | { name: "queued" };
 
 export default function OrcamentoPorVozPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <OrcamentoPorVoz />
+    </Suspense>
+  );
+}
+
+function OrcamentoPorVoz() {
   const db = useAppDb();
+  const params = useSearchParams();
+  /** Visita de onde o ditado começou; o orçamento sai ligado a ela e já sabe cliente e endereço. */
+  const [visitId, setVisitId] = useState<string | undefined>(params.get("visita") ?? undefined);
+  const visit = db?.visits.find((v) => v.id === visitId);
+  const visitClient = visit?.clientId ? db?.clients.find((c) => c.id === visit.clientId) : undefined;
   const router = useRouter();
   const { state, seconds, start, stop } = useRecorder();
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
@@ -34,8 +47,12 @@ export default function OrcamentoPorVozPage() {
   };
   useEffect(() => () => { if (autoStop.current) clearTimeout(autoStop.current); }, []);
 
-  const openReview = (draft: VoiceDraft, transcript: string, pendingId?: string) => {
-    setFields({ clientName: draft.clientName, phone: draft.phone, address: draft.address, paymentTerms: draft.paymentTerms, notes: draft.notes });
+  const openReview = (draft: VoiceDraft, transcript: string, pendingId?: string, pendingVisitId?: string) => {
+    const vid = pendingId ? pendingVisitId : visitId;
+    setVisitId(vid);
+    const v = db?.visits.find((x) => x.id === vid);
+    const c = v?.clientId ? db?.clients.find((x) => x.id === v.clientId) : undefined;
+    setFields({ clientName: c?.name ?? draft.clientName, phone: c?.phone ?? draft.phone, address: v?.siteAddress || c?.address || draft.address, paymentTerms: draft.paymentTerms, notes: draft.notes });
     setPrice(draft.closedPriceReais);
     setDescription(describeDraft(draft));
     setPhase({ name: "review", draft, transcript, pendingId });
@@ -47,7 +64,7 @@ export default function OrcamentoPorVozPage() {
     if (!out) return;
     setPhase({ name: "sending" });
     const keep = async () => {
-      try { await queueVoice(out.blob, out.seconds); setPhase({ name: "queued" }); }
+      try { await queueVoice(out.blob, out.seconds, visitId); setPhase({ name: "queued" }); }
       catch { setPhase({ name: "error", text: "Não consegui guardar o áudio neste aparelho. Libere espaço ou tente de novo com internet." }); }
     };
     if (typeof navigator !== "undefined" && navigator.onLine === false) return keep();
@@ -99,13 +116,13 @@ export default function OrcamentoPorVozPage() {
   const canSave = !!quote && quote.totalCents > 0 && !!fields.clientName.trim();
   const save = () => {
     if (!quote) return;
-    const id = saveVoiceQuote(db, { ...fields, quote });
+    const id = saveVoiceQuote(db, { ...fields, quote, clientId: visitClient?.id, visitId: visit?.id });
     if (phase.name === "review" && phase.pendingId) void discardVoice(phase.pendingId);
     router.replace(`/orcamentos/${id}`);
   };
 
   return (
-    <Screen title="Orçamento por voz" back="/orcamentos">
+    <Screen title="Orçamento por voz" back={visit ? `/visitas/${visit.id}` : "/orcamentos"}>
       <div className="flex flex-col gap-4 pb-8">
         {!cloudEnabled ? <Card>O orçamento por voz precisa de uma conta com internet. Entre na sua conta para usar.</Card> : null}
 
@@ -146,7 +163,7 @@ export default function OrcamentoPorVozPage() {
               <div key={p.id} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
                 <div className="text-base">{new Date(p.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {fmtClock(p.seconds)} · {p.status === "ready" ? "pronto para conferir" : "esperando internet"}</div>
                 <div className="grid grid-cols-2 gap-2">
-                  {p.status === "ready" && p.draft ? <Button onClick={() => openReview(p.draft!, p.transcript ?? "", p.id)}>Conferir</Button> : <Button variant="ghost" onClick={() => void runPending(p.id)}>Tentar agora</Button>}
+                  {p.status === "ready" && p.draft ? <Button onClick={() => openReview(p.draft!, p.transcript ?? "", p.id, p.visitId)}>Conferir</Button> : <Button variant="ghost" onClick={() => void runPending(p.id)}>Tentar agora</Button>}
                   <Button variant="ghost" onClick={() => void discardVoice(p.id)}>Apagar</Button>
                 </div>
               </div>
@@ -158,8 +175,14 @@ export default function OrcamentoPorVozPage() {
           <>
             <Card className="flex flex-col gap-3">
               <b className="text-lg">Confira o que eu entendi</b>
-              <Field label="Cliente"><TextInput value={fields.clientName} onChange={(e) => setFields({ ...fields, clientName: e.target.value })} /></Field>
-              <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={fields.phone} onChange={(e) => setFields({ ...fields, phone: e.target.value })} /></Field>
+              {visitClient ? (
+                <div><div className="text-lg font-semibold">{visitClient.name}</div>{visitClient.phone ? <div className="text-support">{visitClient.phone}</div> : null}<div className="text-base text-support">Cliente da visita. O orçamento fica ligado a ela.</div></div>
+              ) : (
+                <>
+                  <Field label="Cliente"><TextInput value={fields.clientName} onChange={(e) => setFields({ ...fields, clientName: e.target.value })} /></Field>
+                  <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={fields.phone} onChange={(e) => setFields({ ...fields, phone: e.target.value })} /></Field>
+                </>
+              )}
               <Field label="Endereço da obra"><TextInput value={fields.address} onChange={(e) => setFields({ ...fields, address: e.target.value })} /></Field>
             </Card>
 

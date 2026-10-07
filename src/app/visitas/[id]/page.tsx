@@ -9,7 +9,7 @@ import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
-import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
+import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
@@ -197,6 +197,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       </Field>
       </div>
 
+      <LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant={simple ? "primary" : "ghost"}>Ditar orçamento</LinkButton>
       <div data-tour="orcar"><LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton></div>
       {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>

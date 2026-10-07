@@ -138,14 +138,18 @@ export interface VoiceSaveInput {
   paymentTerms: string;
   notes: string;
   quote: VoiceQuote;
+  /** Quando o ditado nasceu numa visita: cliente da visita e a própria visita (o orçamento fica ligado a ela). */
+  clientId?: string;
+  visitId?: string;
 }
 
 /** Cria o cliente (se for novo) e salva o orçamento. Devolve o id para abrir a tela do orçamento. */
 export function saveVoiceQuote(db: Db, s: VoiceSaveInput): string {
-  const existing = db.clients.find((c) => c.name.trim().toLowerCase() === s.clientName.trim().toLowerCase());
+  const existing = s.clientId ? db.clients.find((c) => c.id === s.clientId) : db.clients.find((c) => c.name.trim().toLowerCase() === s.clientName.trim().toLowerCase());
   const clientId = existing?.id ?? addClient({ name: s.clientName.trim(), phone: s.phone.trim(), address: s.address.trim() }).id;
   return saveQuote(db, {
     clientId,
+    visitId: s.visitId,
     siteAddress: s.address.trim() || existing?.address || "",
     input: { rooms: s.quote.rooms, extras: s.quote.extras, adjustment: s.quote.adjustment },
     paymentTerms: s.paymentTerms.trim() || db.company?.paymentTerms || "",
@@ -162,6 +166,8 @@ export interface PendingVoice {
   id: string;
   createdAt: string;
   seconds: number;
+  /** Visita de onde o ditado começou (o orçamento sai ligado a ela). */
+  visitId?: string;
   status: "waiting" | "ready";
   transcript?: string;
   draft?: VoiceDraft;
@@ -195,11 +201,11 @@ export const usePendingVoice = (): PendingVoice[] => useSyncExternalStore(subscr
 const fileId = (id: string) => `voice-${id}`;
 
 /** Guarda o áudio no aparelho para enviar quando houver internet. */
-export async function queueVoice(blob: Blob, seconds: number): Promise<void> {
+export async function queueVoice(blob: Blob, seconds: number, visitId?: string): Promise<void> {
   if (listPendingVoice().length >= MAX_PENDING) throw new Error("queue_full");
   const id = crypto.randomUUID();
   await putFile(fileId(id), blob);
-  writePending([...listPendingVoice(), { id, createdAt: new Date().toISOString(), seconds, status: "waiting" }]);
+  writePending([...listPendingVoice(), { id, createdAt: new Date().toISOString(), seconds, visitId, status: "waiting" }]);
 }
 
 /** Apaga o item (e o áudio, se ainda estiver no aparelho). */

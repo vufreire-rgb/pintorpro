@@ -94,6 +94,21 @@ describe("saveVoiceQuote", () => {
   });
 });
 
+describe("saveVoiceQuote a partir da visita", () => {
+  it("usa o cliente da visita e liga o orçamento à visita", () => {
+    const db = setup();
+    db.clients = [{ id: "c1", name: "Seu Carlos", phone: "1", address: "Av. Brasil" }];
+    db.visits = [{ id: "v1", clientId: "c1", siteAddress: "Av. Brasil", notes: "", photoIds: [], createdAt: "2026-10-01T00:00:00Z" }];
+    store.set("pintorpro:v1", JSON.stringify(db));
+    const quote = quoteFromVoice(db, draft({ closedPriceReais: 900 }));
+    saveVoiceQuote(db, { clientName: "Nome Ditado", phone: "", address: "Av. Brasil", paymentTerms: "", notes: "", quote, clientId: "c1", visitId: "v1" });
+    const saved = JSON.parse(store.get("pintorpro:v1")!) as Db;
+    expect(saved.clients).toHaveLength(1);
+    expect(saved.quotes[0]).toMatchObject({ clientId: "c1", visitId: "v1" });
+    expect(saved.visits[0]!.quoteId).toBe(saved.quotes[0]!.id);
+  });
+});
+
 describe("voiceFailureText", () => {
   it("códigos conhecidos e desconhecidos viram texto em português", () => {
     expect(voiceFailureText("daily_limit")).toMatch(/limite/);

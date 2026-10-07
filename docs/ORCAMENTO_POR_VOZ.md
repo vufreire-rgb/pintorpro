@@ -49,3 +49,13 @@ No celular, no app: Orçamentos → **Ditar orçamento por voz** → falar um or
 - Na voz, o modo simples **ignora as medidas ditadas** e usa só o preço (se não falou preço, o pintor digita).
 - O PDF de orçamento só com preço mostra o texto "o que será feito" como resumo e prazo "A combinar".
 - O que o pintor perde no simples: aviso de prejuízo, lista de materiais, prazo calculado. O aviso está na própria tela de escolha.
+
+## Ditar de dentro da visita
+- Na visita há o botão **Ditar orçamento** (principal no modo simples). Abre `/orcamentos/voz?visita=ID`.
+- O cliente e o endereço vêm da visita; o pintor só fala o serviço e o preço. O nome ditado não substitui o cliente da visita.
+- O orçamento sai **ligado à visita** (fotos escolhidas e localização vão no PDF) e a visita passa a mostrar "Ver orçamento feito".
+- Se estava sem internet, o áudio guardado lembra de qual visita veio.
+- O botão em Orçamentos continua para quem fecha sem visita.
+
+## Próxima etapa (ainda não feita): gravar a conversa inteira
+Ver conversa com o pintor: gravar a conversa com o cliente e a IA ignora o que é desnecessário. Exige comprimir o áudio e enviar em partes (hoje o limite é 6 MB), franquia de minutos por pintor (custo ~R$ 0,43 a 0,55 por visita de 20 min), aviso ao cliente e texto na política de privacidade. Decidir depois do teste real da voz curta.
