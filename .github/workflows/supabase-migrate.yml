@@ -1,0 +1,32 @@
+# Roda UM arquivo de migração (SQL) no banco do Supabase, na mão: Actions → Supabase migrate → Run workflow.
+# Precisa do secret SUPABASE_DB_URL (o mesmo do backup: conexão "Session pooler" com a senha do banco).
+# Nunca roda sozinho: banco é coisa para decidir com calma. Se o arquivo já foi rodado, o erro "already exists" aparece e nada é estragado.
+name: Supabase migrate (SQL)
+
+on:
+  workflow_dispatch:
+    inputs:
+      arquivo:
+        description: "Nome do arquivo em supabase/migrations (ex.: 0009_push.sql)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rodar o SQL
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          ARQUIVO: ${{ github.event.inputs.arquivo }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then echo "::error::Falta o secret SUPABASE_DB_URL. Veja docs/DEPLOY_AUTOMATICO.md."; exit 1; fi
+          if ! echo "$ARQUIVO" | grep -Eq '^[0-9]{4}_[a-z0-9_]+\.sql$'; then echo "::error::Nome inválido: $ARQUIVO"; exit 1; fi
+          if [ ! -f "supabase/migrations/$ARQUIVO" ]; then echo "::error::Não existe supabase/migrations/$ARQUIVO"; exit 1; fi
+          sudo apt-get install -y -qq postgresql-client >/dev/null
+          psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "supabase/migrations/$ARQUIVO"
+          echo "Pronto: $ARQUIVO executado."

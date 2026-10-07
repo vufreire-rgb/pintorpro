@@ -1,0 +1,53 @@
+# Publica as funções do Supabase (pasta supabase/functions) sem precisar colar nada no painel.
+# Roda sozinho quando algo em supabase/functions muda na main, ou na mão (Actions → Supabase deploy → Run workflow).
+# Precisa do secret SUPABASE_ACCESS_TOKEN (ver docs/DEPLOY_AUTOMATICO.md). Todas as funções do Medde usam "Verify JWT desligado":
+# cada uma confere o login sozinha, e algumas são públicas (link do orçamento, página de pedidos).
+name: Supabase deploy (funções)
+
+on:
+  workflow_dispatch:
+    inputs:
+      funcoes:
+        description: 'Quais funções publicar (nomes separados por espaço) ou "todas"'
+        default: "todas"
+  push:
+    branches: [main]
+    paths: ["supabase/functions/**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+env:
+  PROJECT_REF: dafelzfidqxuntvkkgrd
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Publicar as funções
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PEDIDO: ${{ github.event.inputs.funcoes }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::Falta o secret SUPABASE_ACCESS_TOKEN. Veja docs/DEPLOY_AUTOMATICO.md."
+            exit 1
+          fi
+          todas=$(for d in supabase/functions/*/; do [ -f "${d}index.ts" ] && basename "$d"; done)
+          if [ -z "$PEDIDO" ] || [ "$PEDIDO" = "todas" ]; then lista="$todas"; else lista="$PEDIDO"; fi
+          for nome in $lista; do
+            # só aceita nomes de funções que existem na pasta (evita qualquer texto estranho no pedido)
+            if ! echo "$todas" | grep -qx "$nome"; then echo "::error::Função desconhecida: $nome"; exit 1; fi
+            echo "== Publicando $nome"
+            supabase functions deploy "$nome" --project-ref "$PROJECT_REF" --no-verify-jwt --use-api
+          done
+          echo "Pronto: $(echo $lista | wc -w) função(ões) publicada(s)."
