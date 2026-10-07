@@ -33,6 +33,8 @@ export interface Company {
   depositPct?: number;
   /** Já oferecemos cadastrar a chave Pix (e a pessoa disse "agora não"). */
   pixAsked?: boolean;
+  /** O pintor dispensou a lista de primeiros passos. */
+  stepsHidden?: boolean;
   /** Como o pintor orça: "calc" (padrão) usa a base de cálculo; "simple" só voz e preço fechado, sem telas de cálculo. */
   quoteMode?: "calc" | "simple";
   /** Guias passo a passo já vistos ou pulados (ex.: visita). */

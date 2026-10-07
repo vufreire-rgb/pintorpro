@@ -1,0 +1,40 @@
+// Primeiros passos na tela de Visitas.
+import { chromium, devices } from "playwright-core";
+const base = process.env.BASE ?? "http://localhost:3000";
+const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+const browser = await chromium.launch({ executablePath: exe, args: ["--disable-blink-features=AutomationControlled"] });
+const ctx = await browser.newContext({ ...devices["Pixel 7"] });
+const page = await ctx.newPage();
+await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+const fails = [];
+const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
+const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).click();
+await page.goto(base);
+await page.waitForURL("**/onboarding");
+await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
+await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
+await page.waitForURL(base + "/visitas");
+const box = page.getByTestId("primeiros-passos");
+await box.waitFor();
+check((await box.textContent()).includes("0 de 6"), "conta nova: 0 de 6");
+await page.evaluate(() => {
+  const d = JSON.parse(localStorage.getItem("pintorpro:v1"));
+  d.visits = [{ id: "v1", siteAddress: "Rua A", notes: "", photoIds: [], createdAt: new Date().toISOString(), startedAt: new Date().toISOString() }];
+  localStorage.setItem("pintorpro:v1", JSON.stringify(d));
+});
+await page.goto(base + "/visitas");
+await box.waitFor();
+check((await box.textContent()).includes("1 de 6"), "depois de uma visita: 1 de 6");
+check(await box.getByRole("link", { name: "Fazer seu primeiro orçamento" }).isVisible(), "passos pendentes são links");
+await box.getByRole("button", { name: "Não mostrar mais" }).click();
+await page.waitForTimeout(300);
+check((await page.getByTestId("primeiros-passos").count()) === 0, "dispensar esconde a lista");
+await page.reload();
+await page.getByText("Visitas").first().waitFor();
+check((await page.getByTestId("primeiros-passos").count()) === 0, "continua escondida depois de recarregar");
+console.log(errors.length ? "ERROS DE CONSOLE: " + errors.join("; ") : "erros de console: nenhum");
+await browser.close();
+if (fails.length) { console.log("\n" + fails.length + " falha(s)"); process.exit(1); }
+console.log("\nTudo certo.");
