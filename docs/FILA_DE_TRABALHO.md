@@ -61,3 +61,7 @@ Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o q
 - Voz para orçamento (IA): precisa de chave de API e estimativa de custo (`docs/CUSTOS_IA.md`).
 - Cobrança por colaborador (R$ 14,90 no documento mestre).
 - Pagamento dentro do Google Play (taxa ~15%), após confirmar a regra vigente.
+
+
+## Orçamento por voz — status (2026-10-07)
+Construído e testado com servidor falso; **falta ligar de verdade**: chave OpenAI → secret `OPENAI_API_KEY`, rodar `0005_voice_usage.sql`, publicar a função `voice-quote`. Passo a passo em `docs/ORCAMENTO_POR_VOZ.md`. Depois: testar com fala real de obra e ajustar o prompt/modelo.
