@@ -19,6 +19,7 @@ import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
 import { ReviewReminderForm } from "@/components/ReviewReminderForm";
 import { reminderLabel } from "@/modules/reminder";
+import { PushCard } from "@/components/PushCard";
 import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
@@ -138,6 +139,7 @@ export default function Configuracoes() {
       </Section>
       </div>
       {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
+      {cloudEnabled && auth.status === "ready" ? <PushCard /> : null}
       <Section title="Lembrete de revisão" hint={c.reviewReminder ? `Ativo: ${reminderLabel(c.reviewReminder)}` : "Um aviso diário para ver quem não respondeu"}>
         <ReviewReminderForm saved={c.reviewReminder} onSave={(rr) => saveCompany({ ...c, reviewReminder: rr })} />
       </Section>

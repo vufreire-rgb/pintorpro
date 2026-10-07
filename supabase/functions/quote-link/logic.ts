@@ -81,3 +81,8 @@ export function sanitizeSnapshot(raw: unknown): SharedQuote | null {
 /** Esta abertura deve ser contada? Não, se a anterior foi há pouco tempo. */
 export const shouldCountView = (lastViewedAt: string | null, now: number = Date.now()): boolean =>
   !lastViewedAt || now - Date.parse(lastViewedAt) >= VIEW_WINDOW_MS;
+
+/** Avisar o pintor no celular? Na primeira abertura e depois só se ficou mais de 6 horas sem abrir. */
+export const SIX_HOURS_MS = 6 * 3600 * 1000;
+export const shouldNotifyView = (viewsCount: number, lastViewedAt: string | null, now: number = Date.now()): boolean =>
+  viewsCount === 0 || !lastViewedAt || now - Date.parse(lastViewedAt) >= SIX_HOURS_MS;

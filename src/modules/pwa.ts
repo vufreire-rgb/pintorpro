@@ -31,7 +31,7 @@ if (typeof window !== "undefined") {
 
 export type InstallState = "hidden" | "can-prompt" | "ios" | "manual";
 
-const isStandalone = () =>
+export const isStandalone = () =>
   window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
 
 function readState(ignoreDismissed: boolean): InstallState {

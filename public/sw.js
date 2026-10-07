@@ -52,3 +52,41 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
+
+// ---- Notificações (Web Push): o servidor avisa quando o cliente abre o orçamento ou chega um pedido ----
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const url = typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/";
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Medde", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: url,
+      data: { url },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    (async () => {
+      const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of open) {
+        if (new URL(c.url).origin === self.location.origin) {
+          await c.focus();
+          try { await c.navigate(url); } catch { /* sem permissão para navegar: o app fica onde estava */ }
+          return;
+        }
+      }
+      await self.clients.openWindow(url);
+    })(),
+  );
+});

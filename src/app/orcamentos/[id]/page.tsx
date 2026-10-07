@@ -7,6 +7,7 @@ import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Copy, FileText, Link2, Pencil, Send, Trash2 } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
+import { enablePush, usePushState } from "@/modules/push";
 import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
 import { isSimpleMode } from "@/modules/settings";
 import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, setQuoteStatus } from "@/modules/quotes";
@@ -25,6 +26,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const router = useRouter();
   const { links, reload } = useQuoteLinks();
   const [linkMsg, setLinkMsg] = useState("");
+  const push = usePushState();
   if (!db) return <Loading />;
   const q = db.quotes.find((x) => x.id === id);
   if (!q) return <Screen title="Orçamento" back="/orcamentos"><p>Orçamento não encontrado.</p></Screen>;
@@ -60,6 +62,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
               <div className="flex flex-col gap-2 rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base" data-testid="link-status">
                 <div className="font-semibold">{viewedLabel(links[q.id])}</div>
                 {linkIsStale(q, links[q.id]) ? <div className="text-[#8A4B00]">Você editou o orçamento. Toque em &quot;Enviar o link de novo&quot; para o cliente ver a versão nova.</div> : null}
+                {push.state === "off" ? <Button variant="ghost" onClick={() => void enablePush().then(push.reload)}>Avisar no celular quando o cliente abrir</Button> : null}
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="ghost" onClick={() => { void navigator.clipboard?.writeText(linkUrl(links[q.id]!.token)); setLinkMsg(""); }}>Copiar link</Button>
                   <Button variant="danger" onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button>

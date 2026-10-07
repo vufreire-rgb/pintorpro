@@ -64,6 +64,16 @@ function sanitizeRequest(raw: unknown): RequestInput | "spam" | null {
 }
 // ---- fim de logic.ts ----
 
+/** Pede à função "push" para avisar o pintor no celular. Não atrasa a resposta e nunca derruba o fluxo principal. */
+function notifyUser(userId: string, message: { title: string; body: string; url: string }): void {
+  const p = fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/push`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "notify", userId, message }),
+  }).catch((e) => console.error("notify", e instanceof Error ? e.message : e));
+  (globalThis as unknown as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil?.(p);
+}
+
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
 
 const corsFor = (req: Request) => {
@@ -116,6 +126,7 @@ Deno.serve(async (req: Request) => {
     if ((open.count ?? 0) >= MAX_OPEN_REQUESTS) return reply(429, { error: "busy" });
     const ins = await admin.from("quote_requests").insert({ user_id: uid, ...r });
     if (ins.error) { console.error("public-page insert", ins.error.message); return reply(500, { error: "failed" }); }
+    notifyUser(uid, { title: "Novo pedido de orçamento", body: `${r.name}${r.message ? `: ${r.message.slice(0, 90)}` : ""}`, url: "/pedidos" });
     return reply(200, { ok: true });
   }
 

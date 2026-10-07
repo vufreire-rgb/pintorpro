@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isToken, newToken, sanitizeSnapshot, shouldCountView, VIEW_WINDOW_MS } from "./logic";
+import { isToken, newToken, sanitizeSnapshot, shouldCountView, shouldNotifyView, SIX_HOURS_MS, VIEW_WINDOW_MS } from "./logic";
 
 const ok = { painter: { company: "Silva Pinturas", initials: "SP", contact: "", whatsapp: "11999990000" }, number: "0042", total: "R$ 2.800,00", clientName: "Maria", rooms: [{ name: "Sala", items: ["Pintar paredes"] }], color: "#B3261E" };
 
@@ -40,5 +40,14 @@ describe("shouldCountView", () => {
     expect(shouldCountView(null, now)).toBe(true);
     expect(shouldCountView(new Date(now - 60_000).toISOString(), now)).toBe(false);
     expect(shouldCountView(new Date(now - VIEW_WINDOW_MS - 1).toISOString(), now)).toBe(true);
+  });
+});
+
+describe("shouldNotifyView", () => {
+  it("avisa na primeira abertura e depois só após 6 horas", () => {
+    const now = Date.now();
+    expect(shouldNotifyView(0, null, now)).toBe(true);
+    expect(shouldNotifyView(2, new Date(now - 3600_000).toISOString(), now)).toBe(false);
+    expect(shouldNotifyView(2, new Date(now - SIX_HOURS_MS - 1).toISOString(), now)).toBe(true);
   });
 });

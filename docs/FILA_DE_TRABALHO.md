@@ -73,7 +73,8 @@ Construído e testado com servidor falso; **falta ligar de verdade**: chave Open
 | Recibo por foto | `0006_receipt_usage.sql`, função `receipt-scan` (mesma chave) | `docs/ORCAMENTO_POR_VOZ.md` |
 | Link do orçamento (visto pelo cliente) | `0007_shared_quotes.sql`, função `quote-link` | `docs/LINK_DO_ORCAMENTO.md` |
 | Página de pedidos do pintor | `0008_public_pages.sql`, função `public-page` | `docs/PAGINA_DE_PEDIDOS.md` |
-| Resultado do mês, Primeiros passos, modo simples | nada (só app) | — |
+| Notificações no celular | `0009_push.sql`, função `push`, atualizar `quote-link` e `public-page` | `docs/NOTIFICACOES.md` |
+| Resultado do mês, Primeiros passos, modo simples, novo orçamento mais leve | nada (só app) | — |
 
 Todas as funções: **Verify JWT desligado**. Só voz e recibo usam a chave da OpenAI.
-Próximo da fila: notificações push (inclui avisar "cliente abriu o link" e "novo pedido").
+Notificações push: prontas na branch, falta ligar (`docs/NOTIFICACOES.md`: `0009_push.sql`, função `push`, atualizar `quote-link` e `public-page`).

@@ -173,6 +173,25 @@ export async function submitPublicRequest(slug: string, request: Record<string, 
   throw new Error(typeof code === "string" ? code : "network");
 }
 
+// ---- Notificações no celular (função push) ----
+/** Chave pública do servidor para o navegador criar a inscrição. */
+export async function fetchPushKey(): Promise<string> {
+  if (!url) throw new Error("network");
+  let res: Response;
+  try { res = await fetch(`${url}/functions/v1/push?key`, { headers: anonKey ? { apikey: anonKey } : {} }); } catch { throw new Error("network"); }
+  const key = res.ok ? (await res.json().catch(() => null))?.publicKey : null;
+  if (typeof key !== "string") throw new Error(res.status === 404 ? "not_configured" : "network");
+  return key;
+}
+async function invokePush(body: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const { data, error } = await c().functions.invoke("push", { method: "POST", body });
+  if (error) throw new Error(await fnErrorCode(error));
+  return (data ?? {}) as Record<string, unknown>;
+}
+export const savePushSubscription = (subscription: unknown): Promise<unknown> => invokePush({ action: "subscribe", subscription });
+export const removePushSubscription = (endpoint: string): Promise<unknown> => invokePush({ action: "unsubscribe", endpoint });
+export const sendPushTest = async (): Promise<number> => Number((await invokePush({ action: "test" })).sent ?? 0);
+
 /** Linha de assinatura da pessoa (null se ainda não existe). Só leitura: quem escreve é o servidor. */
 export async function pullSubscription(userId: string): Promise<{ status: string; trial_ends_at: string; current_period_end: string | null } | null> {
   const { data, error } = await c().from("subscriptions").select("status, trial_ends_at, current_period_end").eq("user_id", userId).maybeSingle();
