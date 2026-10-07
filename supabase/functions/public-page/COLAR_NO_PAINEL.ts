@@ -126,7 +126,8 @@ Deno.serve(async (req: Request) => {
     if ((open.count ?? 0) >= MAX_OPEN_REQUESTS) return reply(429, { error: "busy" });
     const ins = await admin.from("quote_requests").insert({ user_id: uid, ...r });
     if (ins.error) { console.error("public-page insert", ins.error.message); return reply(500, { error: "failed" }); }
-    notifyUser(uid, { title: "Novo pedido de orçamento", body: `${r.name}${r.message ? `: ${r.message.slice(0, 90)}` : ""}`, url: "/pedidos" });
+    // Só os 5 primeiros pedidos do dia viram aviso no celular: se alguém mandar pedidos falsos em massa, o celular do pintor não vira alvo de spam.
+    if ((recent.count ?? 0) < 5) notifyUser(uid, { title: "Novo pedido de orçamento", body: `${r.name}${r.message ? `: ${r.message.slice(0, 90)}` : ""}`, url: "/pedidos" });
     return reply(200, { ok: true });
   }
 
