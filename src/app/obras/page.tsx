@@ -4,7 +4,7 @@ import { isSimpleMode } from "@/modules/settings";
 import Link from "next/link";
 import { useState } from "react";
 import { dashboard } from "@/modules/dashboard";
-import { Badge, Button, Card, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { CalendarDays, Check, ChartColumn, EyeOff, TriangleAlert } from "lucide-react";
 import { createExampleWork, WORK_STATUS_LABEL } from "@/modules/works";
 import { AutoTour, type TourStep } from "@/components/Tour";
@@ -40,6 +40,7 @@ export default function Obras() {
         {showPanel ? "Esconder painel" : "Ver painel (valores)"}
       </Button>
       </div>
+      <LinkButton href="/obras/resultado" variant="ghost" icon={ChartColumn}>Resultado do mês</LinkButton>
       {showPanel ? (
         <div className="grid grid-cols-2 gap-3">
           {[
