@@ -5,7 +5,7 @@ import { Mic, Square } from "lucide-react";
 import { Button, Card, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
 import { fmtClock, useRecorder } from "@/modules/audio";
-import { quoteFromVoice, requestVoiceDraft, saveVoiceQuote, voiceFailureText, type VoiceDraft } from "@/modules/voice";
+import { discardVoice, processPendingVoice, queueVoice, quoteFromVoice, requestVoiceDraft, saveVoiceQuote, usePendingVoice, voiceFailureText, type PendingVoice, type VoiceDraft } from "@/modules/voice";
 import { surfacesSummary } from "@/modules/rooms";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -13,7 +13,7 @@ import { formatBRL } from "@/shared/money";
 /** Passa disso o áudio fica grande e caro: para sozinho. */
 const MAX_SECONDS = 180;
 
-type Phase = { name: "idle" } | { name: "sending" } | { name: "review"; draft: VoiceDraft; transcript: string } | { name: "error"; text: string };
+type Phase = { name: "idle" } | { name: "sending" } | { name: "review"; draft: VoiceDraft; transcript: string; pendingId?: string } | { name: "error"; text: string } | { name: "queued" };
 
 export default function OrcamentoPorVozPage() {
   const db = useAppDb();
@@ -31,20 +31,61 @@ export default function OrcamentoPorVozPage() {
   };
   useEffect(() => () => { if (autoStop.current) clearTimeout(autoStop.current); }, []);
 
+  const openReview = (draft: VoiceDraft, transcript: string, pendingId?: string) => {
+    setFields({ clientName: draft.clientName, phone: draft.phone, address: draft.address, paymentTerms: draft.paymentTerms, notes: draft.notes });
+    setPrice(draft.closedPriceReais);
+    setPhase({ name: "review", draft, transcript, pendingId });
+  };
+
   const finish = async () => {
     if (autoStop.current) clearTimeout(autoStop.current);
     const out = await stop();
     if (!out) return;
     setPhase({ name: "sending" });
+    const keep = async () => {
+      try { await queueVoice(out.blob, out.seconds); setPhase({ name: "queued" }); }
+      catch { setPhase({ name: "error", text: "Não consegui guardar o áudio neste aparelho. Libere espaço ou tente de novo com internet." }); }
+    };
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return keep();
     try {
       const { transcript, draft } = await requestVoiceDraft(out.blob);
-      setFields({ clientName: draft.clientName, phone: draft.phone, address: draft.address, paymentTerms: draft.paymentTerms, notes: draft.notes });
-      setPrice(draft.closedPriceReais);
-      setPhase({ name: "review", draft, transcript });
+      openReview(draft, transcript);
     } catch (e) {
+      // Sem internet: guarda o áudio e processa quando a conexão voltar. Outros erros: o pintor decide.
+      if (e instanceof Error && e.message === "network") return keep();
       setPhase({ name: "error", text: voiceFailureText(e instanceof Error ? e.message : "") });
     }
   };
+
+  // Áudios guardados sem internet: processa sozinho quando a conexão volta (e ao abrir a tela).
+  const pending = usePendingVoice();
+  const busy = useRef(false);
+  const [pendingError, setPendingError] = useState("");
+  const runPending = async (only?: string) => {
+    if (busy.current) return;
+    busy.current = true;
+    setPendingError("");
+    try {
+      for (const p of listWaiting(only)) {
+        try { await processPendingVoice(p.id); }
+        catch (e) {
+          const code = e instanceof Error ? e.message : "";
+          if (code === "network") break;
+          setPendingError(voiceFailureText(code));
+          break;
+        }
+      }
+    } finally { busy.current = false; }
+  };
+  const runPendingRef = useRef(runPending);
+  useEffect(() => { runPendingRef.current = runPending; });
+  useEffect(() => {
+    const go = () => void runPendingRef.current();
+    if (navigator.onLine !== false) go();
+    window.addEventListener("online", go);
+    return () => window.removeEventListener("online", go);
+  }, []);
+  const listWaiting = (only?: string): PendingVoice[] => pending.filter((p) => p.status === "waiting" && (!only || p.id === only));
   useEffect(() => { finishRef.current = finish; });
 
   const draft = phase.name === "review" ? phase.draft : null;
@@ -55,6 +96,7 @@ export default function OrcamentoPorVozPage() {
   const save = () => {
     if (!quote) return;
     const id = saveVoiceQuote(db, { ...fields, quote });
+    if (phase.name === "review" && phase.pendingId) void discardVoice(phase.pendingId);
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -82,7 +124,31 @@ export default function OrcamentoPorVozPage() {
           </>
         ) : null}
 
+        {phase.name === "queued" ? (
+          <Card className="flex flex-col gap-2">
+            <b>Sem internet: áudio guardado no aparelho</b>
+            <p>Quando a internet voltar, o app transcreve sozinho e o orçamento fica esperando aqui para você conferir. Mantenha esta tela aberta ou volte depois.</p>
+            <Button variant="ghost" onClick={() => setPhase({ name: "idle" })}>Entendi</Button>
+          </Card>
+        ) : null}
+
         {phase.name === "sending" ? <Card><b>Entendendo o que você falou…</b><p className="text-support">Costuma levar alguns segundos.</p></Card> : null}
+
+        {pending.length > 0 && (phase.name === "idle" || phase.name === "error" || phase.name === "queued") ? (
+          <Card className="flex flex-col gap-2">
+            <b>Áudios aguardando ({pending.length})</b>
+            {pendingError ? <p role="alert" className="text-base text-err">{pendingError}</p> : null}
+            {pending.map((p) => (
+              <div key={p.id} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
+                <div className="text-base">{new Date(p.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {fmtClock(p.seconds)} · {p.status === "ready" ? "pronto para conferir" : "esperando internet"}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {p.status === "ready" && p.draft ? <Button onClick={() => openReview(p.draft!, p.transcript ?? "", p.id)}>Conferir</Button> : <Button variant="ghost" onClick={() => void runPending(p.id)}>Tentar agora</Button>}
+                  <Button variant="ghost" onClick={() => void discardVoice(p.id)}>Apagar</Button>
+                </div>
+              </div>
+            ))}
+          </Card>
+        ) : null}
 
         {phase.name === "review" && quote ? (
           <>

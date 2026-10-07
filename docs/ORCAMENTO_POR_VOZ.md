@@ -40,4 +40,4 @@ No celular, no app: Orçamentos → **Ditar orçamento por voz** → falar um or
 - Cômodos retangulares (4 paredes + teto opcional) ou só "X m² de parede".
 - Um tipo de tinta por cômodo. Serviços de preparo seguem o estado da parede (padrão: já pintada).
 - Cliente com o mesmo nome de um existente é reaproveitado.
-- Precisa de internet e de conta.
+- Precisa de conta. **Sem internet** o áudio fica guardado no aparelho (até 10) e é transcrito sozinho quando a conexão volta, com a tela de voz aberta; o app não processa em segundo plano com ele fechado. Depois de transcrito, o áudio é apagado e fica só o rascunho em texto, até o pintor conferir ou apagar. Sair da conta apaga tudo isso. Citar na política de privacidade.

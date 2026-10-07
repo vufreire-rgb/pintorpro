@@ -2,7 +2,9 @@ import { PAINT_OPTIONS } from "./catalog";
 import { addClient } from "./clients";
 import { previewQuote, saveQuote } from "./quotes";
 import { relabel, visitRoomToRoom } from "./rooms";
+import { useSyncExternalStore } from "react";
 import { sendVoice } from "@/repositories/cloudStore";
+import { deleteFile, getFile, putFile } from "@/repositories/fileStore";
 import type { Adjustment, Db, ExtraItem, PaintType, Room, Surface, VisitRoom } from "./types";
 
 /** O que a IA entendeu do que o pintor ditou. Espelha supabase/functions/voice-quote/logic.ts. */
@@ -131,4 +133,73 @@ export function saveVoiceQuote(db: Db, s: VoiceSaveInput): string {
     paymentTerms: s.paymentTerms.trim() || db.company?.paymentTerms || "",
     notes: s.notes.trim(),
   });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Sem internet: o áudio fica no aparelho até a conexão voltar. Depois de transcrito, o áudio é apagado
+// e só o rascunho (texto) fica guardado até o pintor conferir ou apagar.
+// ---------------------------------------------------------------------------------------------
+
+export interface PendingVoice {
+  id: string;
+  createdAt: string;
+  seconds: number;
+  status: "waiting" | "ready";
+  transcript?: string;
+  draft?: VoiceDraft;
+}
+
+export const PENDING_VOICE_KEY = "pintorpro:voice-pending";
+const MAX_PENDING = 10;
+const listeners = new Set<() => void>();
+let cache: { raw: string | null; list: PendingVoice[] } = { raw: null, list: [] };
+const EMPTY: PendingVoice[] = [];
+
+const readRaw = (): string | null => {
+  try { return localStorage.getItem(PENDING_VOICE_KEY); } catch { return null; }
+};
+/** Lista estável (mesma referência enquanto nada mudou), como o React exige. */
+export function listPendingVoice(): PendingVoice[] {
+  const raw = readRaw();
+  if (raw === cache.raw) return cache.list;
+  let list: PendingVoice[] = EMPTY;
+  try { const p = raw ? JSON.parse(raw) : []; if (Array.isArray(p)) list = p as PendingVoice[]; } catch { /* lista quebrada: recomeça vazia */ }
+  cache = { raw, list };
+  return list;
+}
+const writePending = (list: PendingVoice[]): void => {
+  try { localStorage.setItem(PENDING_VOICE_KEY, JSON.stringify(list)); } catch { /* sem espaço: segue sem guardar */ }
+  listeners.forEach((l) => l());
+};
+const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; };
+export const usePendingVoice = (): PendingVoice[] => useSyncExternalStore(subscribe, listPendingVoice, () => EMPTY);
+
+const fileId = (id: string) => `voice-${id}`;
+
+/** Guarda o áudio no aparelho para enviar quando houver internet. */
+export async function queueVoice(blob: Blob, seconds: number): Promise<void> {
+  if (listPendingVoice().length >= MAX_PENDING) throw new Error("queue_full");
+  const id = crypto.randomUUID();
+  await putFile(fileId(id), blob);
+  writePending([...listPendingVoice(), { id, createdAt: new Date().toISOString(), seconds, status: "waiting" }]);
+}
+
+/** Apaga o item (e o áudio, se ainda estiver no aparelho). */
+export async function discardVoice(id: string): Promise<void> {
+  await deleteFile(fileId(id)).catch(() => undefined);
+  writePending(listPendingVoice().filter((p) => p.id !== id));
+}
+
+/** Tenta transcrever um áudio guardado. Sem internet ou com erro, o áudio continua guardado e o erro é repassado. */
+export async function processPendingVoice(id: string): Promise<PendingVoice> {
+  const item = listPendingVoice().find((p) => p.id === id);
+  if (!item) throw new Error("ai_failed");
+  if (item.status === "ready") return item;
+  const blob = await getFile(fileId(id));
+  if (!blob) { await discardVoice(id); throw new Error("ai_failed"); }
+  const { transcript, draft } = await requestVoiceDraft(blob);
+  const ready: PendingVoice = { ...item, status: "ready", transcript, draft };
+  writePending(listPendingVoice().map((p) => (p.id === id ? ready : p)));
+  await deleteFile(fileId(id)).catch(() => undefined);
+  return ready;
 }

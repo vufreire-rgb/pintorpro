@@ -8,6 +8,7 @@ import { saveCompany } from "@/modules/settings";
 import { downloadReviewIcs } from "@/modules/share";
 import { isExpired } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
+import { usePendingVoice } from "@/modules/voice";
 import type { QuoteStatus } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtDate } from "@/shared/format";
@@ -41,6 +42,7 @@ const TABS: QuoteStatus[] = ["open", "won", "lost"];
 
 export default function Orcamentos() {
   const db = useAppDb();
+  const voicePending = usePendingVoice().length;
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [remOpen, setRemOpen] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -63,7 +65,7 @@ export default function Orcamentos() {
       <div className="grid grid-cols-2 gap-3">
         <LinkButton href="/orcamentos/novo" icon={Plus} className="!px-3 !text-lg">Novo orçamento</LinkButton>
         <Button variant="ghost" icon={AlarmClock} className="!px-3 !text-lg" onClick={() => setRemOpen((o) => !o)}>Lembrete</Button>
-        <LinkButton href="/orcamentos/voz" icon={Mic} variant="ghost" className="col-span-2 !px-3 !text-lg">Ditar orçamento por voz</LinkButton>
+        <LinkButton href="/orcamentos/voz" icon={Mic} variant="ghost" className="col-span-2 !px-3 !text-lg">Ditar orçamento por voz{voicePending > 0 ? ` (${voicePending} aguardando)` : ""}</LinkButton>
       </div>
       {remOpen ? <ReminderCard saved={db.company?.reviewReminder} onSave={(rr) => saveCompany({ ...db.company!, reviewReminder: rr })} onClose={() => setRemOpen(false)} /> : null}
       <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">

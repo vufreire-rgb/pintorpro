@@ -6,11 +6,17 @@ vi.stubGlobal("localStorage", {
   setItem: (k: string, v: string) => void store.set(k, v),
   removeItem: (k: string) => void store.delete(k),
 });
-vi.mock("@/repositories/cloudStore", () => ({ cloudConfigured: false, sendVoice: vi.fn() }));
-vi.mock("@/repositories/fileStore", () => ({ putFile: vi.fn(), getFile: vi.fn(), deleteFile: vi.fn() }));
+const sendVoice = vi.fn();
+vi.mock("@/repositories/cloudStore", () => ({ cloudConfigured: false, sendVoice: (b: Blob) => sendVoice(b) }));
+const files = new Map<string, Blob>();
+vi.mock("@/repositories/fileStore", () => ({
+  putFile: async (id: string, b: Blob) => void files.set(id, b),
+  getFile: async (id: string) => files.get(id),
+  deleteFile: async (id: string) => void files.delete(id),
+}));
 
 import { newDb } from "./db";
-import { quoteFromVoice, saveVoiceQuote, voiceFailureText, type VoiceDraft } from "./voice";
+import { discardVoice, listPendingVoice, processPendingVoice, queueVoice, quoteFromVoice, saveVoiceQuote, voiceFailureText, type VoiceDraft } from "./voice";
 import type { Db } from "./types";
 
 const setup = (): Db => {
@@ -21,7 +27,7 @@ const setup = (): Db => {
 const room = { name: "Sala", lengthM: 4, widthM: 5, heightM: 2.7, wallAreaM2: 0, includeCeiling: true, paint: "acrilica" as const, condition: "pintada", doors: 1, windows: 1 };
 const draft = (p: Partial<VoiceDraft> = {}): VoiceDraft => ({ clientName: "Maria", phone: "11988887777", address: "Rua A, 10", rooms: [room], closedPriceReais: 0, paymentTerms: "", notes: "", ...p });
 
-beforeEach(() => store.clear());
+beforeEach(() => { store.clear(); files.clear(); sendVoice.mockReset(); });
 
 describe("quoteFromVoice", () => {
   it("sem preço fechado calcula pelos preços do pintor", () => {
@@ -69,5 +75,32 @@ describe("voiceFailureText", () => {
   it("códigos conhecidos e desconhecidos viram texto em português", () => {
     expect(voiceFailureText("daily_limit")).toMatch(/limite/);
     expect(voiceFailureText("qualquer coisa")).toMatch(/Não consegui/);
+  });
+});
+
+describe("áudio guardado sem internet", () => {
+  const blob = new Blob(["x"], { type: "audio/wav" });
+  it("guarda o áudio e mantém se continuar sem internet", async () => {
+    await queueVoice(blob, 12);
+    const [p] = listPendingVoice();
+    expect(p).toMatchObject({ status: "waiting", seconds: 12 });
+    sendVoice.mockRejectedValue(new Error("network"));
+    await expect(processPendingVoice(p!.id)).rejects.toThrow("network");
+    expect(files.size).toBe(1);
+    expect(listPendingVoice()[0]!.status).toBe("waiting");
+  });
+  it("quando a internet volta, guarda o rascunho e apaga o áudio", async () => {
+    await queueVoice(blob, 5);
+    sendVoice.mockResolvedValue({ transcript: "oi", draft: draft() });
+    const done = await processPendingVoice(listPendingVoice()[0]!.id);
+    expect(done.status).toBe("ready");
+    expect(done.draft?.clientName).toBe("Maria");
+    expect(files.size).toBe(0);
+    await discardVoice(done.id);
+    expect(listPendingVoice()).toHaveLength(0);
+  });
+  it("limita a fila a 10 áudios", async () => {
+    for (let i = 0; i < 10; i++) await queueVoice(blob, 1);
+    await expect(queueVoice(blob, 1)).rejects.toThrow("queue_full");
   });
 });
