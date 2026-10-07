@@ -368,3 +368,5 @@ Cada fase termina com algo **testável** (critério de aceite) e é validada com
 ## Funções que dependem de app instalado / notificação (levantamento 2026-10-08)
 - **Hoje (sem app instalado):** "Hora de revisar" usa um evento de calendário (.ics) que apita pelo app Agenda do celular; visitas agendadas também podem ir para a agenda. O app em si **não** dispara alarme nem notificação.
 - **Pendente, só com app instalado + servidor:** (1) notificação "Hora de revisar" e lembrete de visita do próprio Medde (Web Push: chaves VAPID, tabela de inscrições, função agendada no Supabase; no iPhone só com o app adicionado à Tela de Início, iOS 16.4+); (2) alarme de verdade do relógio: **só com app nativo** (a web e o TWA não conseguem). (3) Trena Bluetooth: Web Bluetooth funciona no Chrome/Android, **não no Safari/iPhone**; depende de escolher o modelo.
+
+- 2026-10-08 — Notificações do Medde (Web Push) incluídas na fila, logo após o domínio com HTTPS: escopo, passos, limites e critério de pronto em `docs/FILA_DE_TRABALHO.md`.
