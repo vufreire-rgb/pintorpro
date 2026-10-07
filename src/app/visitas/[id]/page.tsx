@@ -17,6 +17,7 @@ import { photosFailedMessage } from "@/modules/photos";
 import { blankRoom, legacyToSurfaces, surfacesSummary, type RoomDraft } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
+import { isSimpleMode } from "@/modules/settings";
 import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit } from "@/modules/visits";
 import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum, plural } from "@/shared/format";
@@ -47,13 +48,14 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
   const state = visitState(v);
   const rooms = v.rooms ?? [];
-  const steps: TourStep[] = [
+  const simple = isSimpleMode(db.company);
+  const steps: TourStep[] = ([
     { target: "cliente", title: "Cliente e endereço", text: "Aqui ficam o cliente e o endereço da obra. Já deixei um cliente de exemplo. Num cliente de verdade, toque em Usar minha localização para preencher o endereço." },
     { target: "fotos", title: "Fotos da obra", text: "Tire várias fotos. Depois toque no lápis para marcar setas e textos, e em + PDF para a foto aparecer no orçamento." },
     { target: "medidas", title: "Medidas por parede", text: "Toque em Anotar as medidas, escreva a largura e a altura da Parede 1 e use + Parede para as outras. Escolha o tipo de pintura de cada uma e salve.", done: rooms.length > 0 },
     { target: "observacoes", title: "Observações", text: "Escreva o que o cliente pediu e os problemas que viu, como mofo ou trincas. Isso fica guardado com a visita." },
-    { target: "orcar", title: "Montar o orçamento", text: "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo. Vou te mostrar o orçamento agora.", button: "Ir para o orçamento" },
-  ];
+    { target: "orcar", title: "Montar o orçamento", text: simple ? "Quando terminar, toque aqui para fechar o preço com o cliente. Vou te mostrar o orçamento agora." : "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo. Vou te mostrar o orçamento agora.", button: "Ir para o orçamento" },
+  ] as TourStep[]).filter((st) => !(simple && st.target === "medidas"));
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -162,7 +164,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       </Card>
       </div>
 
-      <div data-tour="medidas">
+      {simple ? null : <div data-tour="medidas">
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
         {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
@@ -187,7 +189,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
         )}
       </Card>
-      </div>
+      </div>}
 
       <div data-tour="observacoes">
       <Field label="Observações" hint="O que o cliente pediu, problemas que viu…">

@@ -43,6 +43,16 @@ check(await page.getByText("Pintura da sala e dos quartos, tinta inclusa").first
 const total = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).quotes[0].result.totals.totalCents);
 check(total === 280000, "total salvo 2800,00 (" + total + ")");
 
+// visita: sem o bloco de medidas
+await page.goto(base + "/visitas/nova");
+await page.getByRole("heading", { name: /Visita/ }).first().waitFor().catch(() => {});
+const vid = await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("pintorpro:v1")); d.visits = [{ id: "v9", siteAddress: "Rua B", notes: "", photoIds: [], createdAt: new Date().toISOString(), startedAt: new Date().toISOString() }]; localStorage.setItem("pintorpro:v1", JSON.stringify(d)); return "v9"; });
+await page.goto(base + "/visitas/" + vid);
+await page.getByText("Observações").first().waitFor();
+check((await page.getByText(/Medidas \(/).count()) === 0, "visita: bloco de medidas escondido no modo simples");
+await page.goto(base + "/orcamentos");
+await page.getByRole("link", { name: /Nº|Dona Maria/ }).first().click().catch(() => {});
+
 // editar
 await page.getByRole("link", { name: "Editar orçamento" }).click();
 await page.getByLabel("Preço fechado").fill("3100");
