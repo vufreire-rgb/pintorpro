@@ -50,6 +50,14 @@ export async function requestVoiceDraft(audio: Blob): Promise<{ transcript: stri
 
 const PAINT_IDS = PAINT_OPTIONS.map((p) => p.id as string);
 
+export const DEFAULT_DESCRIPTION = "Serviço de pintura";
+
+/** Texto sugerido para "O que será feito" a partir dos ambientes ditados. */
+export const describeDraft = (d: VoiceDraft): string => {
+  const names = d.rooms.map((r) => r.name.trim()).filter(Boolean);
+  return names.length ? `Pintura: ${names.join(", ")}` : DEFAULT_DESCRIPTION;
+};
+
 /** Ambiente ditado → medidas da visita. Sem medida nenhuma (nem área de parede) não dá para calcular: devolve null. */
 export function voiceRoomToVisitRoom(r: VoiceRoom, index: number): VisitRoom | null {
   const paint: PaintType = PAINT_IDS.includes(r.paint) ? r.paint : "acrilica";
@@ -93,17 +101,18 @@ export interface VoiceQuote {
  * Monta o orçamento do que foi ditado. Com preço fechado, o total do orçamento fica EXATAMENTE no valor dito
  * (a diferença para o cálculo vira desconto ou acréscimo); o pintor vê isso na tela de revisão.
  */
-export function quoteFromVoice(db: Db, d: VoiceDraft): VoiceQuote {
+export function quoteFromVoice(db: Db, d: VoiceDraft, opts: { simple?: boolean; description?: string } = {}): VoiceQuote {
   const rooms: Room[] = [];
   const skippedRooms: string[] = [];
-  d.rooms.forEach((r, i) => {
+  // Modo simples: as medidas ditadas são ignoradas, o orçamento é só o preço.
+  (opts.simple ? [] : d.rooms).forEach((r, i) => {
     const vr = voiceRoomToVisitRoom(r, i);
     if (vr) rooms.push(visitRoomToRoom(vr, db.enabledServiceIds));
     else skippedRooms.push(r.name.trim() || `Ambiente ${i + 1}`);
   });
   const closedCents = Math.round(d.closedPriceReais * 100);
   // Só o preço, sem medidas: vira um item único para o orçamento existir.
-  const extras: ExtraItem[] = rooms.length === 0 && closedCents > 0 ? [{ description: "Serviço de pintura (preço fechado)", priceCents: closedCents, costCents: 0 }] : [];
+  const extras: ExtraItem[] = rooms.length === 0 && closedCents > 0 ? [{ description: opts.description?.trim() || DEFAULT_DESCRIPTION, priceCents: closedCents, costCents: 0 }] : [];
   let adjustment: Adjustment | undefined;
   let totalCents = 0;
   let costCents = 0;

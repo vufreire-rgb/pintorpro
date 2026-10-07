@@ -10,8 +10,10 @@ import { PriceCheck } from "@/components/PriceCheck";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { RoomEditor } from "@/components/RoomEditor";
 import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
-import { previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
+import { isPriceOnly, previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
+import { isSimpleMode } from "@/modules/settings";
+import { SimpleQuoteForm } from "@/components/SimpleQuoteForm";
 import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtNum, plural, UNIT_LABEL } from "@/shared/format";
@@ -30,6 +32,7 @@ function NovoOrcamento() {
   if (!db) return <Loading />;
   const quote = db.quotes.find((q) => q.id === params.get("editar"));
   const visit = db.visits.find((v) => v.id === (params.get("visita") ?? quote?.visitId));
+  if (isSimpleMode(db.company) && (!quote || isPriceOnly(quote))) return <SimpleQuoteForm key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
   return <Wizard key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
 }
 
@@ -48,7 +51,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const [showCost, setShowCost] = useState(false);
   const [included, setIncluded] = useState<Record<string, boolean>>(quote?.input.materialsIncluded ?? {});
   const [yields, setYields] = useState<Record<string, number>>(quote?.input.yieldOverrides ?? {});
-  const [adj, setAdj] = useState<Adjustment>(quote?.input.adjustment ?? { type: "discount", mode: "percent", value: 0 });
+  const [adj, setAdj] = useState<Adjustment>((quote && !isPriceOnly(quote) ? quote.input.adjustment : undefined) ?? { type: "discount", mode: "percent", value: 0 });
   const [payment, setPayment] = useState<string | null>(quote?.paymentTerms ?? null);
   const [notes, setNotes] = useState(quote?.notes ?? "");
   const [showRoomPrices, setShowRoomPrices] = useState(quote?.showRoomPrices ?? false);

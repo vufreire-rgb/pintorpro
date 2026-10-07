@@ -13,10 +13,11 @@ import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
-import { resetTours, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
+import { isSimpleMode, resetTours, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
+import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
 import { Check, QrCode, Users } from "lucide-react";
 
@@ -36,20 +37,24 @@ export default function Configuracoes() {
   const [pixTest, setPixTest] = useState(false);
   const auth = useAuthState();
   if (!db) return <Loading />;
-  const steps: TourStep[] = [
+  const steps: TourStep[] = ([
     { target: "aj-negocio", title: "Seu negócio", text: "Nome, WhatsApp e cidade. O nome e o WhatsApp aparecem no orçamento que o cliente recebe." },
     { target: "aj-pdf", title: "Seu orçamento em PDF", text: "Coloque seu logo, escolha a cor e ajuste a entrada e os textos de garantia. É a cara do seu orçamento." },
     { target: "aj-pix", title: "Receber por Pix", text: "Cadastre sua chave Pix e o orçamento sai com o QR para o cliente pagar a entrada." },
     { target: "aj-servicos", title: "Serviços e preços", text: "Quanto você cobra por serviço. Os que dizem valor de exemplo precisam da sua confirmação para o orçamento ficar certo." },
     { target: "aj-guias", title: "Rever os guias", text: "Se quiser ver este passo a passo de novo, é só voltar aqui e tocar em Ver os guias de novo." },
-  ];
+  ] as TourStep[]).filter((st) => !(isSimpleMode(db.company) && st.target === "aj-servicos"));
   const c = db.company!;
+  const simple = isSimpleMode(c);
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
       <InstallBanner always />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
+      <Card className="flex flex-col gap-3">
+        <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} />
+      </Card>
       <div data-tour="aj-negocio">
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
@@ -132,6 +137,7 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </div>
+      {simple ? null : <>
       <div data-tour="aj-servicos">
       <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
         {db.services.map((s) => {
@@ -183,9 +189,7 @@ export default function Configuracoes() {
           </div>
         ) : null}
       </Section>
-
-
-
+      </>}
 
       <div data-tour="aj-guias">
       <Card className="flex flex-col gap-3">

@@ -131,13 +131,16 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
   const parts = [rooms.some((r) => r.prep) ? "preparação" : null, q.result.materialLines.some((l) => l.included) ? "tinta" : null, "mão de obra"].filter((x): x is string => !!x);
   const measures = [wall > 0 ? `${area(wall)} de paredes` : null, ceiling > 0 ? `${area(ceiling)} de teto` : null].filter((x): x is string => !!x);
   const roomNames = rooms.length > 0 && rooms.length <= 4 ? `, ${joinPt(rooms.map((r) => r.name.toLowerCase()))}` : "";
-  const summary = rooms.length
+  // Orçamento só com preço (sem medidas): o texto do pintor sobre o que será feito vira o resumo do PDF.
+  const extrasText = q.input.extras.map((e) => e.description.trim()).filter(Boolean).join("; ");
+  const summary = rooms.length === 0 && extrasText ? `${extrasText}.` : rooms.length
     ? `Pintura de ${rooms.length} ${rooms.length === 1 ? "ambiente" : "ambientes"}${roomNames}${measures.length ? `: ${joinPt(measures)}` : ""}, com ${joinPt(parts)}.`
     : "";
 
   const total = q.result.totals.totalCents;
   const pct = q.depositPct ?? c?.depositPct ?? 50;
-  const days = q.result.schedule.totalDays;
+  // Sem medidas não há prazo calculado (só os dias de segurança): fica "A combinar".
+  const days = q.result.schedule.workDays > 0 ? q.result.schedule.totalDays : 0;
 
   return {
     color: c?.brandColor ?? "#0F3B7A",

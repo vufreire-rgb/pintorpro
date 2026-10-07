@@ -41,3 +41,11 @@ No celular, no app: Orçamentos → **Ditar orçamento por voz** → falar um or
 - Um tipo de tinta por cômodo. Serviços de preparo seguem o estado da parede (padrão: já pintada).
 - Cliente com o mesmo nome de um existente é reaproveitado.
 - Precisa de conta. **Sem internet** o áudio fica guardado no aparelho (até 10) e é transcrito sozinho quando a conexão volta, com a tela de voz aberta; o app não processa em segundo plano com ele fechado. Depois de transcrito, o áudio é apagado e fica só o rascunho em texto, até o pintor conferir ou apagar. Sair da conta apaga tudo isso. Citar na política de privacidade.
+
+## Modo simples ("só voz e preço fechado")
+- Escolha no cadastro (tela do WhatsApp) e em **Ajustes → Como você faz orçamento?**. Padrão: **Com cálculo**. Trocar não apaga nada.
+- **Simples** esconde: Serviços e preços, Materiais, Avançado (custos e lucro), tela de medidas e serviços do orçamento, bloco "Só para você" (custo/lucro), prazo calculado e o "lucro estimado do mês".
+- **Simples** mantém: voz, orçamento digitado (cliente + o que será feito + preço fechado), PDF, WhatsApp, obras, pagamentos, gastos e lucro real da obra.
+- Na voz, o modo simples **ignora as medidas ditadas** e usa só o preço (se não falou preço, o pintor digita).
+- O PDF de orçamento só com preço mostra o texto "o que será feito" como resumo e prazo "A combinar".
+- O que o pintor perde no simples: aviso de prejuízo, lista de materiais, prazo calculado. O aviso está na própria tela de escolha.

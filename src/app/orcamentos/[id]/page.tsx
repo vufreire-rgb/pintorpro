@@ -6,6 +6,7 @@ import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Copy, FileText, Pencil, Send, Trash2 } from "lucide-react";
+import { isSimpleMode } from "@/modules/settings";
 import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
@@ -59,7 +60,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         {q.status === "won" ? <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton> : null}
       </Card>
 
-      <Card className="border-amber-300 bg-amber-50">
+      {priceOnly && isSimpleMode(db.company) ? null : <Card className="border-amber-300 bg-amber-50">
         <div className="mb-1 font-display text-lg font-bold">Só para você (não vai no PDF)</div>
         {priceOnly ? (
           <p>Este orçamento tem só o preço, sem medidas. Por isso o app não calcula custo, lucro nem prazo. Para ver o lucro, toque em Editar orçamento e coloque as medidas.</p>
@@ -69,10 +70,13 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
             <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
           </>
         )}
-      </Card>
+      </Card>}
 
       <Card>
         <div className="mb-2 font-display text-[22px] font-bold leading-7">Serviços</div>
+        {q.input.extras.map((e, i) => (
+          <div key={i} className="flex justify-between gap-2 text-base text-ink"><span>{e.description}</span></div>
+        ))}
         {q.input.rooms.map((r) => (
           <div key={r.id} className="mb-2">
             <div className="text-lg font-bold">{r.name}</div>

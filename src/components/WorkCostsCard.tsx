@@ -5,6 +5,8 @@ import { Button, Card, CardTitle, Chip, Field, NumberInput, Stepper, TextInput }
 import { addExpense, removeExpense, setDaysWorked } from "@/modules/works";
 import { dateBR, ymd } from "@/modules/workInfo";
 import { isPriceOnly } from "@/modules/quotes";
+import { isSimpleMode } from "@/modules/settings";
+import { useAppDb } from "@/modules/useApp";
 import { EXPENSE_LABEL, profitHint, workProfit } from "@/modules/workProfit";
 import type { ExpenseKind, Quote, Work } from "@/modules/types";
 import { formatBRL, toCents } from "@/shared/money";
@@ -23,6 +25,7 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
   const [note, setNote] = useState("");
   const p = workProfit(w, quote);
   const priceOnly = !!quote && isPriceOnly(quote);
+  const simple = isSimpleMode(useAppDb()?.company);
   const plan = (cents: number) => (priceOnly ? "—" : formatBRL(cents));
   const hint = priceOnly ? null : profitHint(p, quote?.result.totals.materialsCents ?? 0);
   const left = Math.max(0, w.plannedTotalCents - (w.payments ?? []).reduce((s, x) => s + x.amountCents, 0));
@@ -39,7 +42,7 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
         <Row label="Sua diária" planned={plan(p.plannedDiariaCents)} real={p.realDiariaCents === null ? "—" : formatBRL(p.realDiariaCents)} />
         <Row label="Lucro final" planned={plan(p.plannedProfitCents)} real={p.realProfitCents === null ? "—" : formatBRL(p.realProfitCents)} strong />
       </div>
-      {priceOnly ? <p className="text-base text-support">O orçamento desta obra tem só o preço, sem medidas: não há valores previstos para comparar. Lance os gastos para ver o lucro real.</p> : null}
+      {priceOnly ? <p className="text-base text-support">{simple ? "Lance os gastos da obra para ver o lucro real." : "O orçamento desta obra tem só o preço, sem medidas: não há valores previstos para comparar. Lance os gastos para ver o lucro real."}</p> : null}
       <p className="text-base text-support">Lucro final = o que sobrou no bolso menos a sua diária.</p>
       {left > 0 ? <p className="text-base text-support">Ainda falta receber {formatBRL(left)}. Os números acima usam o valor combinado.</p> : null}
       {hint ? <p className={`rounded-xl p-3 text-base font-semibold ${good ? "bg-green-50 text-accent-dark" : "bg-amber-50 text-amber-900"}`}>{hint}</p> : <p className="text-base text-support">Lance os gastos da obra para ver se o orçamento acertou.</p>}

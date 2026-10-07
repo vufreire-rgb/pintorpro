@@ -5,9 +5,10 @@ import { Mic, Square } from "lucide-react";
 import { Button, Card, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
 import { fmtClock, useRecorder } from "@/modules/audio";
-import { discardVoice, processPendingVoice, queueVoice, quoteFromVoice, requestVoiceDraft, saveVoiceQuote, usePendingVoice, voiceFailureText, type PendingVoice, type VoiceDraft } from "@/modules/voice";
+import { describeDraft, discardVoice, processPendingVoice, queueVoice, quoteFromVoice, requestVoiceDraft, saveVoiceQuote, usePendingVoice, voiceFailureText, type PendingVoice, type VoiceDraft } from "@/modules/voice";
 import { surfacesSummary } from "@/modules/rooms";
 import { useAppDb } from "@/modules/useApp";
+import { isSimpleMode } from "@/modules/settings";
 import { formatBRL } from "@/shared/money";
 
 /** Passa disso o áudio fica grande e caro: para sozinho. */
@@ -22,6 +23,8 @@ export default function OrcamentoPorVozPage() {
   const [phase, setPhase] = useState<Phase>({ name: "idle" });
   const [fields, setFields] = useState({ clientName: "", phone: "", address: "", paymentTerms: "", notes: "" });
   const [price, setPrice] = useState(0);
+  const [description, setDescription] = useState("");
+  const simple = isSimpleMode(db?.company);
 
   const autoStop = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishRef = useRef<() => Promise<void>>(async () => undefined);
@@ -34,6 +37,7 @@ export default function OrcamentoPorVozPage() {
   const openReview = (draft: VoiceDraft, transcript: string, pendingId?: string) => {
     setFields({ clientName: draft.clientName, phone: draft.phone, address: draft.address, paymentTerms: draft.paymentTerms, notes: draft.notes });
     setPrice(draft.closedPriceReais);
+    setDescription(describeDraft(draft));
     setPhase({ name: "review", draft, transcript, pendingId });
   };
 
@@ -89,7 +93,7 @@ export default function OrcamentoPorVozPage() {
   useEffect(() => { finishRef.current = finish; });
 
   const draft = phase.name === "review" ? phase.draft : null;
-  const quote = useMemo(() => (db && draft ? quoteFromVoice(db, { ...draft, closedPriceReais: price }) : null), [db, draft, price]);
+  const quote = useMemo(() => (db && draft ? quoteFromVoice(db, { ...draft, closedPriceReais: price }, { simple, description }) : null), [db, draft, price, simple, description]);
 
   if (!db) return <Loading />;
   const canSave = !!quote && quote.totalCents > 0 && !!fields.clientName.trim();
@@ -159,7 +163,7 @@ export default function OrcamentoPorVozPage() {
               <Field label="Endereço da obra"><TextInput value={fields.address} onChange={(e) => setFields({ ...fields, address: e.target.value })} /></Field>
             </Card>
 
-            <Card className="flex flex-col gap-2">
+            {simple ? null : <Card className="flex flex-col gap-2">
               <b>Ambientes</b>
               {quote.rooms.length === 0 ? <p className="text-support">Nenhuma medida entendida. Tudo bem se você deu o preço fechado: ele vira um item só. Ou grave de novo falando as medidas.</p> : null}
               {quote.rooms.map((r) => (
@@ -169,10 +173,11 @@ export default function OrcamentoPorVozPage() {
                 </div>
               ))}
               {quote.skippedRooms.length > 0 ? <p className="text-base text-[#8A4B00]">Sem medida, ficaram de fora: {quote.skippedRooms.join(", ")}. Você pode completar editando o orçamento depois.</p> : null}
-            </Card>
+            </Card>}
 
             <Card className="flex flex-col gap-3">
-              <Field label="Preço fechado (R$)" hint={price > 0 ? "O total do orçamento fica exatamente neste valor." : "Deixe 0 para o app calcular pelos seus preços dos Ajustes."}>
+              {quote.priceOnly ? <Field label="O que será feito" hint="Aparece no orçamento do cliente."><TextInput value={description} onChange={(e) => setDescription(e.target.value)} /></Field> : null}
+              <Field label="Preço fechado (R$)" hint={price > 0 ? "O total do orçamento fica exatamente neste valor." : simple ? "Digite o preço que você fechou." : "Deixe 0 para o app calcular pelos seus preços dos Ajustes."}>
                 <NumberInput value={price} onChange={(n) => setPrice(Math.max(0, n))} />
               </Field>
               <Field label="Forma de pagamento"><TextInput value={fields.paymentTerms} placeholder={db.company?.paymentTerms ?? ""} onChange={(e) => setFields({ ...fields, paymentTerms: e.target.value })} /></Field>
@@ -187,15 +192,15 @@ export default function OrcamentoPorVozPage() {
             <div className="rounded-2xl border border-brand/25 bg-brand-soft p-4">
               <div className="text-base text-support">Preço para o cliente</div>
               <div className="font-display text-[32px] font-extrabold leading-9 text-brand" data-testid="total">{quote.totalCents > 0 ? formatBRL(quote.totalCents) : "—"}</div>
-              {quote.totalCents > 0 && !quote.priceOnly ? (
+              {!simple && quote.totalCents > 0 && !quote.priceOnly ? (
                 <p className={`mt-1 text-base font-semibold ${quote.profitCents < 0 ? "text-err" : "text-support"}`}>
                   {quote.profitCents < 0
                     ? `Atenção: com os seus preços, este valor dá prejuízo de ${formatBRL(-quote.profitCents)}. Custo estimado: ${formatBRL(quote.costCents)}.`
                     : `Só para você: custo estimado ${formatBRL(quote.costCents)}, lucro estimado ${formatBRL(quote.profitCents)}.`}
                 </p>
               ) : null}
-              {quote.totalCents > 0 && quote.priceOnly ? <p className="mt-1 text-base text-support">Só o preço, sem medidas: o app não calcula custo, lucro nem prazo.</p> : null}
-              {!fields.clientName.trim() ? <p className="text-base text-support">Falta o nome do cliente.</p> : quote.totalCents === 0 ? <p className="text-base text-support">Falta o preço ou as medidas.</p> : null}
+              {!simple && quote.totalCents > 0 && quote.priceOnly ? <p className="mt-1 text-base text-support">Só o preço, sem medidas: o app não calcula custo, lucro nem prazo.</p> : null}
+              {!fields.clientName.trim() ? <p className="text-base text-support">Falta o nome do cliente.</p> : quote.totalCents === 0 ? <p className="text-base text-support">{simple ? "Falta o preço." : "Falta o preço ou as medidas."}</p> : null}
             </div>
             <Button disabled={!canSave} onClick={save}>Salvar orçamento</Button>
             <Button variant="ghost" onClick={() => setPhase({ name: "idle" })}>Gravar de novo</Button>

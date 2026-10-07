@@ -45,6 +45,8 @@ export const setTour = (id: string, state: "done" | "skipped" | null) =>
 export const resetTours = () =>
   updateDb((db) => (db.company ? { ...db, company: { ...db.company, tours: {} } } : db));
 
+/** Modo simples: o pintor só dita ou digita o preço; as telas de preços, medidas, custo e lucro ficam escondidas. */
+export const isSimpleMode = (c: Pick<Company, "quoteMode"> | null | undefined): boolean => c?.quoteMode === "simple";
 export const saveCompany = (company: Company) => updateDb((db) => ({ ...db, company }));
 export const setEnabledServices = (ids: string[]) => updateDb((db) => ({ ...db, enabledServiceIds: ids }));
 export const updateService = (id: string, patch: Partial<ServiceConfig>) =>

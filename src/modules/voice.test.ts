@@ -65,6 +65,17 @@ describe("quoteFromVoice", () => {
     expect(q.priceOnly).toBe(true);
     expect(q.costCents).toBe(0);
   });
+  it("modo simples ignora as medidas ditadas e usa só o preço", () => {
+    const q = quoteFromVoice(setup(), draft({ closedPriceReais: 2000 }), { simple: true, description: "Pintura da sala" });
+    expect(q.rooms).toHaveLength(0);
+    expect(q.skippedRooms).toHaveLength(0);
+    expect(q.extras[0]!.description).toBe("Pintura da sala");
+    expect(q.totalCents).toBe(200000);
+    expect(q.priceOnly).toBe(true);
+  });
+  it("modo simples sem preço: total zero", () => {
+    expect(quoteFromVoice(setup(), draft(), { simple: true }).totalCents).toBe(0);
+  });
   it("sem nada, total zero", () => {
     expect(quoteFromVoice(setup(), draft({ rooms: [] })).totalCents).toBe(0);
   });

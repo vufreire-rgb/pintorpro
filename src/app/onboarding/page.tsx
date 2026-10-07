@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Field, Loading, Ruler, TextInput } from "@/components/ui";
 import { useDb } from "@/modules/db";
 import { DEFAULT_COMPANY, saveCompany, setEnabledServices } from "@/modules/settings";
+import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import type { Company } from "@/modules/types";
 
 const STEPS = 2;
@@ -35,7 +36,10 @@ export default function Onboarding() {
 
   const body = [
     <Field key="n" label="Como você chama seu negócio?" hint="Aparece no orçamento do cliente."><TextInput autoFocus value={c.name} onChange={(e) => set("name", e.target.value)} placeholder="Ex.: João Pinturas" /></Field>,
-    <Field key="w" label="Qual seu WhatsApp?"><TextInput type="tel" inputMode="tel" autoFocus value={c.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} placeholder="(11) 99999-9999" /></Field>,
+    <div key="w" className="flex flex-col gap-6">
+      <Field label="Qual seu WhatsApp?"><TextInput type="tel" inputMode="tel" autoFocus value={c.whatsapp} onChange={(e) => set("whatsapp", e.target.value)} placeholder="(11) 99999-9999" /></Field>
+      <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set("quoteMode", m)} />
+    </div>,
   ][step];
 
   return (

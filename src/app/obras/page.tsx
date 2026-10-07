@@ -1,4 +1,6 @@
 "use client";
+import { isPriceOnly } from "@/modules/quotes";
+import { isSimpleMode } from "@/modules/settings";
 import Link from "next/link";
 import { useState } from "react";
 import { dashboard } from "@/modules/dashboard";
@@ -28,9 +30,9 @@ export default function Obras() {
   const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
   // Lucro real × previsto das obras do mês que já têm gastos lançados.
   const month = new Date().toISOString().slice(0, 7);
-  const tracked = db.works.filter((w) => !w.isExample && w.createdAt.startsWith(month) && (w.expenses?.length ?? 0) > 0).map((w) => workProfit(w, db.quotes.find((q) => q.id === w.quoteId)));
+  const tracked = db.works.filter((w) => !w.isExample && w.createdAt.startsWith(month) && (w.expenses?.length ?? 0) > 0).map((w) => { const q = db.quotes.find((x) => x.id === w.quoteId); return { ...workProfit(w, q), priceOnly: !!q && isPriceOnly(q) }; });
   const realCents = tracked.reduce((a, p) => a + (p.realProfitCents ?? p.realPocketCents), 0);
-  const plannedCents = tracked.reduce((a, p) => a + (p.realProfitCents === null ? p.plannedPocketCents : p.plannedProfitCents), 0);
+  const plannedCents = tracked.filter((p) => !p.priceOnly).reduce((a, p) => a + (p.realProfitCents === null ? p.plannedPocketCents : p.plannedProfitCents), 0);
   return (
     <Screen title="Obras" nav>
       <div data-tour="obras-painel">
@@ -42,10 +44,10 @@ export default function Obras() {
         <div className="grid grid-cols-2 gap-3">
           {[
             ["Vendido no mês", formatBRL(d.soldMonthCents)],
-            ["Lucro estimado do mês", formatBRL(d.profitMonthCents)],
+            ...(isSimpleMode(db.company) ? [] : [["Lucro estimado do mês", formatBRL(d.profitMonthCents)]]),
             ["Falta receber", formatBRL(d.receivableCents)],
             ["Em atraso", formatBRL(d.lateCents)],
-            ...(tracked.length ? [["Lucro real do mês", formatBRL(realCents)], ["Previsto dessas obras", formatBRL(plannedCents)]] : []),
+            ...(tracked.length ? [["Lucro real do mês", formatBRL(realCents)], ...(isSimpleMode(db.company) || tracked.every((p) => p.priceOnly) ? [] : [["Previsto dessas obras", formatBRL(plannedCents)]])] : []),
             ["Obras em andamento", String(d.worksActive)],
           ].map(([label, value]) => (
             <Card key={label}>

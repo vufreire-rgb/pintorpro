@@ -113,4 +113,13 @@ describe("pdfData", () => {
     const photos = Array.from({ length: 9 }, (_, i) => ({ src: "x" + i, room: "", caption: "" }));
     expect(buildPdfData(db, q, photos).photos).toHaveLength(6);
   });
+
+  it("orçamento só com preço: o que será feito vira o resumo e não há ambientes", () => {
+    const priceOnly: QuoteInput = { rooms: [], extras: [{ description: "Pintura completa do apartamento, tinta inclusa", priceCents: 250000, costCents: 0 }] };
+    const { db, q } = make({ input: priceOnly, result: calculateQuote(priceOnly, config) });
+    const d = buildPdfData(db, q);
+    expect(d.summary).toBe("Pintura completa do apartamento, tinta inclusa.");
+    expect(d.rooms).toHaveLength(0);
+    expect(d.days).toBe("A combinar");
+  });
 });
