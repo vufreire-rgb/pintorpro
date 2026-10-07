@@ -47,7 +47,7 @@ export default function Visitas() {
   const touchX = useRef<number | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
   const steps: TourStep[] = [
-    { target: "gravar", title: "Gravar ou agendar", text: "Gravar visita começa uma visita agora, com fotos, medidas e áudio. Agendar marca uma visita para outro dia e lembra você." },
+    { target: "gravar", title: "Gravar ou agendar", text: "Gravar visita começa uma visita agora, com fotos, medidas e áudio. Agendar marca uma visita para outro dia. Dá para colocá-la na agenda do celular, que avisa na hora." },
     { target: "abas", title: "Suas visitas em 3 abas", text: "Agendadas, Sem orçamento e Orçamento feito. Toque numa aba ou deslize para os lados." },
     { target: "lista", title: "Vamos treinar", text: "Cada visita aparece aqui. Vou abrir uma visita de exemplo para você treinar, e depois você apaga.", button: "Abrir visita de exemplo" },
   ];
