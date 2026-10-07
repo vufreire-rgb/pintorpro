@@ -64,6 +64,7 @@ check(total2 === 310000, "editar muda o preço (" + total2 + ")");
 
 // voltar para o cálculo: tudo reaparece
 await page.goto(base + "/configuracoes");
+await page.getByText("Como você faz orçamento?").first().click();
 await page.getByRole("button", { name: /Com cálculo/ }).click();
 await page.getByText("Serviços e preços").waitFor();
 check(true, "voltando para 'Com cálculo' os preços reaparecem");

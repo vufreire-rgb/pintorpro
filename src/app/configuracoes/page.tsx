@@ -17,6 +17,8 @@ import { isSimpleMode, resetTours, saveCompany, setEnabledServices, updateMateri
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
+import { ReviewReminderForm } from "@/components/ReviewReminderForm";
+import { reminderLabel } from "@/modules/reminder";
 import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
@@ -51,11 +53,8 @@ export default function Configuracoes() {
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
-      <InstallBanner always />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
-      <Card className="flex flex-col gap-3">
-        <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} />
-      </Card>
+      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meu negócio</h2>
       <div data-tour="aj-negocio">
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
@@ -138,6 +137,14 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </div>
+      {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
+      <Section title="Lembrete de revisão" hint={c.reviewReminder ? `Ativo: ${reminderLabel(c.reviewReminder)}` : "Um aviso diário para ver quem não respondeu"}>
+        <ReviewReminderForm saved={c.reviewReminder} onSave={(rr) => saveCompany({ ...c, reviewReminder: rr })} />
+      </Section>
+      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meus orçamentos</h2>
+      <Section title="Como você faz orçamento?" hint={simple ? "Agora: só voz e preço fechado" : "Agora: com cálculo (medidas, preços e lucro)"}>
+        <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} hideTitle />
+      </Section>
       {simple ? null : <>
       <div data-tour="aj-servicos">
       <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
@@ -191,9 +198,7 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </>}
-
-      {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
-
+      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Conta e ajuda</h2>
       <div data-tour="aj-guias">
       <Card className="flex flex-col gap-3">
         <h2 className="text-lg font-bold">Guias</h2>
@@ -201,6 +206,7 @@ export default function Configuracoes() {
         <Button variant="ghost" onClick={() => { resetTours(); router.push("/visitas"); }}>Ver os guias de novo</Button>
       </Card>
       </div>
+      <InstallBanner always />
       {cloudEnabled && auth.status === "ready" ? <SubscriptionCard /> : null}
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">

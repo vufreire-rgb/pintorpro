@@ -30,9 +30,8 @@ check(await page.getByText("O orçamento ficou").or(page.getByText(/Sobrou (mais
 check(await page.getByText("Ainda falta receber R$ 3.000,00").isVisible(), "avisa que falta receber");
 await page.getByRole("button", { name: "Aumentar" }).first().click();
 check(!(await page.getByText("Informe os dias").isVisible().catch(() => false)), "com dias trabalhados a diária real é calculada");
-await page.goto(base + "/obras");
-await page.getByRole("button", { name: /Ver painel/ }).click();
-check(await page.getByText("Lucro real do mês").isVisible(), "painel mostra lucro real do mês");
+await page.goto(base + "/obras/resultado");
+check(await page.getByText("Lucro real", { exact: true }).isVisible(), "Resultado do mês mostra o lucro real");
 console.log("erros de console:", errors.length ? errors : "nenhum");
 await browser.close();
 if (fails.length || errors.length) { console.log("\nFALHARAM:", fails); process.exit(1); }

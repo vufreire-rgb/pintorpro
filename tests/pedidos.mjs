@@ -102,7 +102,7 @@ check(state.posted.at(-1).request.hp === "", "campo escondido (anti-robô) vazio
 
 // 3) o pintor vê o pedido
 await page.goto(base + "/orcamentos");
-await page.getByRole("link", { name: /Pedidos de clientes \(1 novo\)/ }).click();
+await page.getByRole("link", { name: /1 pedido novo de clientes/ }).click();
 await page.getByText("Maria Souza").waitFor();
 check(await page.getByText("(11) 98888-7777").isVisible() && await page.getByText("Sala e dois quartos").isVisible(), "pedido aparece com telefone e mensagem");
 await page.getByRole("button", { name: "Criar visita" }).click();

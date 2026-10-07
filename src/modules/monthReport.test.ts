@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { monthLabel, monthReport, shiftMonth } from "./monthReport";
 import type { Db, Quote, Work } from "./types";
 
-const quote = (id: string, total: number, closedAt: string, status: Quote["status"] = "won"): Quote => ({ id, status, closedAt, result: { totals: { totalCents: total } } } as unknown as Quote);
+const quote = (id: string, total: number, closedAt: string, status: Quote["status"] = "won"): Quote => ({ id, status, closedAt, input: { rooms: id === "q2" ? [] : [{}], extras: [] }, result: { totals: { totalCents: total, profitCents: Math.round(total / 4), costCents: 0, laborCostCents: 0 } } } as unknown as Quote);
 const work = (id: string, quoteId: string, total: number, extra: Partial<Work> = {}): Work => ({ id, quoteId, clientId: "c", title: "", status: "in_progress", createdAt: "", plannedDays: 1, plannedHours: 8, plannedTotalCents: total, plannedCostCents: 0, ...extra });
 
 const db = {
@@ -26,6 +26,13 @@ describe("monthReport", () => {
   it("a receber é o que falta hoje em todas as obras", () => {
     expect(monthReport(db, "2026-10").toReceiveCents).toBe(100000 - 50000 + 50000);
     expect(monthReport(db, "2026-08").toReceiveCents).toBe(100000);
+  });
+  it("lucro estimado conta só orçamentos com medidas; trabalhos e atraso vêm das obras", () => {
+    const r = monthReport(db, "2026-10");
+    expect(r.estimatedProfitCents).toBe(25000);
+    expect(r.activeWorks).toBe(2);
+    expect(r.lateCents).toBe(0);
+    expect(r.trackedWorks).toBe(0); // w1 foi criada em "" (fora do mês) neste cenário
   });
   it("mês vazio dá zero", () => {
     expect(monthReport(db, "2026-08")).toMatchObject({ soldCents: 0, receivedCents: 0, spentCents: 0, netCents: 0 });

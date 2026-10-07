@@ -1,17 +1,12 @@
 "use client";
-import { isPriceOnly } from "@/modules/quotes";
-import { isSimpleMode } from "@/modules/settings";
 import Link from "next/link";
-import { useState } from "react";
-import { dashboard } from "@/modules/dashboard";
-import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
-import { CalendarDays, Check, ChartColumn, EyeOff, TriangleAlert } from "lucide-react";
+import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { CalendarDays, Check, ChartColumn, TriangleAlert } from "lucide-react";
 import { createExampleWork, WORK_STATUS_LABEL } from "@/modules/works";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { useRouter } from "next/navigation";
 import { lateCents } from "@/modules/finance";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
-import { workProfit } from "@/modules/workProfit";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
 
@@ -20,44 +15,17 @@ const TONE = { scheduled: "open", in_progress: "open", issues: "warn", done: "ok
 export default function Obras() {
   const db = useAppDb();
   const router = useRouter();
-  const [showPanel, setShowPanel] = useState(false); // sempre começa recolhido: o cliente pode estar olhando
   const steps: TourStep[] = [
-    { target: "obras-painel", title: "Painel com os valores", text: "Os valores ficam escondidos para o cliente não ver. Toque aqui para ver o vendido no mês, o que falta receber, o que está em atraso e o lucro real." },
+    { target: "obras-painel", title: "Resultado do mês", text: "Os valores ficam numa tela à parte, para o cliente não ver sem querer. Toque aqui para ver quanto vendeu, recebeu, gastou e o que falta receber." },
     { target: "obras-lista", title: "Suas obras", text: "Quando você fecha um orçamento, a obra aparece aqui com o quanto falta receber. Vou abrir uma obra de exemplo para você conhecer, e depois você apaga.", button: "Abrir obra de exemplo" },
   ];
   if (!db) return <Loading />;
-  const d = dashboard(db);
   const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
-  // Lucro real × previsto das obras do mês que já têm gastos lançados.
-  const month = new Date().toISOString().slice(0, 7);
-  const tracked = db.works.filter((w) => !w.isExample && w.createdAt.startsWith(month) && (w.expenses?.length ?? 0) > 0).map((w) => { const q = db.quotes.find((x) => x.id === w.quoteId); return { ...workProfit(w, q), priceOnly: !!q && isPriceOnly(q) }; });
-  const realCents = tracked.reduce((a, p) => a + (p.realProfitCents ?? p.realPocketCents), 0);
-  const plannedCents = tracked.filter((p) => !p.priceOnly).reduce((a, p) => a + (p.realProfitCents === null ? p.plannedPocketCents : p.plannedProfitCents), 0);
   return (
     <Screen title="Obras" nav>
       <div data-tour="obras-painel">
-      <Button variant="ghost" icon={showPanel ? EyeOff : ChartColumn} aria-expanded={showPanel} onClick={() => setShowPanel((o) => !o)}>
-        {showPanel ? "Esconder painel" : "Ver painel (valores)"}
-      </Button>
+        <LinkButton href="/obras/resultado" variant="ghost" icon={ChartColumn}>Resultado do mês (valores)</LinkButton>
       </div>
-      <LinkButton href="/obras/resultado" variant="ghost" icon={ChartColumn}>Resultado do mês</LinkButton>
-      {showPanel ? (
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            ["Vendido no mês", formatBRL(d.soldMonthCents)],
-            ...(isSimpleMode(db.company) ? [] : [["Lucro estimado do mês", formatBRL(d.profitMonthCents)]]),
-            ["Falta receber", formatBRL(d.receivableCents)],
-            ["Em atraso", formatBRL(d.lateCents)],
-            ...(tracked.length ? [["Lucro real do mês", formatBRL(realCents)], ...(isSimpleMode(db.company) || tracked.every((p) => p.priceOnly) ? [] : [["Previsto dessas obras", formatBRL(plannedCents)]])] : []),
-            ["Obras em andamento", String(d.worksActive)],
-          ].map(([label, value]) => (
-            <Card key={label}>
-              <div className="text-base text-support">{label}</div>
-              <div className="font-display text-2xl font-bold">{value}</div>
-            </Card>
-          ))}
-        </div>
-      ) : null}
       <div data-tour="obras-lista" className="flex flex-col gap-4">
       {db.works.length === 0 ? <p className="text-lg text-support">Quando você fechar um orçamento, a obra aparece aqui.</p> : null}
       {works.map((w) => (

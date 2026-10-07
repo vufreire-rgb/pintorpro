@@ -20,7 +20,7 @@ const db = {
 await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
 
 await page.goto(base + "/obras");
-await page.getByRole("button", { name: /Ver painel/ }).waitFor();
+await page.getByRole("link", { name: /Resultado do mês/ }).waitFor();
 check(await page.getByText("Falta receber R$ 3.000,00").isVisible(), "cada obra mostra quanto falta receber");
 await page.getByText("Carla Dias").click();
 await page.getByText("Dinheiro da obra").waitFor();
@@ -51,21 +51,20 @@ await page.screenshot({ path: "/tmp/obra.png", fullPage: true });
 // lista e painel
 await page.goto(base + "/obras");
 check(await page.getByText("Tudo recebido").isVisible(), "lista marca 'Tudo recebido'");
-check(await page.getByText("Vendido no mês").isVisible().catch(() => false) === false, "painel de valores começa escondido");
-await page.getByRole("button", { name: /Ver painel/ }).click();
-check(await page.getByText("Falta receber").first().isVisible() && await page.getByText("Vendido no mês").isVisible() && await page.getByText("Lucro estimado do mês").isVisible(), "painel recolhível mostra vendido, lucro e falta receber");
-await page.reload();
-check(await page.getByText("Vendido no mês").isVisible().catch(() => false) === false, "ao reabrir, o painel volta escondido");
+check(await page.getByText("Vendido", { exact: true }).isVisible().catch(() => false) === false, "valores não aparecem na lista de obras (ficam na tela Resultado do mês)");
+await page.getByRole("link", { name: /Resultado do mês/ }).click();
+await page.waitForURL("**/obras/resultado");
+check(await page.getByText("Falta receber").first().isVisible() && await page.getByText("Vendido", { exact: true }).isVisible() && await page.getByText("Lucro estimado", { exact: true }).isVisible() && await page.getByText("Em atraso").isVisible(), "Resultado do mês mostra vendido, lucro estimado, falta receber e atraso");
 
 // lembrete de revisão
-await page.goto(base + "/orcamentos");
-await page.getByRole("button", { name: /Lembrete/ }).click();
+await page.goto(base + "/configuracoes");
+await page.getByText("Lembrete de revisão").first().click();
 await page.locator('input[type="time"]').fill("07:30");
 await page.getByRole("button", { name: "Todo dia" }).click();
 const [dl2] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Salvar no calendário do celular" }).click()]);
 const ics2 = await (await import("node:fs/promises")).readFile(await dl2.path(), "utf8");
 check(ics2.includes("RRULE:FREQ=DAILY") && ics2.includes("T073000") && ics2.includes("TRIGGER:PT0S"), "lembrete diário às 07:30 gera .ics com alarme");
-check(await (async () => { await page.getByRole("button", { name: /Lembrete/ }).click(); return page.getByText("Lembrete atual: Todo dia às 07:30").isVisible(); })(), "tela mostra o lembrete salvo");
+check(await page.getByText("Lembrete atual: Todo dia às 07:30").isVisible(), "tela mostra o lembrete salvo");
 await page.screenshot({ path: "/tmp/orc.png" });
 
 console.log("erros de console:", errors.length ? errors : "nenhum");

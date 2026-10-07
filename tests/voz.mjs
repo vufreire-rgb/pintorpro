@@ -51,7 +51,8 @@ await page.getByRole("button", { name: "Começar" }).click();
 await page.waitForURL(base + "/visitas");
 
 await page.goto(base + "/orcamentos");
-await page.getByRole("link", { name: "Ditar orçamento por voz" }).click();
+await page.getByRole("button", { name: "Novo orçamento" }).click();
+await page.getByRole("link", { name: /Falar/ }).click();
 await page.waitForURL("**/orcamentos/voz");
 
 // 1) limite diário: mensagem clara e dá para tentar de novo
@@ -123,6 +124,7 @@ check(!(await page.getByText(/Prazo:/).count()), "orçamento só com preço: nã
 draft.rooms = [{ name: "Sala", lengthM: 4, widthM: 5, heightM: 2.7, wallAreaM2: 0, includeCeiling: true, paint: "acrilica", condition: "pintada", doors: 1, windows: 1 }];
 draft.closedPriceReais = 1800;
 await page.goto(base + "/configuracoes");
+await page.getByText("Como você faz orçamento?").first().click();
 await page.getByRole("button", { name: /Só voz e preço fechado/ }).click();
 await page.goto(base + "/orcamentos/voz");
 await page.getByRole("button", { name: "Começar a falar" }).click();

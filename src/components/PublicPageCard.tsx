@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Copy, Share2 } from "lucide-react";
-import { Button, Chip, Field, Section, TextArea, TextInput } from "./ui";
+import { Button, Chip, Field, LinkButton, Section, TextArea, TextInput } from "./ui";
 import { activatePage, deactivatePage, isValidSlug, pageErrorText, pageUrl, slugify, useMyPage } from "@/modules/publicPage";
 import type { Db } from "@/modules/types";
 
@@ -62,6 +62,7 @@ export function PublicPageCard({ db }: { db: Db }) {
             <Button variant="ghost" icon={Copy} onClick={() => void copy()}>{copied ? "Copiado!" : "Copiar link"}</Button>
             <Button variant="ghost" icon={Share2} onClick={() => void share()}>Divulgar</Button>
           </div>
+          <LinkButton href="/pedidos" variant="ghost">Ver pedidos recebidos</LinkButton>
           <Button variant="danger" disabled={busy} onClick={() => void off()}>Desativar página</Button>
         </div>
       ) : null}

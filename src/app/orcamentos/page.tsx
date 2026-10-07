@@ -1,11 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Badge, Button, Card, CardTitle, Chip, Field, LinkButton, Loading, Screen, TextInput } from "@/components/ui";
-import { AlarmClock, Eye, Inbox, Mic, Plus } from "lucide-react";
-import { DAY_SHORT, DEFAULT_REMINDER, isValidTime, reminderLabel, type ReviewReminder } from "@/modules/reminder";
-import { saveCompany } from "@/modules/settings";
-import { downloadReviewIcs } from "@/modules/share";
+import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { Eye, Inbox, Mic, Pencil, Plus } from "lucide-react";
 import { isExpired } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { usePendingVoice } from "@/modules/voice";
@@ -18,29 +15,6 @@ import { fmtDate } from "@/shared/format";
 
 export const STATUS_LABEL: Record<QuoteStatus, string> = { open: "Aberto", won: "Fechado", lost: "Perdido" };
 
-function ReminderCard({ saved, onSave, onClose }: { saved?: ReviewReminder; onSave: (r: ReviewReminder) => void; onClose: () => void }) {
-  const [r, setR] = useState<ReviewReminder>(saved ?? DEFAULT_REMINDER);
-  const toggle = (d: number) => setR({ ...r, days: r.days.includes(d) ? r.days.filter((x) => x !== d) : [...r.days, d] });
-  return (
-    <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
-      <CardTitle icon={AlarmClock}>Hora de revisar</CardTitle>
-      {saved ? <p className="text-base font-bold text-brand">Lembrete atual: {reminderLabel(saved)}</p> : null}
-      <p className="text-base text-support">O celular apita no horário, mesmo com o app fechado, para você ver quem ainda não respondeu.</p>
-      <Field label="Que horas?"><TextInput type="time" value={r.time} onChange={(e) => setR({ ...r, time: e.target.value })} /></Field>
-      <div className="flex flex-wrap gap-2">
-        <Chip active={r.days.length === 7} onClick={() => setR({ ...r, days: [0, 1, 2, 3, 4, 5, 6] })}>Todo dia</Chip>
-        <Chip active={r.days.join() === "1,2,3,4,5"} onClick={() => setR({ ...r, days: [1, 2, 3, 4, 5] })}>Seg a Sex</Chip>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {DAY_SHORT.map((n, d) => <Chip key={n} active={r.days.includes(d)} onClick={() => toggle(d)}>{n}</Chip>)}
-      </div>
-      <Button disabled={!isValidTime(r.time) || r.days.length === 0} onClick={() => { const v = { ...r, days: [...r.days].sort((a, b) => a - b) }; onSave(v); downloadReviewIcs(v); onClose(); }}>Salvar no calendário do celular</Button>
-      <p className="text-base text-support">Vai baixar um arquivo: abra-o e toque em adicionar ao calendário. Se mudar o horário depois, apague o lembrete antigo no calendário.</p>
-      <Button variant="ghost" onClick={onClose}>Fechar</Button>
-    </Card>
-  );
-}
-
 const TABS: QuoteStatus[] = ["open", "won", "lost"];
 
 export default function Orcamentos() {
@@ -49,7 +23,7 @@ export default function Orcamentos() {
   const { links } = useQuoteLinks();
   const newRequests = useRequests().requests.filter((r) => r.status === "new").length;
   const [tab, setTab] = useState<QuoteStatus>("open");
-  const [remOpen, setRemOpen] = useState(false);
+  const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
   if (!db) return <Loading />;
   const list = db.quotes.filter((q) => q.status === tab);
@@ -67,13 +41,24 @@ export default function Orcamentos() {
           if (dx > 60 && i > 0) setTab(TABS[i - 1]!);
         }}
       >
-      <div className="grid grid-cols-2 gap-3">
-        <LinkButton href="/orcamentos/novo" icon={Plus} className="!px-3 !text-lg">Novo orçamento</LinkButton>
-        <Button variant="ghost" icon={AlarmClock} className="!px-3 !text-lg" onClick={() => setRemOpen((o) => !o)}>Lembrete</Button>
-        <LinkButton href="/orcamentos/voz" icon={Mic} variant="ghost" className="col-span-2 !px-3 !text-lg">Ditar orçamento por voz{voicePending > 0 ? ` (${voicePending} aguardando)` : ""}</LinkButton>
-        {cloudEnabled ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="col-span-2 !px-3 !text-lg">Pedidos de clientes{newRequests > 0 ? ` (${newRequests} ${newRequests === 1 ? "novo" : "novos"})` : ""}</LinkButton> : null}
+      <div className="flex flex-col gap-3">
+        {cloudEnabled ? (
+          <>
+            <Button icon={Plus} aria-expanded={choosing} onClick={() => setChoosing((o) => !o)}>Novo orçamento</Button>
+            {choosing ? (
+              <div className="grid grid-cols-2 gap-3">
+                <LinkButton href="/orcamentos/voz" icon={Mic} variant="ghost" className="!px-3 !text-lg">Falar{voicePending > 0 ? ` (${voicePending} aguardando)` : ""}</LinkButton>
+                <LinkButton href="/orcamentos/novo" icon={Pencil} variant="ghost" className="!px-3 !text-lg">Digitar</LinkButton>
+              </div>
+            ) : voicePending > 0 ? (
+              <Link href="/orcamentos/voz" className="text-center text-base font-semibold text-brand underline">{voicePending} {voicePending === 1 ? "áudio aguardando" : "áudios aguardando"} para virar orçamento</Link>
+            ) : null}
+          </>
+        ) : (
+          <LinkButton href="/orcamentos/novo" icon={Plus}>Novo orçamento</LinkButton>
+        )}
+        {newRequests > 0 ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="!px-3 !text-lg">{newRequests} {newRequests === 1 ? "pedido novo" : "pedidos novos"} de clientes</LinkButton> : null}
       </div>
-      {remOpen ? <ReminderCard saved={db.company?.reviewReminder} onSave={(rr) => saveCompany({ ...db.company!, reviewReminder: rr })} onClose={() => setRemOpen(false)} /> : null}
       <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
         {TABS.map((s) => (
           <button

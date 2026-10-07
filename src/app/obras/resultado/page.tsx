@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, Loading, Screen } from "@/components/ui";
 import { monthKey, monthLabel, monthReport, shiftMonth } from "@/modules/monthReport";
+import { isSimpleMode } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
 
@@ -13,6 +14,7 @@ export default function ResultadoDoMes() {
   const [month, setMonth] = useState(now);
   if (!db) return <Loading />;
   const r = monthReport(db, month);
+  const simple = isSimpleMode(db.company);
   const rows: [string, string, string?][] = [
     ["Vendido", formatBRL(r.soldCents), r.soldCount ? `${r.soldCount} ${r.soldCount === 1 ? "orçamento fechado" : "orçamentos fechados"} no mês` : "Orçamentos fechados no mês"],
     ["Recebido", formatBRL(r.receivedCents), "Pagamentos que entraram no mês"],
@@ -42,10 +44,45 @@ export default function ResultadoDoMes() {
           ))}
         </Card>
 
-        <Card className="flex items-baseline justify-between gap-3">
-          <div><div className="text-lg font-semibold">Falta receber</div><div className="text-base text-support">De todas as obras, hoje</div></div>
-          <b className="font-display text-xl" data-testid="r-falta">{formatBRL(r.toReceiveCents)}</b>
+        <Card className="flex flex-col divide-y divide-slate-100">
+          <div className="flex items-baseline justify-between gap-3 pb-3">
+            <div><div className="text-lg font-semibold">Falta receber</div><div className="text-base text-support">De todas as obras, hoje</div></div>
+            <b className="font-display text-xl" data-testid="r-falta">{formatBRL(r.toReceiveCents)}</b>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 py-3">
+            <div><div className="text-lg font-semibold">Em atraso</div><div className="text-base text-support">Parcelas vencidas e não pagas</div></div>
+            <b className={`font-display text-xl ${r.lateCents > 0 ? "text-err" : ""}`} data-testid="r-atraso">{formatBRL(r.lateCents)}</b>
+          </div>
+          <div className="flex items-baseline justify-between gap-3 pt-3">
+            <div className="text-lg font-semibold">Obras em andamento</div>
+            <b className="font-display text-xl" data-testid="r-andamento">{r.activeWorks}</b>
+          </div>
         </Card>
+        {simple ? (r.trackedWorks > 0 ? (
+          <Card className="flex items-baseline justify-between gap-3">
+            <div><div className="text-lg font-semibold">Lucro real do mês</div><div className="text-base text-support">Das obras com gastos lançados</div></div>
+            <b className="font-display text-xl" data-testid="r-lucro-real">{formatBRL(r.realProfitCents)}</b>
+          </Card>
+        ) : null) : (
+          <Card className="flex flex-col divide-y divide-slate-100">
+            <div className="flex items-baseline justify-between gap-3 pb-3">
+              <div><div className="text-lg font-semibold">Lucro estimado</div><div className="text-base text-support">Dos orçamentos fechados no mês, pelos seus preços</div></div>
+              <b className="font-display text-xl" data-testid="r-lucro-estimado">{formatBRL(r.estimatedProfitCents)}</b>
+            </div>
+            {r.trackedWorks > 0 ? (
+              <>
+                <div className="flex items-baseline justify-between gap-3 py-3">
+                  <div><div className="text-lg font-semibold">Lucro real</div><div className="text-base text-support">Das obras com gastos lançados</div></div>
+                  <b className="font-display text-xl" data-testid="r-lucro-real">{formatBRL(r.realProfitCents)}</b>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 pt-3">
+                  <div><div className="text-lg font-semibold">Previsto dessas obras</div></div>
+                  <b className="font-display text-xl" data-testid="r-previsto">{formatBRL(r.plannedProfitCents)}</b>
+                </div>
+              </>
+            ) : null}
+          </Card>
+        )}
         <p className="text-base text-support">Os valores contam só o que você lançou nas obras (pagamentos e gastos). Obras de treino ficam de fora.</p>
       </div>
     </Screen>

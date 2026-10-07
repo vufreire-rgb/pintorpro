@@ -69,12 +69,11 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
-      <InstallBanner />
-      <FirstSteps db={db} />
       <div data-tour="gravar" className="grid grid-cols-2 gap-3">
         <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
         <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
       </div>
+      <FirstSteps db={db} />
       <div data-tour="abas" role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
         {TABS.map((t) => (
           <button
@@ -114,6 +113,7 @@ export default function Visitas() {
         );
       })}
       </div>
+      <InstallBanner />
       </div>
       <AutoTour id="visitas" steps={steps} onFinish={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)} />
     </Screen>

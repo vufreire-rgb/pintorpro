@@ -27,7 +27,9 @@ await page.evaluate(() => {
 await page.goto(base + "/visitas");
 await box.waitFor();
 check((await box.textContent()).includes("1 de 6"), "depois de uma visita: 1 de 6");
-check(await box.getByRole("link", { name: "Fazer seu primeiro orçamento" }).isVisible(), "passos pendentes são links");
+check(!(await box.getByRole("link", { name: "Fazer seu primeiro orçamento" }).isVisible()), "a lista começa recolhida (uma linha só)");
+await box.locator("summary").click();
+check(await box.getByRole("link", { name: "Fazer seu primeiro orçamento" }).isVisible(), "ao tocar, os passos pendentes aparecem como links");
 await box.getByRole("button", { name: "Não mostrar mais" }).click();
 await page.waitForTimeout(300);
 check((await page.getByTestId("primeiros-passos").count()) === 0, "dispensar esconde a lista");
