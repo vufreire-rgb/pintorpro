@@ -63,6 +63,10 @@ export function clientTextFor(svc: { id: string; name: string; clientText?: stri
 
 /** Serviços de preparação (para o resumo do PDF) e ordem em que aparecem (do preparo à pintura). */
 export const PREP_SERVICE_IDS = ["protecao", "protecao_vaos", "raspagem", "correcao", "massa_corrida", "massa_acrilica", "lixamento", "selador"];
+/** Como os serviços aparecem agrupados na tela do orçamento. O que não está em Preparação nem em Pintura cai em Extras. */
+export const PAINT_SERVICE_IDS = ["pintura_parede", "pintura_teto", "textura", "esmalte_m2", "pintura_piso", "cimento_queimado"];
+export const serviceGroup = (id: string): "prep" | "paint" | "extra" => (PREP_SERVICE_IDS.includes(id) ? "prep" : PAINT_SERVICE_IDS.includes(id) ? "paint" : "extra");
+export const SERVICE_GROUP_LABEL = { prep: "Preparação", paint: "Pintura", extra: "Extras" } as const;
 export const serviceOrder = (id: string): number => {
   const i = DEFAULT_SERVICES.findIndex((s) => s.id === id);
   return i === -1 ? 999 : i;

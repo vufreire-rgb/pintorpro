@@ -22,15 +22,22 @@ function Row({ s }: { s: ServiceConfig }) {
   );
 }
 
-/** "Confirme seus preços": só aparece para serviços usados no orçamento que ainda têm valor de exemplo. */
+/**
+ * "Confirme seus preços": só aparece para serviços usados no orçamento que ainda têm valor de exemplo.
+ * Um botão confirma tudo de uma vez; para ajustar um por um, o pintor abre a lista (recolhida para a tela não ficar enorme).
+ */
 export function PriceCheck({ services }: { services: ServiceConfig[] }) {
   if (services.length === 0) return null;
+  const n = services.length;
   return (
     <Card className="flex flex-col gap-3">
       <CardTitle>Confirme seus preços</CardTitle>
-      <p className="text-base text-support">Estes valores são de exemplo. Se estiverem bons, confirme todos de uma vez ou ajuste um por um.</p>
-      {services.length > 1 ? <Button icon={Check} onClick={() => services.forEach((s) => updateService(s.id, { salePriceCents: s.salePriceCents }))}>Confirmar todos como estão</Button> : null}
-      {services.map((s) => <Row key={s.id} s={s} />)}
+      <p className="text-base text-support">{n === 1 ? "Este valor é de exemplo." : `${n} valores são de exemplo.`} Se estiverem bons, confirme de uma vez ou ajuste um por um.</p>
+      <Button icon={Check} onClick={() => services.forEach((s) => updateService(s.id, { salePriceCents: s.salePriceCents }))}>{n > 1 ? "Confirmar todos como estão" : "Confirmar como está"}</Button>
+      <details className="rounded-xl border border-slate-200 p-3">
+        <summary className="cursor-pointer text-base font-bold text-brand">Ajustar um por um</summary>
+        <div className="mt-3 flex flex-col gap-3">{services.map((s) => <Row key={s.id} s={s} />)}</div>
+      </details>
     </Card>
   );
 }

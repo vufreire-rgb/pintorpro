@@ -7,6 +7,7 @@ import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextA
 import { Eye, EyeOff, Ruler, Settings, X } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { PriceCheck } from "@/components/PriceCheck";
+import { ServicePicker } from "@/components/ServicePicker";
 import { AutoTour, type TourStep } from "@/components/Tour";
 import { RoomEditor } from "@/components/RoomEditor";
 import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
@@ -118,6 +119,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     { target: "orc-salvar", title: "Preço e salvar", text: "O preço para o cliente aparece na hora e muda conforme você mexe. Toque em Salvar para guardar. Depois você gera o PDF e manda no WhatsApp." },
   ];
   const t = result?.totals;
+  // Serviços com preço de exemplo já têm o bloco "Confirme seus preços"; aqui só entram os outros avisos (materiais de exemplo viram uma linha).
+  const demoServices = db.services.filter((sv) => sv.isDemo && allRooms.some((r) => r.services.some((x) => x.serviceId === sv.id)));
+  const demoMatch = (w: string): string | undefined => w.match(/^"(.+)" usa valores de demonstração\.$/)?.[1];
+  const shownDemo = new Set(demoServices.map((sv) => sv.name));
+  const demoMaterials = (result?.warnings ?? []).map(demoMatch).filter((n): n is string => !!n && !shownDemo.has(n));
+  const notes2 = [...(demoMaterials.length ? [`Materiais com preço de exemplo: ${demoMaterials.join(", ")}. Confira em Ajustes → Materiais.`] : []), ...(result?.warnings ?? []).filter((w) => !demoMatch(w))];
   return (
     <Screen title={quote ? `Editar orçamento nº ${quote.number}` : "Orçamento"} back={quote ? `/orcamentos/${quote.id}` : visit ? `/visitas/${visit.id}` : "/orcamentos"}>
       <div className="flex flex-col gap-4 pb-36">
@@ -170,11 +177,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               {editingId === r.id ? (
                 <RoomEditor title="Medidas do ambiente" draft={draft} onChange={setDraft} onSave={saveEdit} onCancel={() => setEditingId(null)} saveLabel="Salvar medidas" />
               ) : <Button variant="ghost" icon={Ruler} onClick={() => openEdit(r)}>Editar medidas</Button>}
-              <div className="flex flex-wrap gap-2">
-                {db.services.filter((sv) => enabled.includes(sv.id)).map((sv) => (
-                  <Chip key={sv.id} active={r.services.some((x) => x.serviceId === sv.id)} onClick={() => toggleService(r.id, sv.id)}>{sv.name}</Chip>
-                ))}
-              </div>
+              <ServicePicker services={db.services.filter((sv) => enabled.includes(sv.id))} selected={r.services.map((x) => x.serviceId)} onToggle={(id) => toggleService(r.id, id)} />
               {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
                 <details>
                   <summary className="cursor-pointer text-base font-semibold text-brand">Demãos e quantidades</summary>
@@ -208,7 +211,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         ) : (
           <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
         )}
-        <PriceCheck services={db.services.filter((sv) => sv.isDemo && allRooms.some((r) => r.services.some((x) => x.serviceId === sv.id)))} />
+        <PriceCheck services={demoServices} />
 
         <details data-tour="orc-ajustes" className="rounded-2xl border border-slate-200 p-3">
           <summary className="flex cursor-pointer items-center gap-2 font-display text-lg font-bold"><Settings size={24} strokeWidth={2.2} aria-hidden className="text-brand" />Ajustes do orçamento (opcional)</summary>
@@ -256,10 +259,10 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
           </div>
         </details>
 
-        {result && result.warnings.length > 0 ? (
+        {notes2.length > 0 ? (
           <details className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-base text-ink">
-            <summary className="cursor-pointer font-semibold">Avisos ({result.warnings.length})</summary>
-            <ul className="mt-2 list-disc pl-5">{result.warnings.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
+            <summary className="cursor-pointer font-semibold">Avisos ({notes2.length})</summary>
+            <ul className="mt-2 list-disc pl-5">{notes2.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
             <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>
           </details>
         ) : null}

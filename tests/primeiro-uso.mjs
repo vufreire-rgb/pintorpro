@@ -21,6 +21,8 @@ await page.goto(base + "/orcamentos/novo");
 check(!(await page.getByText("Confirme seus preços").isVisible().catch(() => false)), "sem medidas, ainda não pede preço");
 await page.getByLabel("Parede 1 largura").fill("12");
 await page.getByText("Confirme seus preços").waitFor();
+check(!(await page.getByLabel(/Preço de /).first().isVisible()), "os preços individuais começam recolhidos (a tela não fica enorme)");
+await page.getByText("Ajustar um por um").click();
 const price = page.getByLabel(/Preço de /).first();
 const before = await page.getByTestId("total").innerText();
 await price.fill("30");
