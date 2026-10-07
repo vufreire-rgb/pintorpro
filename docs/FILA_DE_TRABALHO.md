@@ -44,6 +44,18 @@ Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o q
 
 **Pronto quando:** teste automático com servidor de push falso + teste manual em 1 Android e 1 iPhone instalados, com o app fechado; texto de privacidade atualizado.
 
+## Proposta (aguardando decisão do titular, 2026-10-08): Orçamento por voz
+**Ideia (vista em outro app):** o pintor abre o app, **dita** o que precisa ("sala 4 por 5, paredes e teto, duas demãos, R$ 1.800, entrada de 50%") e o app **transcreve e monta o orçamento**, sem calcular nada dentro do app: vale o preço que o pintor fala (ele faz a conta do jeito dele).
+**Versão enxuta (MVP):**
+1. Botão de microfone no novo orçamento; ditado pelo navegador (grátis no Chrome/Android) ou transcrição paga; **não guarda o áudio**, só o texto.
+2. Uma função no Supabase manda o texto à IA (modelo barato) com a chave guardada como secret no servidor; devolve cliente, endereço, ambientes, serviços, **valor total**, prazo e forma de pagamento.
+3. Tela de **revisão** (a pessoa confere e corrige), depois PDF e WhatsApp como hoje.
+4. Novo modo de orçamento com **preço fechado** (valor digitado/ditado, sem usar o motor de cálculo); o motor continua para quem quiser ajuda no cálculo.
+**Custo estimado:** cerca de **R$ 0,10 por orçamento** ditado (1,5 min); 20 por mês ≈ R$ 2 por pintor (≈ 6% da assinatura). Limite mensal por conta para não estourar.
+**Cuidados:** a chave da IA só como secret no servidor (nunca no app nem no chat); política de privacidade deve citar o envio da voz/texto ao provedor de IA; sem internet o pintor digita.
+**Estimativa:** 3 a 5 dias para o MVP + testes com fala real de pintor.
+**Sugestão de prioridade:** antes das notificações, por reduzir o maior atrito (digitar).
+
 ## Ideias guardadas (sem data)
 - Alarme de verdade do relógio: só com app nativo; hoje não vale o custo.
 - Voz para orçamento (IA): precisa de chave de API e estimativa de custo (`docs/CUSTOS_IA.md`).
