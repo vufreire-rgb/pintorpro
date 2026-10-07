@@ -4,6 +4,20 @@ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 // O Supabase novo chama a chave de "publishable"; aceitamos os dois nomes.
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+/**
+ * O link de "esqueci a senha" chega com o resultado no endereço (#...type=recovery ou #error_code=...).
+ * O supabase-js limpa esse trecho ao ler, então guardamos antes de ele ser criado.
+ */
+export type RecoveryLink = "ok" | "expired" | null;
+export const recoveryLink: RecoveryLink =
+  typeof window === "undefined"
+    ? null
+    : /type=recovery/.test(window.location.hash)
+      ? "ok"
+      : /error_code=otp_expired|error=access_denied/.test(window.location.hash)
+        ? "expired"
+        : null;
+
 /** false = modo local (sem login), como antes. Liga sozinho quando as chaves existem. */
 export const cloudConfigured = Boolean(url && anonKey);
 
@@ -18,7 +32,13 @@ export const onAuthChange = (cb: (s: Session | null) => void): (() => void) => {
 };
 
 export const signIn = (email: string, password: string) => c().auth.signInWithPassword({ email, password });
-export const signUp = (email: string, password: string) => c().auth.signUp({ email, password });
+/** `redirectTo`: para onde o link do e-mail de confirmação leva (precisa estar na lista de Redirect URLs do Supabase). */
+export const signUp = (email: string, password: string, redirectTo?: string) =>
+  c().auth.signUp({ email, password, options: redirectTo ? { emailRedirectTo: redirectTo } : undefined });
+export const resendConfirmation = (email: string, redirectTo?: string) =>
+  c().auth.resend({ type: "signup", email, options: redirectTo ? { emailRedirectTo: redirectTo } : undefined });
+export const requestPasswordReset = (email: string, redirectTo: string) => c().auth.resetPasswordForEmail(email, { redirectTo });
+export const updatePassword = (password: string) => c().auth.updateUser({ password });
 /** Sai da conta. Sem internet o servidor não responde; nesse caso sai só neste aparelho (a sessão antiga expira sozinha). */
 export async function signOut(): Promise<void> {
   const { error } = await c().auth.signOut();

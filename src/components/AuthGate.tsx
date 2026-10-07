@@ -2,28 +2,53 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { takeAccountDeletedNotice } from "@/modules/account";
-import { initAuth, login, register, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
+import { forgotPassword, initAuth, login, register, resendConfirmationEmail, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
 import { Splash } from "./Splash";
 import { Button, Field, Loading, TextInput } from "./ui";
 
 function LoginScreen() {
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up" | "reset">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [info, setInfo] = useState("");
+  const [needsConfirm, setNeedsConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleted] = useState(takeAccountDeletedNotice);
+
+  const go = (m: "in" | "up" | "reset") => { setMode(m); setMsg(""); setInfo(""); setNeedsConfirm(false); };
 
   const submit = async () => {
     setBusy(true);
     setMsg("");
+    setInfo("");
+    setNeedsConfirm(false);
+    if (mode === "reset") {
+      const err = await forgotPassword(email);
+      if (err) setMsg(err);
+      else setInfo("Se esse e-mail tiver uma conta, enviamos um link para criar uma nova senha. Abra o e-mail (veja também o spam) e toque no link.");
+      setBusy(false);
+      return;
+    }
     const err = mode === "in" ? await login(email, password) : await register(email, password);
     setBusy(false);
-    if (err === "CONFIRM") setMsg("Enviamos um e-mail para confirmar sua conta. Abra o e-mail, toque no link e depois volte aqui para entrar.");
-    else if (err) setMsg(err);
+    if (err === "CONFIRM" || err === "NOT_CONFIRMED") {
+      setNeedsConfirm(true);
+      setInfo("Enviamos um e-mail para confirmar sua conta. Abra o e-mail, toque no link e depois volte aqui para entrar.");
+      if (err === "NOT_CONFIRMED") setInfo("Falta confirmar seu e-mail. Abra o e-mail que enviamos, toque no link e volte aqui para entrar.");
+    } else if (err) setMsg(err);
   };
 
+  const resend = async () => {
+    setBusy(true);
+    const err = await resendConfirmationEmail(email);
+    setBusy(false);
+    if (err) setMsg(err);
+    else setInfo("Enviamos o e-mail de novo. Veja também a caixa de spam.");
+  };
+
+  const title = mode === "in" ? "Entrar na sua conta" : mode === "up" ? "Criar sua conta" : "Esqueci minha senha";
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-brand">
       <header className="flex flex-col items-center gap-3 px-6 pb-10 pt-14 text-center text-white">
@@ -33,23 +58,33 @@ function LoginScreen() {
         <p className="text-lg text-white/80">{APP_TAGLINE}</p>
       </header>
       <section className="flex flex-1 flex-col gap-4 rounded-t-3xl bg-white p-6 pb-10">
-        <h2 className="text-2xl font-bold">{mode === "in" ? "Entrar na sua conta" : "Criar sua conta"}</h2>
+        <h2 className="text-2xl font-bold">{title}</h2>
         {mode === "up" ? <p className="-mt-2 text-support">Beta gratuito.</p> : null}
+        {mode === "reset" ? <p className="-mt-2 text-support">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</p> : null}
         <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
-          <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
-        </Field>
-        {deleted ? <p className="rounded-xl bg-brand-soft p-3 text-base">Sua conta foi excluída. Todos os seus dados foram apagados.</p> : null}
+        {mode !== "reset" ? (
+          <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>
+            <TextInput type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} value={password} onChange={(e) => setPassword(e.target.value)} />
+          </Field>
+        ) : null}
+        {deleted && !msg && !info ? <p className="rounded-xl bg-brand-soft p-3 text-base">Sua conta foi excluída. Todos os seus dados foram apagados.</p> : null}
+        {info ? <p className="rounded-xl bg-brand-soft p-3 text-base">{info}</p> : null}
         {msg ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{msg}</p> : null}
-        <Button disabled={busy || !email.includes("@") || password.length < 6} onClick={submit}>{busy ? "Aguarde…" : mode === "in" ? "Entrar" : "Criar conta"}</Button>
-        <Button variant="ghost" onClick={() => { setMode(mode === "in" ? "up" : "in"); setMsg(""); }}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>
+        <Button disabled={busy || !email.includes("@") || (mode !== "reset" && password.length < 6)} onClick={submit}>
+          {busy ? "Aguarde…" : mode === "in" ? "Entrar" : mode === "up" ? "Criar conta" : "Enviar link"}
+        </Button>
+        {needsConfirm ? <Button variant="ghost" disabled={busy || !email.includes("@")} onClick={resend}>Reenviar e-mail de confirmação</Button> : null}
+        {mode === "in" ? <Button variant="ghost" onClick={() => go("reset")}>Esqueci minha senha</Button> : null}
+        {mode === "reset" ? <Button variant="ghost" onClick={() => go("in")}>Voltar para entrar</Button> : (
+          <Button variant="ghost" onClick={() => go(mode === "in" ? "up" : "in")}>{mode === "in" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}</Button>
+        )}
       </section>
     </div>
   );
 }
 
 /** Páginas abertas a qualquer pessoa, sem login (exigidas pelas lojas de aplicativos). */
-const PUBLIC_PATHS = ["/privacidade", "/termos", "/excluir-conta"];
+const PUBLIC_PATHS = ["/privacidade", "/termos", "/excluir-conta", "/redefinir-senha"];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
