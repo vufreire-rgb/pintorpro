@@ -55,7 +55,7 @@ export default function Orcamentos() {
                 <LinkButton href="/orcamentos/novo" icon={Pencil} variant="ghost" className="!px-3 !text-lg">Digitar</LinkButton>
               </div>
             ) : voicePending > 0 ? (
-              <Link href="/orcamentos/voz" className="text-center text-base font-semibold text-brand underline">{voicePending} {voicePending === 1 ? "áudio aguardando" : "áudios aguardando"} para virar orçamento</Link>
+              <Link href="/orcamentos/voz" className="text-center font-display text-lg font-semibold text-live">{voicePending} {voicePending === 1 ? "áudio aguardando" : "áudios aguardando"} para virar orçamento</Link>
             ) : null}
           </>
         ) : (
@@ -86,7 +86,7 @@ export default function Orcamentos() {
         const card = (
           <Link href={`/orcamentos/${q.id}`}>
             <Card>
-              <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {name}</b><b className="font-display">{formatBRL(q.result.totals.totalCents)}</b></div>
+              <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {name}</b><b className="font-display text-xl font-semibold">{formatBRL(q.result.totals.totalCents)}</b></div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{q.autoClosed ? <Badge tone="lost">Sem resposta</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
             </Card>
           </Link>
