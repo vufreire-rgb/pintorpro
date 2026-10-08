@@ -20,7 +20,7 @@ export function FechouNotice({ owner, number, onClose }: { owner?: string; numbe
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <Link href="/obras" className="inline-flex min-h-12 items-center justify-center rounded-2xl border-2 border-brand bg-white font-display text-lg font-semibold text-brand">Ver a obra</Link>
+        <Link href="/obras" className="inline-flex min-h-12 items-center justify-center rounded-3xl bg-brand-soft font-display text-lg font-semibold text-brand">Ver a obra</Link>
         <button className="min-h-12 rounded-2xl font-display text-lg font-semibold text-support" onClick={onClose}>Fechar</button>
       </div>
     </div>

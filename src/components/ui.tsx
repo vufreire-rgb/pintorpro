@@ -298,7 +298,7 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, badge, bare = fals
           {Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null}
           <span className="min-w-0 flex-1">
             <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
-            {summary ? <span className="block truncate text-base leading-[22px] text-support">{summary}</span> : null}
+            {summary ? <span className="line-clamp-2 text-base leading-[22px] text-support">{summary}</span> : null}
           </span>
         </button>
         <RowBadge badge={badge} />
