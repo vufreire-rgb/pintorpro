@@ -90,6 +90,21 @@ export function surfacesSummary(surfaces: Surface[], doors: number, windows: num
   return [m.wallsNetM2 > 0 ? `Paredes ${f(m.wallsNetM2)}` : null, m.ceilingM2 > 0 ? `Teto ${f(m.ceilingM2)}` : null, m.floorM2 > 0 ? `Piso ${f(m.floorM2)}` : null].filter(Boolean).join(" · ");
 }
 
+/** Área total medida de um ambiente da visita (paredes sem aberturas + teto + piso), em m². */
+export function visitRoomM2(r: Pick<VisitRoom, "surfaces" | "lengthM" | "widthM" | "heightM" | "doors" | "windows">): number {
+  const surfaces = r.surfaces?.length ? r.surfaces : legacyToSurfaces(r.lengthM, r.widthM, r.heightM);
+  const m = measureRoom({ id: "x", name: "x", lengthM: 0, widthM: 0, heightM: 0, openings: openingsFor(r.doors, r.windows), services: [], surfaces });
+  return m.wallsNetM2 + m.ceilingM2 + m.floorM2;
+}
+
+/** Resumo do bloco Medidas: "Sala · 21,42 m²", "3 ambientes · 58,10 m²" ou "Nenhuma medida". */
+export function measuresSummary(rooms: Pick<VisitRoom, "name" | "surfaces" | "lengthM" | "widthM" | "heightM" | "doors" | "windows">[]): string {
+  if (rooms.length === 0) return "Nenhuma medida";
+  const total = rooms.reduce((n, r) => n + visitRoomM2(r), 0);
+  const f = `${total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m²`;
+  return rooms.length === 1 ? `${rooms[0]!.name} · ${f}` : `${rooms.length} ambientes · ${f}`;
+}
+
 const PAINT_SERVICE_IDS = [...new Set(Object.values(PAINT_SERVICE).flatMap((p) => Object.values(p)))];
 const area = (s: Surface) => s.widthM * s.heightM;
 

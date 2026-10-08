@@ -26,8 +26,8 @@ await shot("02-painel");
 
 await page.getByRole("button", { name: /nova visita/i }).click();
 await page.getByRole("button", { name: "Começar agora" }).click();                       // um toque: a visita já existe, sem cliente
-await page.getByText("Fotos (0)").waitFor();
-await page.getByText("Endereço da obra").locator("..").locator("input, textarea").fill("Rua das Flores, 100");
+await page.getByText("Nenhuma foto", { exact: true }).waitFor();
+await page.getByLabel("Endereço da obra").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)
 await page.getByRole("button", { name: /Anotar as medidas/ }).click();
 await page.getByPlaceholder("Ex.: Sala").fill("Sala");
@@ -35,11 +35,11 @@ await page.getByLabel("Parede 1 largura").fill("5");
 await page.getByRole("button", { name: "Parede", exact: true }).click();
 await page.getByLabel("Parede 2 largura").fill("4");
 await page.getByRole("button", { name: "Salvar ambiente" }).click();
-await page.getByText("Medidas (1)").waitFor();
+await page.getByRole("button", { name: /^Medidas.*m²/ }).waitFor();
 // fotos: galeria (2) + câmera do app (2, com ambiente marcado)
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 await page.getByTestId("photo-input").setInputFiles([{ name: "a.png", mimeType: "image/png", buffer: png }, { name: "b.png", mimeType: "image/png", buffer: png }]);
-await page.getByText("Fotos (2)").waitFor();
+await page.getByText("2 fotos", { exact: true }).waitFor();
 await page.getByRole("button", { name: /Tirar fotos/ }).click();
 await page.getByRole("button", { name: "Sala", exact: true }).click();
 await page.waitForFunction(() => document.querySelector("video")?.videoWidth > 0);
@@ -49,7 +49,7 @@ await page.getByRole("button", { name: "Tirar foto", exact: true }).click();
 await page.getByText("2 fotos", { exact: true }).waitFor();
 await shot("03b-camera");
 await page.getByRole("button", { name: "Concluir" }).click();
-await page.getByText("Fotos (4)").waitFor();
+await page.getByText("4 fotos", { exact: true }).waitFor();
 const rooms = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("pintorpro:v1")).visits[0].photoMeta ?? {}).map((m) => m.room));
 if (rooms.filter((r) => r === "Sala").length !== 2) throw new Error("ambiente das fotos da câmera não foi marcado: " + JSON.stringify(rooms));
 // áudio: pede confirmação, grava e marca momentos
@@ -58,12 +58,12 @@ await page.getByText("Você avisou o cliente?").waitFor();
 await page.getByRole("button", { name: /Sim, avisei/ }).click();
 await page.getByRole("button", { name: /Parar e guardar/ }).waitFor();
 await page.waitForTimeout(1200);
-await page.getByRole("button", { name: /Medida/ }).click();
+await page.getByRole("button", { name: "Medida", exact: true }).click();
 await page.waitForTimeout(1300);
 await page.getByRole("button", { name: /Problema/ }).click();
 await page.getByText("2 marcas neste áudio.").waitFor();
 await page.getByRole("button", { name: /Parar e guardar/ }).click();
-await page.getByText("Áudio (1)").waitFor();
+await page.getByText("1 gravado").waitFor();
 await page.getByText(/Áudio 1 ·/).waitFor();
 await page.getByRole("group", { name: "Marcas do áudio" }).or(page.getByLabel("Marcas do áudio")).getByRole("button", { name: /Medida/ }).waitFor();
 await page.getByPlaceholder(/Cliente quer cor/).fill("Sala 4x5, mofo perto da janela");
@@ -77,7 +77,7 @@ await page.getByRole("button", { name: "Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
 await page.getByRole("tab", { name: /A orçar/ }).click();
 await page.getByText("Maria Souza").first().click();
-await page.getByText("Fotos (4)").waitFor();
+await page.getByText("4 fotos", { exact: true }).waitFor();
 // atalhos de contato do cliente
 const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
 if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsWith("https://wa.me/5511977776666")) || !hrefs.some((h) => h?.includes("google.com/maps"))) throw new Error("atalhos de contato ausentes: " + hrefs);

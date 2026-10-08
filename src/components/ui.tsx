@@ -286,10 +286,10 @@ export function ConfirmDialog({ open, title, text, confirmLabel = "Sim, apagar",
  * Começa fechado. O conteúdo fica sempre montado (só escondido), então nada que esteja dentro perde o estado.
  * Abre sozinho e não fecha enquanto `openWhen` for verdadeiro (gravando, erro de validação, item novo) ou quando algo dentro recebe foco.
  */
-export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen = false, defaultOpen = false, children }: {
+export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen = false, openSignal = 0, defaultOpen = false, children }: {
   title: string; icon?: LucideIcon; summary?: string;
-  action?: { label: string; ariaLabel?: string; icon?: LucideIcon; onClick?: () => void; opens?: boolean };
-  openWhen?: boolean; defaultOpen?: boolean; children: React.ReactNode;
+  action?: { label: string; ariaLabel?: string; icon?: LucideIcon; onClick?: () => void; opens?: boolean; disabled?: boolean };
+  openWhen?: boolean; /** Muda de valor quando algo foi adicionado: abre o bloco. */ openSignal?: number; defaultOpen?: boolean; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
@@ -297,8 +297,11 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen =
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (openWhen) setOpen(true);
   }, [openWhen]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openSignal) setOpen(true);
+  }, [openSignal]);
   const shown = open || openWhen;
-  const ActionIcon = action?.icon;
   return (
     <section className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]">
       <div className="flex min-h-[88px] items-center gap-2 px-4">
@@ -310,8 +313,7 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen =
           </span>
         </button>
         {action ? (
-          <button type="button" aria-label={action.ariaLabel} onClick={() => { if (action.opens) setOpen(true); action.onClick?.(); }} className="inline-flex min-h-12 min-w-24 shrink-0 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-4 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70">
-            {ActionIcon ? <ActionIcon size={20} strokeWidth={2.2} aria-hidden /> : null}
+          <button type="button" aria-label={action.ariaLabel} disabled={action.disabled} onClick={() => { if (action.opens) setOpen(true); action.onClick?.(); }} className="inline-flex min-h-12 min-w-24 shrink-0 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-4 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70 disabled:opacity-50">
             {action.label}
           </button>
         ) : null}
@@ -330,10 +332,14 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen =
  * Linha de dado: círculo de ícone, rótulo, valor (até 2 linhas) e seta. Tocar abre o campo no lugar;
  * com o valor vazio, já abre para editar. As ações ligadas ao campo (`actions`) aparecem logo abaixo.
  */
-export function LinhaDeDado({ icon: Icon, label, value, editor, actions }: { icon?: LucideIcon; label: string; value: string; editor: React.ReactNode; actions?: React.ReactNode }) {
+export function LinhaDeDado({ icon: Icon, label, value, editor, actions, openWhen = false }: { icon?: LucideIcon; label: string; value: string; editor: React.ReactNode; actions?: React.ReactNode; openWhen?: boolean }) {
   const [open, setOpen] = useState(false);
   const bodyId = useId();
-  const editing = open || !value.trim();
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openWhen) setOpen(true);
+  }, [openWhen]);
+  const editing = open || openWhen || !value.trim();
   return (
     <section className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]">
       <button type="button" aria-expanded={editing} aria-controls={bodyId} onClick={() => setOpen(!editing)} className="flex min-h-[88px] w-full items-center gap-3 px-4 py-3 text-left">

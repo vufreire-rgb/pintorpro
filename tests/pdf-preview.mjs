@@ -23,7 +23,7 @@ await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   // visita: 3 fotos, todas "No PDF", com ambiente e legenda
   await page.goto(base + "/visitas/v1");
   await page.getByTestId("photo-input").setInputFiles(["tests/foto-teste.png", "tests/foto-teste.png", "tests/foto-teste.png"]);
-  await page.getByText("Fotos (3)").waitFor();
+  await page.getByText("3 fotos", { exact: true }).waitFor();
   for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Pôr no PDF" }).first().click();
   const salas = ["Sala", "Sala", "Quarto"], legs = ["Rachadura perto da janela", "Tinta descascando", "Canto do teto com mofo"];
   for (let i = 0; i < 3; i++) {

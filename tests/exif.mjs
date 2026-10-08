@@ -19,7 +19,7 @@ const db = {
 };
 await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
 await page.goto(base + "/visitas/v1");
-await page.getByText("Fotos (0)").waitFor();
+await page.getByText("Nenhuma foto", { exact: true }).waitFor();
 
 // JPEG de verdade com um bloco EXIF falso contendo GPS
 const withExif = await page.evaluate(async () => {
@@ -35,7 +35,7 @@ const withExif = await page.evaluate(async () => {
 });
 check(Buffer.from(withExif).includes("GPSLatitude"), "arquivo de teste tem GPS dentro");
 await page.getByTestId("photo-input").setInputFiles([{ name: "gps.jpg", mimeType: "image/jpeg", buffer: Buffer.from(withExif) }]);
-await page.getByText("Fotos (1)").waitFor();
+await page.getByText("1 foto", { exact: true }).waitFor();
 
 const stored = async () => page.evaluate(() => new Promise((resolve) => {
   const req = indexedDB.open("pintorpro-files", 1);
@@ -59,7 +59,7 @@ await page.getByTestId("photo-input").setInputFiles([{ name: "ruim.jpg", mimeTyp
 await page.getByText(/Não consegui ler 1 foto/).waitFor();
 check(true, "foto ilegível: a pessoa é avisada");
 check((await stored()).length === 1, "foto ilegível NÃO é guardada (nem o original)");
-check(await page.getByText("Fotos (1)").isVisible(), "a visita continua com 1 foto");
+check(await page.getByText("1 foto", { exact: true }).isVisible(), "a visita continua com 1 foto");
 console.log(errors.length ? "ERROS DE CONSOLE: " + errors.join("; ") : "erros de console: nenhum");
 await browser.close();
 if (fails.length) { console.log("\n" + fails.length + " falha(s)"); process.exit(1); }

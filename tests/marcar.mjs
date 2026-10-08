@@ -22,9 +22,9 @@ const marks = () => page.evaluate(() => { const v = JSON.parse(localStorage.getI
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /nova visita/i }).click();
 await page.getByRole("button", { name: "Começar agora" }).click();
-await page.getByText("Fotos (0)").waitFor();
+await page.getByText("Nenhuma foto", { exact: true }).waitFor();
 await page.getByTestId("photo-input").setInputFiles("tests/foto-teste.png");
-await page.getByText("Fotos (1)").waitFor();
+await page.getByText("1 foto", { exact: true }).waitFor();
 await page.getByRole("button", { name: "Marcar a foto" }).click();
 const dlg = page.getByRole("dialog", { name: "Marcar a foto" });
 await dlg.waitFor();
@@ -79,6 +79,7 @@ console.log("texto y1:", text.y1, "x1:", text.x1); check(Math.abs(text.y1 - 0.3)
 check(await page.getByRole("button", { name: "Marcar a foto" }).innerText().then((t) => t.includes("2")), "botão mostra 2 marcações");
 await page.screenshot({ path: `${OUT}/marcar-grade.png` });
 await page.reload();
+await page.getByRole("button", { name: /^Fotos/ }).click();
 await page.getByRole("button", { name: "Marcar a foto" }).click();
 await dlg.waitFor();
 await page.waitForFunction(() => document.querySelector('[data-testid="marks-canvas"]')?.getBoundingClientRect().width > 50);

@@ -38,7 +38,7 @@ await page.getByLabel("Parede 3 tipo de pintura").selectOption("esmalte");
 await page.getByRole("button", { name: "Piso", exact: true }).click();
 await page.getByLabel("Piso largura").fill("5"); await page.getByLabel("Piso altura").fill("4");
 await page.getByRole("button", { name: "Salvar ambiente" }).click();
-await page.getByText("Medidas (1)").waitFor();
+await page.getByRole("button", { name: /^Medidas.*m²/ }).waitFor();
 await page.goto(base + "/orcamentos/novo?visita=v1");
 await page.getByText(/Paredes \d/).first().waitFor();
 check(await page.getByRole("button", { name: "Editar medidas" }).isVisible(), "orçamento já nasce com as medidas da visita");

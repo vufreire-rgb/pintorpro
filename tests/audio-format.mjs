@@ -25,7 +25,7 @@ await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   await page.getByRole("button", { name: /Parar e guardar/ }).waitFor();
   await page.waitForTimeout(2500);
   await page.getByRole("button", { name: /Parar e guardar/ }).click();
-  await page.getByText("Áudio (1)").waitFor();
+  await page.getByText("1 gravado").waitFor();
   const mime = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).visits[0].audios[0].mime);
   const info = await page.evaluate(async () => {
     const a = document.querySelector("audio");

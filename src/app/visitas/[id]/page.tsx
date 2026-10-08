@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
@@ -7,13 +8,13 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
-import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
-import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
+import { BlocoRecolhivel, bareTextCls, Button, buttonCls, CartaoDeObservacao, Card, CardTitle, Chip, ConfirmDialog, Field, LinhaDeDado, LinkButton, Loading, Screen, TextArea2, TextInput } from "@/components/ui";
+import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
 import { photosFailedMessage } from "@/modules/photos";
-import { blankRoom, legacyToSurfaces, surfacesSummary, type RoomDraft } from "@/modules/rooms";
+import { blankRoom, legacyToSurfaces, measuresSummary, surfacesSummary, type RoomDraft } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
@@ -41,6 +42,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
   const [draft, setDraft] = useState<RoomDraft>({ name: "", surfaces: [], doors: 1, windows: 1 });
   const [when, setWhen] = useState("");
+  /** Muda quando uma foto é adicionada: abre o bloco Fotos. */
+  const [photoSignal, setPhotoSignal] = useState(0);
   if (!db) return <Loading />;
   const v = db.visits.find((x) => x.id === id);
   if (!v) return <Screen title="Visita" back="/visitas"><p>Visita não encontrada.</p></Screen>;
@@ -55,6 +58,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
     try {
       const { failed } = await addVisitPhotos(v.id, Array.from(files));
       setMsg(failed ? photosFailedMessage(failed) : "");
+      setPhotoSignal((n) => n + 1);
     } finally { setBusy(false); }
     if (input.current) input.current.value = "";
   };
@@ -89,24 +93,23 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           {when ? <Button variant="ghost" icon={Check} onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
         </Card>
       ) : (
-        <div className="text-base text-support">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
+        <div className="text-base leading-[22px] text-support">{fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente</div>
       )}
 
-      <div>
-      <Card className="flex flex-col gap-3">
-        {client && !changing ? (
-          <>
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="text-lg font-bold">{client.name}</div>
-                {client.phone ? <div className="text-support">{client.phone}</div> : null}
+      {client ? (
+        <Card className="flex flex-col gap-3">
+          {!changing ? (
+            <>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-lg font-bold">{client.name}</div>
+                  {client.phone ? <div className="text-support">{client.phone}</div> : null}
+                </div>
+                <button className="min-h-12 px-2 font-display text-lg font-semibold text-live" onClick={() => setChanging(true)}>Trocar</button>
               </div>
-              <button className="min-h-10 px-2 text-brand underline" onClick={() => setChanging(true)}>Trocar</button>
-            </div>
-            <ContactActions phone={client.phone} address={v.siteAddress || client.address} location={v.location} />
-          </>
-        ) : (
-          client ? (
+              <ContactActions phone={client.phone} address={v.siteAddress || client.address} location={v.location} />
+            </>
+          ) : (
             <>
               <b>Trocar cliente</b>
               <div className="flex flex-wrap gap-2">
@@ -114,21 +117,36 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               </div>
               <Button variant="ghost" size="sm" icon={X} onClick={() => setChanging(false)}>Cancelar</Button>
             </>
-          ) : <p className="flex items-start gap-2 text-lg text-support"><User size={24} strokeWidth={2.2} aria-hidden className="mt-0.5 shrink-0" />O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
+          )}
+        </Card>
+      ) : null}
+
+      <LinhaDeDado
+        icon={MapPin}
+        label="Endereço da obra"
+        value={v.siteAddress}
+        openWhen={locating || !!geoMsg}
+        editor={<TextArea2 aria-label="Endereço da obra" value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} />}
+        actions={(
+          <>
+            <Button variant="ghost" size="sm" icon={MapPin} disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "Atualizar pela minha localização" : "Usar minha localização"}</Button>
+            {v.location ? <p className="text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden className="mr-1 inline" />Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
+            {geoMsg ? <p className="text-base text-ink">{geoMsg}</p> : null}
+            {fromOsm ? <p className="text-base text-support">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
+          </>
         )}
-        <Field label="Endereço da obra"><TextArea2 value={v.siteAddress} onChange={(e) => setVisitAddress(v.id, e.target.value)} /></Field>
-        <Button variant="ghost" icon={MapPin} disabled={locating} onClick={fillFromLocation}>{locating ? "Buscando sua posição…" : v.location ? "Atualizar pela minha localização" : "Usar minha localização"}</Button>
-        {v.location ? <p className="text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden className="mr-1 inline" />Ponto no mapa salvo{v.location.accuracy ? ` (precisão de cerca de ${v.location.accuracy} m)` : ""}. <a className="underline" href={mapsUrl(v.siteAddress, v.location)} target="_blank" rel="noreferrer">Abrir no mapa</a></p> : null}
-        {geoMsg ? <p className="text-base text-ink">{geoMsg}</p> : null}
-        {fromOsm ? <p className="text-base text-support">Endereço sugerido com dados © colaboradores do <a className="underline" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>.</p> : null}
-      </Card>
-      </div>
+      />
 
-      <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>
+      <AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} />
 
-      <div>
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={Camera}>Fotos ({v.photoIds.length})</CardTitle>
+      <BlocoRecolhivel
+        title="Fotos"
+        icon={Camera}
+        summary={v.photoIds.length === 0 ? "Nenhuma foto" : plural(v.photoIds.length, "foto", "fotos")}
+        openWhen={!!msg}
+        openSignal={photoSignal}
+        action={{ label: "Foto", ariaLabel: "Tirar fotos (várias)", icon: Camera, opens: true, onClick: () => setCamera(true) }}
+      >
         <PhotoGrid
           ids={v.photoIds}
           marksOf={(pid) => v.photoMeta?.[pid]?.marks}
@@ -138,7 +156,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           onToggle={(pid) => setPhotoMeta(v.id, pid, { inPdf: !v.photoMeta?.[pid]?.inPdf }, MAX_PDF_PHOTOS) || setMsg(`Máximo de ${MAX_PDF_PHOTOS} fotos no PDF.`)}
         />
         {v.photoIds.some((pid) => v.photoMeta?.[pid]?.inPdf) ? (
-          <div className="flex flex-col gap-3 rounded-xl bg-slate-50 p-3">
+          <div className="flex flex-col gap-3 rounded-2xl bg-[#F3F6FA] p-3">
             <b className="text-base">Fotos no PDF do cliente</b>
             {v.photoIds.filter((pid) => v.photoMeta?.[pid]?.inPdf).map((pid, i) => (
               <div key={pid} className="flex flex-col gap-2">
@@ -150,23 +168,26 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         ) : v.photoIds.length > 0 ? <p className="text-base text-support">Toque em <b>+ PDF</b> nas fotos que quer mostrar no orçamento (até {MAX_PDF_PHOTOS}) e no <b>lápis</b> para desenhar setas, textos e medidas.</p> : null}
         {msg ? <p className="text-base text-err">{msg}</p> : null}
         <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => onFiles(e.target.files)} data-testid="photo-input" />
-        <Button variant="ghost" icon={Camera} onClick={() => setCamera(true)}>Tirar fotos (várias)</Button>
         <Button variant="ghost" icon={ImageIcon} disabled={busy} onClick={() => input.current?.click()}>{busy ? "Guardando…" : "Escolher da galeria"}</Button>
         <p className="text-base text-support">{cloudEnabled ? "Suas fotos ficam guardadas na sua conta." : "As fotos ficam guardadas neste aparelho."}</p>
-      </Card>
-      </div>
+      </BlocoRecolhivel>
 
-      {simple ? null : <div>
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
+      {simple ? null : (
+      <BlocoRecolhivel
+        title="Medidas"
+        icon={Ruler}
+        summary={measuresSummary(rooms)}
+        openWhen={editing !== null}
+        action={editing ? undefined : { label: "Medir", ariaLabel: rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente", icon: Ruler, opens: true, onClick: () => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); } }}
+      >
         {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
         {rooms.map((r) => editing === r.id ? null : (
-          <div key={r.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
+          <div key={r.id} className="flex items-center justify-between gap-2 rounded-2xl bg-[#F3F6FA] p-3">
             <button className="min-w-0 flex-1 text-left" onClick={() => { setDraft({ name: r.name, surfaces: r.surfaces?.length ? r.surfaces : legacyToSurfaces(r.lengthM, r.widthM, r.heightM), doors: r.doors, windows: r.windows }); setEditing(r.id); }} aria-label={`Editar ${r.name}`}>
               <b>{r.name}</b>
               <div className="text-base text-support">{r.surfaces?.length ? `${plural(r.surfaces.filter((s) => s.kind === "wall").length, "parede", "paredes")} · ${surfacesSummary(r.surfaces, r.doors, r.windows)}` : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m · altura ${fmtNum(r.heightM)} m`} · {plural(r.doors, "porta", "portas")} · {plural(r.windows, "janela", "janelas")}</div>
             </button>
-            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
+            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
         ))}
         {editing ? (
@@ -177,27 +198,25 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             onSave={() => { saveVisitRoom(v.id, draft, editing === "novo" ? undefined : editing); setEditing(null); }}
             onCancel={() => setEditing(null)}
           />
-        ) : (
-          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }} aria-label={rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}>{rooms.length ? "Anotar outro ambiente" : "Anotar medidas"}</Button>
-        )}
-      </Card>
-      </div>}
+        ) : null}
+      </BlocoRecolhivel>
+      )}
 
-      <div>
-      <Field label="Observações" hint="O que o cliente pediu, problemas que viu…">
-        <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
-      </Field>
-      </div>
+      <CartaoDeObservacao
+        label="Observações"
+        hint="O que o cliente pediu, problemas que viu…"
+        mic={<LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant="ghost" className="!h-12 !min-h-12 !w-12 !min-w-12 !rounded-full !p-0" aria-label="Ditar orçamento">{""}</LinkButton>}
+      >
+        <textarea className={bareTextCls} value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
+      </CartaoDeObservacao>
 
-      <div className={simple ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
-        <LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant={simple ? "primary" : "ghost"} size={simple ? "md" : "sm"} aria-label="Ditar orçamento">{simple ? "Ditar orçamento" : "Ditar"}</LinkButton>
-        {simple ? null : <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" size="sm" icon={FilePlus2} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}>{v.quoteId ? "Montar outro" : "Montar"}</LinkButton>}
+      <div className="flex flex-col items-center gap-1">
+        <Link href={`/orcamentos/novo?visita=${v.id}`} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"} className="inline-flex min-h-12 items-center gap-2 font-display text-lg font-semibold text-live"><FilePlus2 size={22} strokeWidth={2.2} aria-hidden />{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</Link>
+        {v.quoteId ? <Link href={`/orcamentos/${v.quoteId}`} className="inline-flex min-h-12 items-center gap-2 font-display text-lg font-semibold text-live"><FileText size={22} strokeWidth={2.2} aria-hidden />Ver orçamento feito</Link> : null}
       </div>
-      {simple ? <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" size="sm" icon={FilePlus2}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton> : null}
-      {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento feito</LinkButton> : null}
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>
-      <div className="h-20" aria-hidden />
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="h-24" aria-hidden />
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md bg-[#F3F6FA] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">
         <Button icon={Check} onClick={() => (client ? router.push("/visitas") : setSaving(true))}>Salvar visita</Button>
       </div>
       <ConfirmDialog
@@ -235,7 +254,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       {camera ? (
         <CameraCapture
           rooms={rooms.map((r) => r.name)}
-          onShot={async (file, room) => { const { failed } = await addVisitPhotos(v.id, [file], room || undefined); if (failed) setMsg(photosFailedMessage(failed)); }}
+          onShot={async (file, room) => { const { failed } = await addVisitPhotos(v.id, [file], room || undefined); if (failed) setMsg(photosFailedMessage(failed)); setPhotoSignal((n) => n + 1); }}
           onClose={() => setCamera(false)}
         />
       ) : null}

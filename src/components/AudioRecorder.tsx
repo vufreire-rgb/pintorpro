@@ -6,7 +6,7 @@ import { useFileUrl } from "@/modules/photos";
 import { addVisitAudio, removeVisitAudio, setRecordingConsent } from "@/modules/visits";
 import type { AudioMarker, AudioNote } from "@/modules/types";
 import { fmtDate } from "@/shared/format";
-import { Button, CardTitle, ConfirmDialog } from "./ui";
+import { BlocoRecolhivel, Button, ConfirmDialog } from "./ui";
 import { Mic, MapPin, MessageCircle, Square, Star, TriangleAlert, X, type LucideIcon } from "lucide-react";
 
 /** Marcas rápidas durante a gravação. */
@@ -25,10 +25,10 @@ function Player({ note, index, onRemove }: { note: AudioNote; index: number; onR
     void audio.current.play().catch(() => undefined);
   };
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
+    <div className="flex flex-col gap-2 rounded-2xl bg-[#F3F6FA] p-3">
       <div className="flex items-center justify-between">
-        <span className="text-lg font-bold">Áudio {index + 1} · {fmtClock(note.seconds)} · {fmtDate(note.createdAt)}</span>
-        <button onClick={onRemove} aria-label="Apagar áudio" className="grid h-12 w-12 place-items-center rounded-full bg-slate-100"><X size={20} strokeWidth={2.4} aria-hidden /></button>
+        <span className="text-lg">Áudio {index + 1} · {fmtClock(note.seconds)} · {fmtDate(note.createdAt)}</span>
+        <button onClick={onRemove} aria-label="Apagar áudio" className="grid h-12 w-12 place-items-center rounded-full bg-white"><X size={20} strokeWidth={2.4} aria-hidden /></button>
       </div>
       {url ? (
         <>
@@ -39,7 +39,7 @@ function Player({ note, index, onRemove }: { note: AudioNote; index: number; onR
       {note.markers?.length ? (
         <div className="flex flex-wrap gap-2" aria-label="Marcas do áudio">
           {note.markers.map((m, i) => (
-            <button key={i} onClick={() => jump(m.t)} className="min-h-12 rounded-full border-2 border-field bg-white px-4 text-base font-bold">
+            <button key={i} onClick={() => jump(m.t)} className="min-h-12 rounded-full border-2 border-field bg-white px-4 text-base font-normal">
               {fmtClock(m.t)} {cleanLabel(m.label)}
             </button>
           ))}
@@ -71,36 +71,43 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
     }
   };
 
+  const total = audios.reduce((n, a) => n + a.seconds, 0);
+  const summary = audios.length === 0 ? "Nenhum áudio" : `${audios.length} ${audios.length === 1 ? "gravado" : "gravados"} · ${fmtClock(total)}`;
   return (
-    <div className="flex flex-col gap-3">
-      <CardTitle icon={Mic}>Áudio ({audios.length})</CardTitle>
-      {audios.map((a, i) => <Player key={a.id} note={a} index={i} onRemove={() => removeVisitAudio(visitId, a.id)} />)}
-      {state === "recording" ? (
-        <>
-          <Button icon={Square} onClick={finish} disabled={saving}>Parar e guardar · {fmtClock(seconds)}</Button>
-          <div className="grid grid-cols-2 gap-2" aria-label="Marcar momento">
-            {MARKERS.map((label) => {
-              const Icon = MARKER_ICON[label]!;
-              return (
-                <button
-                  key={label}
-                  onClick={() => setMarkers((m) => [...m, { t: seconds, label }])}
-                  className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-2xl border-2 border-field bg-white px-2 text-base font-bold text-ink active:bg-brand-soft"
-                >
-                  <Icon size={20} strokeWidth={2.2} aria-hidden />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-          {markers.length > 0 ? <p className="text-base text-support">{markers.length} {markers.length === 1 ? "marca" : "marcas"} neste áudio.</p> : <p className="text-base text-support">Toque numa marca para guardar o momento exato.</p>}
-        </>
-      ) : (
-        <Button variant="ghost" icon={Mic} onClick={press} disabled={saving || state === "unsupported"}>Gravar áudio</Button>
-      )}
-      {state === "denied" ? <p className="text-base text-err">Sem acesso ao microfone. Permita o microfone nas configurações do navegador e tente de novo.</p> : null}
-      {state === "unsupported" ? <p className="text-base text-err">Este navegador não consegue gravar áudio.</p> : null}
-      <p className="text-base text-support">{cloudEnabled ? "Os áudios ficam guardados na sua conta." : "Os áudios ficam guardados neste aparelho."}</p>
+    <>
+      <BlocoRecolhivel
+        title="Áudio"
+        icon={Mic}
+        summary={summary}
+        openWhen={state === "recording" || state === "denied" || state === "unsupported"}
+        action={state === "recording" ? undefined : { label: "Gravar", ariaLabel: "Gravar áudio", icon: Mic, opens: true, disabled: saving || state === "unsupported", onClick: press }}
+      >
+        {audios.map((a, i) => <Player key={a.id} note={a} index={i} onRemove={() => removeVisitAudio(visitId, a.id)} />)}
+        {state === "recording" ? (
+          <>
+            <Button icon={Square} onClick={finish} disabled={saving}>Parar e guardar · {fmtClock(seconds)}</Button>
+            <div className="grid grid-cols-2 gap-2" aria-label="Marcar momento">
+              {MARKERS.map((label) => {
+                const Icon = MARKER_ICON[label]!;
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setMarkers((m) => [...m, { t: seconds, label }])}
+                    className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-2xl border-2 border-field bg-white px-2 text-base font-normal text-ink active:bg-brand-soft"
+                  >
+                    <Icon size={20} strokeWidth={2.2} aria-hidden />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            {markers.length > 0 ? <p className="text-base text-support">{markers.length} {markers.length === 1 ? "marca" : "marcas"} neste áudio.</p> : <p className="text-base text-support">Toque numa marca para guardar o momento exato.</p>}
+          </>
+        ) : null}
+        {state === "denied" ? <p className="text-base text-err">Sem acesso ao microfone. Permita o microfone nas configurações do navegador e tente de novo.</p> : null}
+        {state === "unsupported" ? <p className="text-base text-err">Este navegador não consegue gravar áudio.</p> : null}
+        <p className="text-base text-support">{cloudEnabled ? "Os áudios ficam guardados na sua conta." : "Os áudios ficam guardados neste aparelho."}</p>
+      </BlocoRecolhivel>
       <ConfirmDialog
         open={asking}
         title="Você avisou o cliente?"
@@ -114,6 +121,6 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
           void begin();
         }}
       />
-    </div>
+    </>
   );
 }

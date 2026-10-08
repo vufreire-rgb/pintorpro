@@ -41,7 +41,7 @@ await snap(page, "visita-aviso-gravacao");
 await page.getByRole("button", { name: /Sim, avisei/ }).click();
 await page.getByRole("button", { name: /Parar e guardar/ }).waitFor();
 await page.waitForTimeout(1500);
-await page.getByRole("button", { name: /Medida/ }).click();
+await page.getByRole("button", { name: "Medida", exact: true }).click();
 await snap(page, "visita-gravando-audio-com-marcas", { wait: 600 });
 await page.getByRole("button", { name: /Parar e guardar/ }).click();
 await page.waitForTimeout(800);

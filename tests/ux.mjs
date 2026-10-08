@@ -47,7 +47,7 @@ check(!/0 foto|0 áudio|\(s\)/.test(card), "card sem '0 foto(s)' nem '(s)': " + 
 
 // visita: salvar fixo + medidas recolhidas
 await page.goto(base + "/visitas/v1");
-await page.getByText("Fotos (0)").waitFor();
+await page.getByText("Nenhuma foto", { exact: true }).waitFor();
 check(!(await page.getByPlaceholder("Ex.: Sala").isVisible()), "formulário de medidas começa recolhido");
 const save = page.getByRole("button", { name: "Salvar visita" });
 const box = await save.boundingBox();
@@ -55,6 +55,7 @@ const vh = page.viewportSize().height;
 check(box && box.y + box.height > vh - 120, "'Salvar visita' fica fixo na parte de baixo da tela mesmo sem rolar");
 await page.evaluate(() => window.scrollTo(0, 0));
 await page.getByRole("button", { name: /Anotar as medidas/ }).click();
+await page.getByPlaceholder("Ex.: Sala").waitFor();
 check(await page.getByPlaceholder("Ex.: Sala").isVisible(), "tocar no botão abre o formulário de medidas");
 
 // ajustes em blocos
