@@ -13,7 +13,7 @@ import { newDb } from "./db";
 import { saveQuote } from "./quotes";
 import { addSurface, EMPTY_ROOM, roomFromForm } from "./rooms";
 import { addVisitAudio, saveVisitRoom, createClientForVisit, createQuickVisit, createScheduledVisit, rescheduleVisit, removeVisitRoom, setVisitClient, startVisit } from "./visits";
-import { buildIcs, confirmationText, countByFilter, filterVisits, fromLocalInput, mapsUrl, telUrl, toLocalInput, visitState, waUrl, whenLabel } from "./visitList";
+import { buildIcs, confirmationText, countByFilter, filterVisits, firstFilledFilter, fromLocalInput, mapsUrl, telUrl, toLocalInput, visitState, waUrl, whenLabel } from "./visitList";
 import type { Client, Db, Visit } from "./types";
 
 const read = (): Db => JSON.parse(store.get("pintorpro:v1")!) as Db;
@@ -122,6 +122,15 @@ describe("lista: busca, filtros e ordem", () => {
     expect(filterVisits(visits, clients, { filter: "quoted" }, NOW).map((v) => v.id)).toEqual(["a"]);
     expect(filterVisits(visits, clients, { filter: "scheduled" }, NOW).map((v) => v.id)).toEqual(["d", "c"]);
     expect(countByFilter(visits, NOW)).toEqual({ all: 4, todo: 1, quoted: 1, scheduled: 2 });
+  });
+
+  it("a lista abre na primeira aba que tem visita (nunca numa aba vazia se há visitas em outra)", () => {
+    const [a, b, c] = visits as [Visit, Visit, Visit];
+    expect(firstFilledFilter(visits, NOW)).toBe("scheduled");
+    expect(firstFilledFilter([a, b], NOW)).toBe("todo");
+    expect(firstFilledFilter([a], NOW)).toBe("quoted");
+    expect(firstFilledFilter([c], NOW)).toBe("scheduled");
+    expect(firstFilledFilter([], NOW)).toBe("scheduled");
   });
 });
 

@@ -12,7 +12,7 @@ import { CalendarDays, ClipboardList } from "lucide-react";
 import { createExampleVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
-import { countByFilter, filterVisits, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
+import { countByFilter, filterVisits, firstFilledFilter, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
 import type { Visit } from "@/modules/types";
 import { fmtDate } from "@/shared/format";
 
@@ -43,7 +43,9 @@ function VisitBadge({ v }: { v: Visit }) {
 
 export default function Visitas() {
   const db = useAppDb();
-  const [filter, setFilter] = useState<VisitFilter>("scheduled");
+  // Abre na primeira aba que tem visita (assim ninguém pensa que perdeu tudo); depois a pessoa escolhe.
+  const [picked, setPicked] = useState<VisitFilter | null>(null);
+  const filter: VisitFilter = picked ?? (db ? firstFilledFilter(db.visits) : "scheduled");
   const router = useRouter();
   const touchX = useRef<number | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
@@ -64,8 +66,8 @@ export default function Visitas() {
           const dx = e.changedTouches[0]!.clientX - touchX.current;
           touchX.current = null;
           const i = TABS.findIndex((t) => t.id === filter);
-          if (dx < -60 && i < TABS.length - 1) setFilter(TABS[i + 1]!.id);
-          if (dx > 60 && i > 0) setFilter(TABS[i - 1]!.id);
+          if (dx < -60 && i < TABS.length - 1) setPicked(TABS[i + 1]!.id);
+          if (dx > 60 && i > 0) setPicked(TABS[i - 1]!.id);
         }}
       >
       <BrandHeader />
@@ -80,7 +82,7 @@ export default function Visitas() {
             key={t.id}
             role="tab"
             aria-selected={filter === t.id}
-            onClick={() => setFilter(t.id)}
+            onClick={() => setPicked(t.id)}
             className={`min-h-12 rounded-xl px-1 text-base font-bold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-ink"}`}
           >
             {t.label} ({counts[t.id]})
