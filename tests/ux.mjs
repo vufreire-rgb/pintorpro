@@ -27,7 +27,7 @@ await page.evaluate((now) => {
 
 // menu: aba atual destacada
 await page.goto(base + "/visitas");
-const cur = async () => page.locator('nav a[aria-current="page"]').allInnerTexts();
+const cur = async () => page.locator('nav a[aria-current="page"]').evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
 check((await cur()).join() === "Visitas", "menu destaca 'Visitas' na tela de visitas");
 await page.getByRole("link", { name: "Obras" }).click();
 await page.waitForURL("**/obras");

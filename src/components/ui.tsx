@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, FileText, MapPin, Minus, PaintRoller, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, FileText, MapPin, Minus, PaintRoller, Plus, ShoppingBag, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
 
 export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
@@ -17,7 +17,7 @@ export function Screen({ title, back, children, nav = false, corner }: { title: 
         <h1 className={`min-w-0 font-display font-semibold ${nav ? "text-[28px] leading-[34px]" : "text-2xl leading-[30px]"}`}>{title}</h1>
         {corner ? <div className="ml-auto">{corner}</div> : null}
       </header>
-      <main className={`flex flex-1 flex-col gap-3.5 px-5 py-4 ${nav ? "pb-28" : "pb-8"}`}>{children}</main>
+      <main className={`flex flex-1 flex-col gap-3.5 px-5 py-4 ${nav ? "pb-24" : "pb-8"}`}>{children}</main>
       {nav ? <BottomNav /> : null}
     </div>
   );
@@ -27,21 +27,22 @@ const NAV = [
   ["/visitas", "Visitas", MapPin],
   ["/orcamentos", "Orçamentos", FileText],
   ["/obras", "Obras", PaintRoller],
+  ["/loja", "Loja", ShoppingBag],
   ["/configuracoes", "Ajustes", SlidersHorizontal],
 ] as const;
 
+/** Barra de baixo no estilo dos apps de celular: só ícones (o nome fica no aria-label), 56 px de altura; a aba atual ganha a pílula azul-névoa. */
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid h-20 max-w-md grid-cols-4 items-center border-t border-line bg-white px-1 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-5 items-center border-t border-line bg-white px-1 pb-[env(safe-area-inset-bottom)]" style={{ minHeight: 56 }}>
       {NAV.map(([href, label, Icon]) => {
         const here = path === href || path.startsWith(href + "/");
         return (
-          <Link key={href} href={href} aria-current={here ? "page" : undefined} className={`flex flex-col items-center gap-1 text-[14px] leading-4 ${here ? "font-bold text-brand" : "font-normal text-support"}`}>
-            <span className={`flex h-8 w-14 items-center justify-center rounded-2xl ${here ? "bg-brand-soft" : ""}`}>
-              <Icon size={24} strokeWidth={2.2} aria-hidden />
+          <Link key={href} href={href} aria-label={label} aria-current={here ? "page" : undefined} className="flex h-14 items-center justify-center">
+            <span className={`flex h-10 w-14 items-center justify-center rounded-full ${here ? "bg-brand-soft text-brand" : "text-support"}`}>
+              <Icon size={22} strokeWidth={here ? 2.4 : 2} aria-hidden />
             </span>
-            {label}
           </Link>
         );
       })}
