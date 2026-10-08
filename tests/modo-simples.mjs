@@ -54,6 +54,7 @@ await page.goto(base + "/orcamentos");
 await page.getByRole("link", { name: /Nº|Dona Maria/ }).first().click().catch(() => {});
 
 // editar
+await page.getByRole("button", { name: /^Mais opções/ }).click();
 await page.getByRole("link", { name: "Editar orçamento" }).click();
 await page.getByLabel("Preço fechado").fill("3100");
 await page.getByRole("button", { name: "Salvar" }).click();

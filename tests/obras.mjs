@@ -10,6 +10,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
+const abrir = async (page, re) => { const b = page.getByRole("button", { name: re }).first(); if ((await b.getAttribute("aria-expanded")) === "false") await b.click(); };
 const db = {
   version: 1,
   company: { name: "Silva Pinturas", whatsapp: "(11) 90000-0000", city: "SP", paymentTerms: "50/50", hoursPerDay: 8, marginPct: 30, dailyRateCents: 25000, safetyDays: 1, pricingMode: "base_price", marginMode: "on_price" },
@@ -28,6 +29,7 @@ await page.getByText("Dinheiro da obra").waitFor();
 // datas
 const today = new Date(); const pad = (n) => String(n).padStart(2, "0");
 const d = (add) => { const x = new Date(today.getFullYear(), today.getMonth(), today.getDate() + add); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`; };
+await page.getByRole("button", { name: /^Datas/ }).click();
 await page.locator('input[type="date"]').first().fill(d(2));
 check((await page.locator('input[type="date"]').nth(1).inputValue()) === d(4), "término sugerido = início + 3 dias previstos");
 const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: /Adicionar à agenda/ }).click()]);
@@ -35,6 +37,7 @@ const ics = await (await import("node:fs/promises")).readFile(await dl.path(), "
 check(ics.includes("DTSTART;VALUE=DATE:" + d(2).replace(/-/g, "")) && ics.includes("SUMMARY:Obra - Carla Dias"), "arquivo .ics da obra");
 
 // pagamentos
+await abrir(page, /^Dinheiro da obra/);
 await page.getByRole("button", { name: "Entrada", exact: true }).click();
 await page.waitForTimeout(300);
 const v1 = await page.getByLabel("Valor recebido (R$)").inputValue(); console.log("valor:", v1); check(/^1[.]?500/.test(v1), "entrada sugerida de 50%");
@@ -45,7 +48,7 @@ await page.getByRole("button", { name: "Pagamento final", exact: true }).click()
 await page.waitForTimeout(300);
 const v2 = await page.getByLabel("Valor recebido (R$)").inputValue(); console.log("valor:", v2); check(/^1[.]?500/.test(v2), "pagamento final = o que falta");
 await page.getByRole("button", { name: "Registrar", exact: true }).click();
-check(await page.getByText("Falta").locator("..").getByText("R$ 0,00").isVisible(), "falta zerada");
+check(await page.getByText("Falta", { exact: true }).locator("..").getByText("R$ 0,00").isVisible(), "falta zerada");
 await page.screenshot({ path: "/tmp/obra.png", fullPage: true });
 
 // lista e painel

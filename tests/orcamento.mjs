@@ -40,6 +40,7 @@ const q = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v
 check(q.input.rooms.length === 1 && q.input.rooms[0].name === "Sala" && q.input.rooms[0].id !== "pendente", "salvou 1 ambiente (Sala) com id definitivo");
 
 // com um ambiente salvo, o segundo só entra no preço depois de digitar as medidas
+await page.getByRole("button", { name: /^Mais opções/ }).click();
 await page.getByRole("link", { name: /Editar orçamento/ }).click();
 await page.getByText("Editar orçamento nº 1").first().waitFor();
 const before = await total.innerText();

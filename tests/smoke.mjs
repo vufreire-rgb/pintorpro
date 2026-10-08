@@ -12,6 +12,7 @@ page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 const shot = (n) => page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/${n}.png` });
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) throw new Error(msg); };
+const abrir = async (page, re) => { const b = page.getByRole("button", { name: re }).first(); if ((await b.getAttribute("aria-expanded")) === "false") await b.click(); };
 const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).click();
 
 await page.goto(base);
@@ -84,6 +85,7 @@ if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsW
 await page.getByRole("link", { name: "Montar orçamento" }).click();
 await page.getByText("Suas anotações da visita").click();
 await page.getByText("Sala 4x5, mofo perto da janela").waitFor();
+await page.getByRole("button", { name: /m² · \d+ serviço/ }).first().click();
 await page.getByText(/Paredes \d/).first().waitFor();                   // as paredes anotadas na visita já vieram, sem digitar de novo
 await shot("03-orcamento-uma-tela");
 await page.getByText("Maria Souza").first().waitFor();                  // cliente da visita já veio
@@ -99,18 +101,22 @@ await shot("08-detalhe");
 
 // ---- Duplicar, editar e apagar ----
 const quoteUrl = page.url();
+await abrir(page, /^Mais opções/);
 await page.getByRole("button", { name: /Duplicar orçamento/ }).click();
 await page.getByRole("heading", { name: "Orçamento nº 2" }).waitFor();
+await page.getByRole("button", { name: /^Mais opções/ }).click();
 await page.getByRole("link", { name: /Editar orçamento/ }).click();
 await page.getByText("Editar orçamento nº 2").first().waitFor();
 await shot("08a-editar");
 await page.getByText("Sala", { exact: true }).first().waitFor();       // dados do orçamento vieram preenchidos
 await page.getByRole("button", { name: "Salvar", exact: true }).click();
 await page.getByText(/Orçamento nº 2 · rev\. 2/).waitFor();
+await abrir(page, /^Mais opções/);
 await page.getByRole("button", { name: /Apagar orçamento/ }).click();
 await shot("08b-confirmar-apagar");
 await page.getByRole("button", { name: "Cancelar" }).click();
 await page.getByText(/Orçamento nº 2 · rev\. 2/).waitFor();            // cancelar não apaga
+await abrir(page, /^Mais opções/);
 await page.getByRole("button", { name: /Apagar orçamento/ }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.waitForURL("**/orcamentos");
@@ -148,6 +154,7 @@ await page.getByRole("button", { name: "Apagar obra" }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.getByText(/Quando você fechar/).waitFor();
 await page.goto(quoteUrl);
+await abrir(page, /^Mais opções/);
 await page.getByRole("button", { name: /Apagar orçamento/ }).click();
 await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.waitForURL("**/orcamentos");

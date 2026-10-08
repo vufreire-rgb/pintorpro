@@ -11,6 +11,7 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const fails = [];
 const check = (ok, msg) => { console.log(ok ? "OK  " : "FALHOU", msg); if (!ok) fails.push(msg); };
+const abrir = async (page, re) => { const b = page.getByRole("button", { name: re }).first(); if ((await b.getAttribute("aria-expanded")) === "false") await b.click(); };
 const pad = (n) => String(n).padStart(2, "0");
 const d = (add) => { const x = new Date(); x.setDate(x.getDate() + add); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`; };
 const db = {
@@ -38,6 +39,7 @@ await page.getByRole("button", { name: "Fechar" }).click();
 // 2) plano de pagamento
 await page.goto(base + "/obras/w1");
 await page.getByText("Plano de pagamento").waitFor();
+await page.getByRole("button", { name: /^Plano de pagamento/ }).click();
 await page.getByRole("button", { name: "Entrada + 2 parcelas" }).click();
 await page.getByText("Parcela 2").first().waitFor();
 const plan = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).works[0].plan);
@@ -64,8 +66,9 @@ check((await page.getByTestId("pix-code").innerText()).includes("540715000.00") 
 await page.getByRole("button", { name: "Fechar" }).click();
 
 // 5) registrar pagamento da próxima parcela, com forma e comprovante
+await abrir(page, /^Dinheiro da obra/);
 await page.getByRole("button", { name: /^Entrada · / }).click();
-await page.getByRole("button", { name: "Dinheiro" }).click();
+await page.getByRole("button", { name: "Dinheiro", exact: true }).click();
 await page.getByTestId("proof-input").setInputFiles("tests/foto-teste.png");
 await page.getByRole("button", { name: "Registrar", exact: true }).click();
 await page.getByText(/Entrada · .* · Dinheiro/).waitFor();

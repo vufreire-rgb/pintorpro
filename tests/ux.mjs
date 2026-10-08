@@ -65,9 +65,11 @@ const h = await page.evaluate(() => document.documentElement.scrollHeight);
 check(h < 2200, "Ajustes ficou curto (" + h + " px de altura, antes eram ~7.000 px no celular)");
 check(!(await page.locator('input[value="Silva Pinturas"]').isVisible().catch(() => false)), "todas as linhas de Ajustes começam fechadas (lista limpa)");
 await page.getByText("Seu negócio").first().click();
+await page.locator('input[value="Silva Pinturas"]').waitFor();
 check(await page.locator('input[value="Silva Pinturas"]').isVisible(), "tocar em 'Seu negócio' abre os campos");
 check(!(await page.getByText("Valor de exemplo — confira").first().isVisible().catch(() => false)), "serviços começam recolhidos");
 await page.getByText("Serviços e preços").click();
+await page.getByText("Valor de exemplo — confira").first().waitFor();
 check(await page.getByText("Valor de exemplo — confira").first().isVisible(), "tocar em 'Serviços e preços' abre o bloco");
 
 // nada passa da largura da tela (em 390 e 412 px), com todos os blocos abertos

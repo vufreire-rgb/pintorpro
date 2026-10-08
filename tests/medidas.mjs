@@ -40,6 +40,7 @@ await page.getByLabel("Piso largura").fill("5"); await page.getByLabel("Piso alt
 await page.getByRole("button", { name: "Salvar ambiente" }).click();
 await page.getByRole("button", { name: /^Medidas.*m²/ }).waitFor();
 await page.goto(base + "/orcamentos/novo?visita=v1");
+await page.getByRole("button", { name: /m² · \d+ serviço/ }).first().click();
 await page.getByText(/Paredes \d/).first().waitFor();
 check(await page.getByRole("button", { name: "Editar medidas" }).isVisible(), "orçamento já nasce com as medidas da visita");
 check(await page.getByText("Esmalte", { exact: false }).first().isVisible(), "pintura esmalte virou serviço do ambiente");
