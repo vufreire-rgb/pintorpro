@@ -6,8 +6,8 @@
 
 ## 1. Quem somos
 O Medde é um aplicativo para pintores organizarem visitas, orçamentos, obras e recebimentos.
-**Responsável:** [NOME OU RAZÃO SOCIAL], [CPF/CNPJ], [ENDEREÇO].
-**Contato para assuntos de privacidade:** [E-MAIL DE CONTATO].
+**Responsável:** Vinicius Freire Machado, [CPF/CNPJ], [ENDEREÇO].
+**Contato para assuntos de privacidade:** vufreire@gmail.com.
 
 ## 2. Dois papéis diferentes
 - **Você (o pintor)** usa o Medde para guardar dados dos **seus clientes** (nome, telefone, endereço da obra, fotos). Em relação a esses dados, **você decide como usar** e o Medde só **guarda e processa para você**.
@@ -55,7 +55,7 @@ Também podemos compartilhar dados se uma lei ou ordem judicial exigir.
 - Voz e foto de recibo: não são guardadas.
 
 ## 7. Seus direitos (LGPD, art. 18)
-Você pode pedir: confirmação de que tratamos seus dados, acesso, correção, anonimização, portabilidade ("Baixar meus dados" em Ajustes), eliminação, informação sobre com quem compartilhamos e revogação de consentimento. Escreva para [E-MAIL DE CONTATO]. [PRAZO DE RESPOSTA.]
+Você pode pedir: confirmação de que tratamos seus dados, acesso, correção, anonimização, portabilidade ("Baixar meus dados" em Ajustes), eliminação, informação sobre com quem compartilhamos e revogação de consentimento. Escreva para vufreire@gmail.com. [PRAZO DE RESPOSTA.]
 **Se você é cliente de um pintor** (seus dados estão no app dele), fale primeiro com o pintor; ele é quem decide sobre esses dados. Também respondemos pedidos pelo e-mail acima.
 
 ## 8. Segurança
@@ -71,4 +71,4 @@ O Medde é para profissionais maiores de 18 anos.
 Se mudarmos algo importante, avisaremos no app.
 
 ## 12. Contato
-[NOME DO ENCARREGADO/CONTATO], [E-MAIL DE CONTATO].
+Vinicius Freire Machado, vufreire@gmail.com.

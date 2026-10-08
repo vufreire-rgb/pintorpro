@@ -5,7 +5,7 @@
 **Última atualização:** [DATA]
 
 ## 1. O que é o Medde
-Aplicativo para pintores organizarem visitas, orçamentos, obras e recebimentos. É oferecido por [NOME OU RAZÃO SOCIAL], [CPF/CNPJ].
+Aplicativo para pintores organizarem visitas, orçamentos, obras e recebimentos. É oferecido por Vinicius Freire Machado, [CPF/CNPJ].
 
 ## 2. Conta
 - Você precisa ter 18 anos ou mais e informar dados verdadeiros.
@@ -51,4 +51,4 @@ Podemos atualizar estes termos. Mudanças importantes serão avisadas no app.
 Lei brasileira. Foro: [COMARCA].
 
 ## 14. Contato
-[E-MAIL DE CONTATO].
+vufreire@gmail.com.
