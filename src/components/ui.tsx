@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, FileText, MapPin, Minus, PaintRoller, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
 
-export function Screen({ title, back, children, nav = false }: { title: string; back?: string; children: React.ReactNode; nav?: boolean }) {
+export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
@@ -15,6 +15,7 @@ export function Screen({ title, back, children, nav = false }: { title: string; 
           </Link>
         ) : null}
         <h1 className="text-[28px] font-bold leading-[34px]">{title}</h1>
+        {corner ? <div className="ml-auto">{corner}</div> : null}
       </header>
       <main className={`flex flex-1 flex-col gap-4 p-4 ${nav ? "pb-28" : "pb-8"}`}>{children}</main>
       {nav ? <BottomNav /> : null}

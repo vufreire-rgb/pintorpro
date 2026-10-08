@@ -52,19 +52,19 @@ const stored = (fn) => page.evaluate(fn);
 // ---- Visitas
 await page.goto(base + "/visitas");
 await page.getByText("Rua v-ag").waitFor();
-check(/Agendadas \(1\)/.test(await page.getByRole("tab", { name: /Agendadas/ }).innerText()), "abre na aba Agendadas (tem 1)");
+check(/Agendadas\s*1/.test(await page.getByRole("tab", { name: /Agendadas/ }).innerText()), "abre na aba Agendadas (tem 1)");
 await swipe(page.locator("a", { hasText: "Rua v-ag" }), 220);
 await page.waitForURL(/visitas\/v-ag$/);
 check((await stored(() => !!JSON.parse(localStorage.getItem("pintorpro:v1")).visits.find((v) => v.id === "v-ag").startedAt)), "agendada: deslizar para a direita COMEÇA a visita e abre ela");
 
 await page.goto(base + "/visitas");
-await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByRole("tab", { name: /A orçar/ }).click();
 await swipe(page.locator("a", { hasText: "Rua v-sem" }), 220);
 await page.waitForURL(/orcamentos\/novo\?visita=v-sem/);
 check(true, "sem orçamento: direita abre o novo orçamento já ligado à visita");
 
 await page.goto(base + "/visitas");
-await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByRole("tab", { name: /A orçar/ }).click();
 await swipe(page.locator("a", { hasText: "Rua v-sem" }), -220);
 await page.getByText("Apagar esta visita?").waitFor();
 await page.getByRole("button", { name: "Cancelar" }).click();
@@ -74,7 +74,7 @@ await page.getByRole("button", { name: "Sim, apagar" }).click();
 await page.waitForTimeout(400);
 check((await stored(() => JSON.parse(localStorage.getItem("pintorpro:v1")).visits.length)) === 2, "confirmando, a visita é apagada");
 
-await page.getByRole("tab", { name: /Orçamento feito/ }).click();
+await page.getByRole("button", { name: /Visitas com orçamento feito \(1\)/ }).click();
 await swipe(page.locator("a", { hasText: "Rua v-com" }), 220);
 await page.waitForURL(/orcamentos\/q-com$/);
 check(true, "orçamento feito: direita abre o orçamento");

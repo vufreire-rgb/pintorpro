@@ -50,9 +50,9 @@ check(true, "toque real no botão Continuar funciona");
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777");
 await page.getByRole("button", { name: "Começar" }).tap();
 await page.waitForURL(base + "/visitas");
-const tab = page.getByRole("tab", { name: /Sem orçamento/ });
+const tab = page.getByRole("tab", { name: /A orçar/ });
 await tab.tap({ timeout: 3000 });
-check(/Sem orçamento/.test(await page.getByRole("tab", { selected: true }).innerText()), "em Visitas, tocar numa aba troca de aba");
+check(/A orçar/.test(await page.getByRole("tab", { selected: true }).innerText()), "em Visitas, tocar numa aba troca de aba");
 // mesmo se a abertura ficasse presa, ela não pode bloquear toque
 const fixos = await page.evaluate(() => [...document.querySelectorAll("body *")].filter((e) => getComputedStyle(e).position === "fixed" && getComputedStyle(e).pointerEvents !== "none" && e.getBoundingClientRect().width >= innerWidth * 0.9 && e.getBoundingClientRect().height >= innerHeight * 0.9).length);
 check(fixos === 0, "nenhuma camada de tela cheia captura toques");

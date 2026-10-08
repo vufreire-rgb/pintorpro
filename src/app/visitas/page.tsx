@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { InstallBanner } from "@/components/InstallBanner";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
-import { BrandHeader } from "@/components/BrandHeader";
+import { BrandMark } from "@/components/BrandHeader";
 import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { SwipeRow } from "@/components/SwipeRow";
-import { CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
 import { deleteVisit, startVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
@@ -30,9 +30,9 @@ function Thumb({ id }: { id?: string }) {
 
 const TABS: { id: VisitFilter; label: string; empty: string }[] = [
   { id: "scheduled", label: "Agendadas", empty: "Nenhuma visita agendada." },
-  { id: "todo", label: "Sem orçamento", empty: "Nenhuma visita esperando orçamento." },
-  { id: "quoted", label: "Orçamento feito", empty: "Nenhuma visita com orçamento ainda." },
+  { id: "todo", label: "A orçar", empty: "Nenhuma visita esperando orçamento." },
 ];
+const QUOTED_EMPTY = "Nenhuma visita com orçamento feito ainda.";
 
 function VisitBadge({ v }: { v: Visit }) {
   const st = visitState(v);
@@ -54,7 +54,7 @@ export default function Visitas() {
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
-    <Screen title="Visitas" nav>
+    <Screen title="Visitas" nav corner={<Link href="/configuracoes" aria-label={`${db.company?.name ?? "Meu negócio"} · Ajustes`}><BrandMark size={38} /></Link>}>
       <div
         className="flex flex-col gap-4"
         onTouchStart={(e) => { touchX.current = e.touches[0]!.clientX; }}
@@ -63,11 +63,11 @@ export default function Visitas() {
           const dx = e.changedTouches[0]!.clientX - touchX.current;
           touchX.current = null;
           const i = TABS.findIndex((t) => t.id === filter);
+          if (i < 0) return;
           if (dx < -60 && i < TABS.length - 1) setPicked(TABS[i + 1]!.id);
           if (dx > 60 && i > 0) setPicked(TABS[i - 1]!.id);
         }}
       >
-      <BrandHeader />
       <div className="flex flex-col gap-3">
         <Button icon={Plus} aria-expanded={choosing} onClick={() => setChoosing((o) => !o)}>Nova visita</Button>
         {choosing ? (
@@ -78,22 +78,30 @@ export default function Visitas() {
         ) : null}
       </div>
       <FirstSteps db={db} />
-      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={filter === t.id}
-            onClick={() => setPicked(t.id)}
-            className={`min-h-12 rounded-xl px-1 text-base font-bold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-ink"}`}
-          >
-            {t.label} ({counts[t.id]})
-          </button>
-        ))}
-      </div>
+      {filter === "quoted" ? (
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-bold">Visitas com orçamento feito</h2>
+          <Button variant="ghost" size="sm" icon={ArrowLeft} className="!w-auto" onClick={() => setPicked(counts.scheduled > 0 ? "scheduled" : "todo")}>Voltar</Button>
+        </div>
+      ) : (
+        <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={filter === t.id}
+              onClick={() => setPicked(t.id)}
+              className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-1 text-base font-bold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-ink"}`}
+            >
+              {t.label}
+              <span className={`rounded-lg px-2 py-0.5 text-sm ${filter === t.id ? "bg-white text-brand" : "bg-white/70 text-brand"}`}>{counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex flex-col gap-4">
       {list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
-      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque em Nova visita para começar: ela já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
+      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque em Nova visita para começar: ela já guarda fotos, áudio e medidas." : (filter === "quoted" ? QUOTED_EMPTY : TABS.find((t) => t.id === filter)!.empty)}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
@@ -146,6 +154,9 @@ export default function Visitas() {
         );
       })}
       </div>
+      {filter !== "quoted" && counts.quoted > 0 ? (
+        <Button variant="ghost" size="sm" icon={FileText} onClick={() => setPicked("quoted")}>Visitas com orçamento feito ({counts.quoted})</Button>
+      ) : null}
       <InstallBanner />
       <ConfirmDialog
         open={!!askDelete}

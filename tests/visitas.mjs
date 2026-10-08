@@ -58,14 +58,13 @@ check(!(await page.getByText("Visita agendada").isVisible().catch(() => false)),
 // lista: filtros e busca
 await page.goto(base + "/visitas");
 await page.getByRole("tab", { name: /Agendadas/ }).waitFor();
-check(await page.getByRole("tab", { name: /Agendadas \(1\)/ }).getAttribute("aria-selected") === "true", "a aba abre em 'Agendadas (1)'");
-check(await page.getByRole("tab", { name: /Sem orçamento \(1\)/ }).isVisible(), "aba 'Sem orçamento (1)'");
-check(await page.getByRole("tab", { name: /Orçamento feito \(0\)/ }).isVisible(), "aba 'Orçamento feito (0)'");
+check(await page.getByRole("tab", { name: /Agendadas\s*1/ }).getAttribute("aria-selected") === "true", "a aba abre em 'Agendadas (1)'");
+check(await page.getByRole("tab", { name: /A orçar\s*1/ }).isVisible(), "aba 'Sem orçamento (1)'");
+check((await page.getByRole("tab").count()) === 2, "só 2 abas: Agendadas e A orçar (visita já orçada fica num botão à parte)");
 check(await page.getByText(/Atrasada/).isVisible(), "visita atrasada marcada em vermelho");
-await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByRole("tab", { name: /A orçar/ }).click();
 check(await page.getByText("Ana Lima").first().isVisible(), "aba 'Sem orçamento' mostra a visita já começada");
-await page.getByRole("tab", { name: /Orçamento feito/ }).click();
-check(await page.getByText("Nenhuma visita com orçamento ainda.").isVisible(), "aba vazia avisa");
+check((await page.getByRole("button", { name: /Visitas com orçamento feito/ }).count()) === 0, "sem visita orçada, o botão das orçadas nem aparece");
 await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 
 // visita rápida pelo painel
@@ -83,7 +82,7 @@ await page.getByLabel(/Nome do cliente|nome/).last().fill("Marta Souza");
 await page.getByLabel("Telefone (WhatsApp)").fill("11988887777");
 await page.getByRole("button", { name: "Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
-await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByRole("tab", { name: /A orçar/ }).click();
 check(await page.getByText("Marta Souza").first().isVisible(), "visita salva aparece na lista com o cliente");
 
 // cor do app segue a cor escolhida + logo

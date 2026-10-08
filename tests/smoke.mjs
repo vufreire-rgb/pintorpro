@@ -75,7 +75,7 @@ await page.getByText("Nome do cliente").locator("..").locator("input").fill("Mar
 await page.getByText("Telefone (WhatsApp)").last().locator("..").locator("input").fill("11977776666");
 await page.getByRole("button", { name: "Salvar visita" }).last().click();
 await page.waitForURL(/\/visitas$/);
-await page.getByRole("tab", { name: /Sem orçamento/ }).click();
+await page.getByRole("tab", { name: /A orçar/ }).click();
 await page.getByText("Maria Souza").first().click();
 await page.getByText("Fotos (4)").waitFor();
 // atalhos de contato do cliente
@@ -128,7 +128,7 @@ await page.goto(base + "/obras");
 await page.getByText("Maria Souza").waitFor();
 await shot("09-obras");
 await page.goto(base + "/visitas");
-await page.getByRole("tab", { name: /Orçamento feito \(1\)/ }).click();
+await page.getByRole("button", { name: /Visitas com orçamento feito \(1\)/ }).click();
 await page.getByText("Maria Souza").first().waitFor();
 // apagar visita
 await page.getByText("Maria Souza").first().click();

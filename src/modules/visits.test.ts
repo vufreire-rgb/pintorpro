@@ -128,7 +128,7 @@ describe("lista: busca, filtros e ordem", () => {
     const [a, b, c] = visits as [Visit, Visit, Visit];
     expect(firstFilledFilter(visits, NOW)).toBe("scheduled");
     expect(firstFilledFilter([a, b], NOW)).toBe("todo");
-    expect(firstFilledFilter([a], NOW)).toBe("quoted");
+    expect(firstFilledFilter([a], NOW)).toBe("scheduled"); // só há visita já orçada: não é aba; abre em Agendadas (vazia) e o link mostra as orçadas
     expect(firstFilledFilter([c], NOW)).toBe("scheduled");
     expect(firstFilledFilter([], NOW)).toBe("scheduled");
   });
