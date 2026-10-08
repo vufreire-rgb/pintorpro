@@ -1,4 +1,5 @@
 "use client";
+import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Chip, Field, NumberInput, Screen, TextArea2, TextInput } from "./ui";
@@ -74,7 +75,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
           <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{price > 0 ? formatBRL(Math.round(price * 100)) : "—"}</div>
           {!canSave ? <div className="text-base text-support">{!hasClient ? "Falta o cliente" : "Falta o preço"}</div> : null}
         </div>
-        <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} disabled={!canSave} onClick={save}>Salvar</Button>
+        <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} icon={Check} disabled={!canSave} onClick={save}>Salvar</Button>
       </div>
     </Screen>
   );

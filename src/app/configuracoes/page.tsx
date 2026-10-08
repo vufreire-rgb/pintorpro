@@ -1,10 +1,8 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { DeleteAccountCard } from "@/components/DeleteAccountCard";
 import { InstallBanner } from "@/components/InstallBanner";
-import { AutoTour, type TourStep } from "@/components/Tour";
 import { LinkButton, Button, Card, ConfirmDialog, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, useAuthState } from "@/modules/auth";
@@ -14,7 +12,7 @@ import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, pixPayload } from "@/modules/pix";
 import { PixKeyInput } from "@/components/PixKeyInput";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
-import { isSimpleMode, resetTours, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
+import { isSimpleMode, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
 import { toCents } from "@/shared/money";
 import { UNIT_LABEL } from "@/shared/format";
@@ -24,7 +22,7 @@ import { PushCard } from "@/components/PushCard";
 import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
-import { Check, QrCode, Users } from "lucide-react";
+import { Check, QrCode, Users, ImagePlus, Download } from "lucide-react";
 
 function LogoPreview({ id }: { id: string }) {
   const url = useFileUrl(id);
@@ -33,7 +31,6 @@ function LogoPreview({ id }: { id: string }) {
 }
 
 export default function Configuracoes() {
-  const router = useRouter();
   const [leaving, setLeaving] = useState(false);
   const [askLeave, setAskLeave] = useState(false);
   const db = useAppDb();
@@ -42,13 +39,6 @@ export default function Configuracoes() {
   const [pixTest, setPixTest] = useState(false);
   const auth = useAuthState();
   if (!db) return <Loading />;
-  const steps: TourStep[] = ([
-    { target: "aj-negocio", title: "Seu negócio", text: "Nome, WhatsApp e cidade. O nome e o WhatsApp aparecem no orçamento que o cliente recebe." },
-    { target: "aj-pdf", title: "Seu orçamento em PDF", text: "Coloque seu logo, escolha a cor e ajuste a entrada e os textos de garantia. É a cara do seu orçamento." },
-    { target: "aj-pix", title: "Receber por Pix", text: "Cadastre sua chave Pix e o orçamento sai com o QR para o cliente pagar a entrada." },
-    { target: "aj-servicos", title: "Serviços e preços", text: "Quanto você cobra por serviço. Os que dizem valor de exemplo precisam da sua confirmação para o orçamento ficar certo." },
-    { target: "aj-guias", title: "Rever os guias", text: "Se quiser ver este passo a passo de novo, é só voltar aqui e tocar em Ver os guias de novo." },
-  ] as TourStep[]).filter((st) => !(isSimpleMode(db.company) && st.target === "aj-servicos"));
   const c = db.company!;
   const simple = isSimpleMode(c);
   const set = (patch: Partial<typeof c>) => saveCompany({ ...c, ...patch });
@@ -57,7 +47,7 @@ export default function Configuracoes() {
       <BrandHeader />
       <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
       <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meu negócio</h2>
-      <div data-tour="aj-negocio">
+      <div>
       <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="WhatsApp"><TextInput value={c.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} /></Field>
@@ -65,7 +55,7 @@ export default function Configuracoes() {
         <Field label="Condição de pagamento padrão"><TextInput value={c.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value })} /></Field>
       </Section>
       </div>
-      <div data-tour="aj-pdf">
+      <div>
       <Section title="Seu orçamento em PDF" hint="Logo, sua cor, entrada e textos do PDF">
         <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
         <div className="flex flex-col gap-3">
@@ -73,7 +63,7 @@ export default function Configuracoes() {
           <div className="flex items-center gap-4">
             {c.logoId ? <LogoPreview id={c.logoId} /> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-brand text-base text-white">sem logo</div>}
             <div className="flex flex-1 flex-col gap-2">
-              <Button variant="ghost" onClick={() => logoInput.current?.click()}>{c.logoId ? "Trocar logo" : "Enviar meu logo"}</Button>
+              <Button variant="ghost" size="sm" icon={ImagePlus} onClick={() => logoInput.current?.click()}>{c.logoId ? "Trocar logo" : "Enviar meu logo"}</Button>
               {c.logoId ? <button className="min-h-10 text-err underline" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
             </div>
           </div>
@@ -111,7 +101,7 @@ export default function Configuracoes() {
         <p className="text-base text-support">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
       </Section>
       </div>
-      <div data-tour="aj-pix">
+      <div>
       <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
         <p className="text-base text-support">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
         <PixKeyInput
@@ -142,7 +132,7 @@ export default function Configuracoes() {
         <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} hideTitle />
       </Section>
       {simple ? null : <>
-      <div data-tour="aj-servicos">
+      <div>
       <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
         {db.services.map((s) => {
           const on = db.enabledServiceIds.includes(s.id);
@@ -195,13 +185,6 @@ export default function Configuracoes() {
       </Section>
       </>}
       <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Conta e ajuda</h2>
-      <div data-tour="aj-guias">
-      <Card className="flex flex-col gap-3">
-        <h2 className="text-lg font-bold">Guias</h2>
-        <p className="text-base text-support">Quer rever o passo a passo de Visitas, Orçamentos, Obras e Ajustes?</p>
-        <Button variant="ghost" onClick={() => { resetTours(); router.push("/visitas"); }}>Ver os guias de novo</Button>
-      </Card>
-      </div>
       <InstallBanner always />
       {cloudEnabled && auth.status === "ready" ? <SubscriptionCard /> : null}
       {cloudEnabled && auth.status === "ready" ? (
@@ -218,7 +201,7 @@ export default function Configuracoes() {
             onCancel={() => setAskLeave(false)}
             onConfirm={async () => { setAskLeave(false); setLeaving(true); await signOutAndWipe(); }}
           />
-          <Button variant="ghost" onClick={() => downloadMyData()}>Baixar meus dados</Button>
+          <Button variant="ghost" size="sm" icon={Download} onClick={() => downloadMyData()}>Baixar meus dados</Button>
           <DeleteAccountCard />
         </Card>
       ) : null}
@@ -227,7 +210,6 @@ export default function Configuracoes() {
         <img src="/brand/simbolo-colorido.svg" alt="" className="h-5 w-5" />
         {APP_NAME} · versão 1.0
       </div>
-      <AutoTour id="ajustes" steps={steps} />
     </Screen>
   );
 }

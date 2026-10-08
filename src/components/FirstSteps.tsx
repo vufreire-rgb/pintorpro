@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Check, ChevronDown, Circle } from "lucide-react";
+import { Check, ChevronDown, Circle, EyeOff } from "lucide-react";
 import { Button } from "./ui";
 import { saveCompany } from "@/modules/settings";
 import { firstSteps } from "@/modules/firstSteps";
@@ -37,7 +37,7 @@ export function FirstSteps({ db }: { db: Db }) {
               </li>
             ))}
           </ul>
-          <Button variant="danger" onClick={() => saveCompany({ ...c, stepsHidden: true })}>Não mostrar mais</Button>
+          <Button variant="danger" size="sm" icon={EyeOff} onClick={() => saveCompany({ ...c, stepsHidden: true })}>Não mostrar mais</Button>
         </div>
       </details>
     </div>

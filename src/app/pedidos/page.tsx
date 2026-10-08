@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { MessageCircle, Trash2, UserPlus, X } from "lucide-react";
+import { MessageCircle, Trash2, UserPlus, X, Settings } from "lucide-react";
 import { SwipeRow } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
 import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
@@ -64,7 +64,7 @@ export default function Pedidos() {
           <Card className="flex flex-col gap-2">
             <b>Sua página para receber pedidos está desligada</b>
             <p className="text-base text-support">Ative em Ajustes e divulgue o link. O cliente preenche e o pedido aparece aqui.</p>
-            <LinkButton href="/configuracoes" variant="ghost">Ir para Ajustes</LinkButton>
+            <LinkButton href="/configuracoes" variant="ghost" icon={Settings}>Ir para Ajustes</LinkButton>
           </Card>
         ) : null}
         {requests.length > 0 ? <p className="text-base text-support">Dica: deslize o pedido para a direita para criar a visita, ou para a esquerda para descartar.</p> : null}

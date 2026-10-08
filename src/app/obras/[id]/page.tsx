@@ -2,10 +2,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, CircleCheck, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, QrCode, Receipt, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, Check, CircleCheck, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, Play, Plus, QrCode, Receipt, RefreshCw, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
-import { AutoTour, type TourStep } from "@/components/Tour";
 import { WorkCostsCard } from "@/components/WorkCostsCard";
 import { PixModal } from "@/components/PixModal";
 import { ACTION_CLS, Badge, Button, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
@@ -73,12 +72,6 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   if (!db) return <Loading />;
   const w = db.works.find((x) => x.id === id);
   if (!w) return <Screen title="Obra" back="/obras"><p>Obra não encontrada.</p></Screen>;
-  const steps: TourStep[] = [
-    { target: "obra-datas", title: "Datas da obra", text: "Marque o início. O término sugerido vem dos dias do orçamento. Dá para mandar a obra para a agenda do celular." },
-    { target: "obra-plano", title: "Plano de pagamento", text: "Combine as parcelas com o cliente. O app avisa quando alguma atrasa e monta a mensagem de cobrança." },
-    { target: "obra-dinheiro", title: "Dinheiro da obra", text: "Registre cada pagamento que receber. Para cada um você gera o recibo em PDF e pode anexar o comprovante." },
-    { target: "obra-custos", title: "Custos e lucro", text: "Lance os gastos reais (tinta, ajudante, gasolina) e os dias trabalhados. O app mostra o lucro de verdade e compara com o previsto no orçamento." },
-  ];
   const client = db.clients.find((c) => c.id === w.clientId);
   const quote = db.quotes.find((q) => q.id === w.quoteId);
   const visit = quote?.visitId ? db.visits.find((v) => v.id === quote.visitId) : undefined;
@@ -116,16 +109,16 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         <ContactActions phone={client?.phone} address={quote?.siteAddress || client?.address} location={visit?.location} />
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={w.status === "done" ? "ok" : w.status === "issues" ? "warn" : "open"}>{WORK_STATUS_LABEL[w.status]}</Badge>
-          {w.status === "scheduled" ? <Button variant="ghost" className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Começar a obra</Button> : null}
-          {w.status === "in_progress" || w.status === "issues" ? <Button variant="ghost" icon={CircleCheck} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
-          {w.status === "in_progress" ? <Button variant="ghost" icon={TriangleAlert} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "issues")}>Tem pendência</Button> : null}
-          {w.status === "issues" ? <Button variant="ghost" className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Resolvi a pendência</Button> : null}
-          {w.status === "done" ? <Button variant="ghost" icon={RotateCcw} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Reabrir</Button> : null}
+          {w.status === "scheduled" ? <Button variant="ghost" size="sm" icon={Play} className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Começar a obra</Button> : null}
+          {w.status === "in_progress" || w.status === "issues" ? <Button variant="ghost" icon={CircleCheck} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
+          {w.status === "in_progress" ? <Button variant="ghost" icon={TriangleAlert} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "issues")}>Tem pendência</Button> : null}
+          {w.status === "issues" ? <Button variant="ghost" size="sm" icon={Check} className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Resolvi a pendência</Button> : null}
+          {w.status === "done" ? <Button variant="ghost" icon={RotateCcw} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Reabrir</Button> : null}
         </div>
         {w.status === "scheduled" || w.status === "in_progress" ? <p className="text-base text-support">A situação muda sozinha: começa na data de início e conclui quando tudo foi pago e o término passou.</p> : null}
       </Card>
 
-      <div data-tour="obra-datas">
+      <div>
       <Card className="flex flex-col gap-3">
         <CardTitle icon={CalendarDays}>Datas</CardTitle>
         <p className="text-base text-support">Previsto no orçamento: {plural(w.plannedDays, "dia", "dias")} de trabalho.</p>
@@ -137,7 +130,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
       </Card>
       </div>
 
-      <div data-tour="obra-plano">
+      <div>
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Landmark}>Plano de pagamento</CardTitle>
         {late > 0 ? <p className="flex items-center gap-2 rounded-xl bg-[#FFF3D6] p-3 font-bold text-[#8A4B00]"><TriangleAlert size={20} strokeWidth={2.4} aria-hidden />{formatBRL(late)} em atraso</p> : null}
@@ -147,7 +140,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
             <div className="flex flex-wrap gap-2">
               {(Object.keys(PLAN_PRESET_LABEL) as PlanPreset[]).map((pr) => <Chip key={pr} active={false} onClick={() => makePlan(pr)}>{PLAN_PRESET_LABEL[pr]}</Chip>)}
             </div>
-            {changePlan ? <Button variant="ghost" className="!min-h-12 !text-base" onClick={() => setChangePlan(false)}>Cancelar</Button> : null}
+            {changePlan ? <Button variant="ghost" size="sm" icon={X} onClick={() => setChangePlan(false)}>Cancelar</Button> : null}
           </>
         ) : (
           <>
@@ -176,8 +169,8 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
             ))}
             {gap !== 0 ? <p className="text-base text-[#8A4B00]">A soma das parcelas {gap > 0 ? `está ${formatBRL(gap)} abaixo` : `está ${formatBRL(-gap)} acima`} do valor combinado.</p> : null}
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="ghost" className="!min-h-12 !text-base" onClick={() => addInstallment(w.id, { label: `Parcela ${view.length}`, dueDate: ymd(new Date()), amountCents: Math.max(0, gap) })}>+ Parcela</Button>
-              <Button variant="ghost" className="!min-h-12 !text-base" onClick={() => setChangePlan(true)}>Trocar modelo</Button>
+              <Button variant="ghost" size="sm" icon={Plus} onClick={() => addInstallment(w.id, { label: `Parcela ${view.length}`, dueDate: ymd(new Date()), amountCents: Math.max(0, gap) })}>Parcela</Button>
+              <Button variant="ghost" size="sm" icon={RefreshCw} onClick={() => setChangePlan(true)}>Trocar modelo</Button>
             </div>
           </>
         )}
@@ -185,7 +178,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
       </Card>
       </div>
 
-      <div data-tour="obra-dinheiro">
+      <div>
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Wallet}>Dinheiro da obra</CardTitle>
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -219,16 +212,16 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           </div>
           <input ref={proofInput} type="file" accept="image/*" hidden data-testid="proof-input" onChange={(e) => { setProof(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           <Button variant="ghost" icon={Paperclip} onClick={() => proofInput.current?.click()}>{proof ? `${proof.name.slice(0, 24)} (trocar)` : "Anexar comprovante (opcional)"}</Button>
-          <Button disabled={amount <= 0 || busy} onClick={register}>Registrar</Button>
+          <Button icon={Check} disabled={amount <= 0 || busy} onClick={register}>Registrar</Button>
         </div>
       </Card>
       </div>
 
-      <div data-tour="obra-custos"><WorkCostsCard w={w} quote={quote} /></div>
+      <div><WorkCostsCard w={w} quote={quote} /></div>
 
       <Card className="flex flex-col gap-3">
         <CardTitle icon={ClipboardList}>Orçamento e visita</CardTitle>
-        {quote ? <LinkButton href={`/orcamentos/${quote.id}`} variant="ghost">Ver orçamento nº {String(quote.number).padStart(3, "0")}</LinkButton> : null}
+        {quote ? <LinkButton href={`/orcamentos/${quote.id}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento nº {String(quote.number).padStart(3, "0")}</LinkButton> : null}
         {visit ? (
           <>
             {visit.notes ? <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-ink">{visit.notes}</p> : null}
@@ -250,7 +243,6 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { deleteWork(w.id); router.replace("/obras"); }}
       />
-      <AutoTour id="obra" steps={steps} enabled={!!w.isExample} onFinish={() => router.push("/obras")} />
     </Screen>
   );
 }

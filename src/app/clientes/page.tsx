@@ -1,4 +1,5 @@
 "use client";
+import { Check, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, ConfirmDialog, Field, Loading, Screen, TextInput } from "@/components/ui";
 import { addClient, deleteClient, updateClient } from "@/modules/clients";
@@ -35,10 +36,10 @@ export default function Clientes() {
           <Field label="Nome"><TextInput value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <Field label="Telefone"><TextInput type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
           <Field label="Endereço"><TextInput value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
-          <Button disabled={!f.name.trim()} onClick={save}>{editing === "new" ? "Salvar cliente" : "Salvar alterações"}</Button>
-          <Button variant="ghost" onClick={() => setEditing(null)}>Cancelar</Button>
+          <Button icon={Check} disabled={!f.name.trim()} onClick={save}>{editing === "new" ? "Salvar cliente" : "Salvar alterações"}</Button>
+          <Button variant="ghost" size="sm" icon={X} onClick={() => setEditing(null)}>Cancelar</Button>
         </Card>
-      ) : <Button onClick={() => open("new")}>+ Novo cliente</Button>}
+      ) : <Button icon={UserPlus} onClick={() => open("new")}>Novo cliente</Button>}
       {blocked ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{blocked}</p> : null}
       {db.clients.length === 0 ? <p className="text-support">Nenhum cliente ainda.</p> : null}
       {db.clients.map((c) => (
@@ -49,8 +50,8 @@ export default function Clientes() {
             <div className="text-support">{c.address}</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="ghost" className="text-base" onClick={() => open(c.id)}>Editar</Button>
-            <Button variant="ghost" className="text-base text-err" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
+            <Button variant="ghost" size="sm" icon={Pencil} onClick={() => open(c.id)}>Editar</Button>
+            <Button variant="ghost" size="sm" icon={Trash2} className="text-err" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
           </div>
         </Card>
       ))}

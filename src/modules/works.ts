@@ -51,18 +51,6 @@ export const deleteWork = (id: string) =>
     return { ...db, works: db.works.filter((x) => x.id !== id), clients: drop ? db.clients.filter((c) => !(c.isExample && c.id === w!.clientId)) : db.clients };
   });
 
-/** Obra de treino do guia: valores de exemplo, fora do painel. Apagar a obra apaga o cliente de exemplo (se ninguém mais o usa). */
-export function createExampleWork(): string {
-  const id = crypto.randomUUID();
-  updateDb((db) => {
-    const existing = db.clients.find((c) => c.isExample);
-    const client = existing ?? { id: crypto.randomUUID(), name: "Cliente Exemplo", phone: "(11) 99999-0000", address: "Rua Exemplo, 123", isExample: true };
-    const work: Work = { id, quoteId: "exemplo", clientId: client.id, title: `${client.name} — ${client.address}`, status: "scheduled", createdAt: new Date().toISOString(), plannedDays: 3, plannedHours: 24, plannedTotalCents: 300000, plannedCostCents: 100000, isExample: true };
-    return { ...db, clients: existing ? db.clients : [client, ...db.clients], works: [work, ...db.works] };
-  });
-  return id;
-}
-
 export const addExpense = (id: string, e: Omit<Expense, "id">) =>
   patch(id, (w) => ({ ...w, expenses: [...(w.expenses ?? []), { ...e, id: crypto.randomUUID() }] }));
 export const removeExpense = (id: string, expenseId: string) =>

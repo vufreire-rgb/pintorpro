@@ -37,8 +37,6 @@ export interface Company {
   stepsHidden?: boolean;
   /** Como o pintor orça: "calc" (padrão) usa a base de cálculo; "simple" só voz e preço fechado, sem telas de cálculo. */
   quoteMode?: "calc" | "simple";
-  /** Guias passo a passo já vistos ou pulados (ex.: visita). */
-  tours?: Record<string, "done" | "skipped">;
 }
 
 export interface Client {

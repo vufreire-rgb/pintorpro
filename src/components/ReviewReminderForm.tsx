@@ -1,4 +1,5 @@
 "use client";
+import { CalendarPlus } from "lucide-react";
 import { useState } from "react";
 import { Button, Chip, Field, TextInput } from "./ui";
 import { DAY_SHORT, DEFAULT_REMINDER, isValidTime, reminderLabel, type ReviewReminder } from "@/modules/reminder";
@@ -20,7 +21,7 @@ export function ReviewReminderForm({ saved, onSave }: { saved?: ReviewReminder; 
       <div className="flex flex-wrap gap-2">
         {DAY_SHORT.map((n, d) => <Chip key={n} active={r.days.includes(d)} onClick={() => toggle(d)}>{n}</Chip>)}
       </div>
-      <Button disabled={!isValidTime(r.time) || r.days.length === 0} onClick={() => { const v = { ...r, days: [...r.days].sort((a, b) => a - b) }; onSave(v); downloadReviewIcs(v); }}>Salvar no calendário do celular</Button>
+      <Button icon={CalendarPlus} disabled={!isValidTime(r.time) || r.days.length === 0} onClick={() => { const v = { ...r, days: [...r.days].sort((a, b) => a - b) }; onSave(v); downloadReviewIcs(v); }}>Salvar no calendário do celular</Button>
       <p className="text-base text-support">Vai baixar um arquivo: abra-o e toque em adicionar ao calendário. Se mudar o horário depois, apague o lembrete antigo no calendário.</p>
     </div>
   );

@@ -31,20 +31,6 @@ export const DEFAULT_COMPANY: Company = {
   depositPct: 50,
 };
 
-/** Marca um guia como visto/pulado (ou `null` para ver de novo). */
-export const setTour = (id: string, state: "done" | "skipped" | null) =>
-  updateDb((db) => {
-    if (!db.company) return db;
-    const tours = { ...db.company.tours };
-    if (state) tours[id] = state;
-    else delete tours[id];
-    return { ...db, company: { ...db.company, tours } };
-  });
-
-/** Faz todos os guias abrirem de novo. */
-export const resetTours = () =>
-  updateDb((db) => (db.company ? { ...db, company: { ...db.company, tours: {} } } : db));
-
 /** Modo simples: o pintor só dita ou digita o preço; as telas de preços, medidas, custo e lucro ficam escondidas. */
 export const isSimpleMode = (c: Pick<Company, "quoteMode"> | null | undefined): boolean => c?.quoteMode === "simple";
 export const saveCompany = (company: Company) => updateDb((db) => ({ ...db, company }));

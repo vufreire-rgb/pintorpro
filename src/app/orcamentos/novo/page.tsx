@@ -4,11 +4,10 @@ import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
 import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
-import { Eye, EyeOff, Ruler, Settings, X } from "lucide-react";
+import { Eye, EyeOff, Ruler, Settings, X, Plus, Check } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { PriceCheck } from "@/components/PriceCheck";
 import { ServicePicker } from "@/components/ServicePicker";
-import { AutoTour, type TourStep } from "@/components/Tour";
 import { RoomEditor } from "@/components/RoomEditor";
 import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
 import { isPriceOnly, previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
@@ -111,13 +110,6 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     router.replace(`/orcamentos/${id}`);
   };
 
-  const steps: TourStep[] = [
-    { target: "orc-cliente", title: "Cliente e endereço", text: "Escolha um cliente que já existe ou cadastre um novo. Vindo de uma visita, o cliente e o endereço já vêm preenchidos." },
-    { target: "orc-ambientes", title: "Ambientes e serviços", text: "As medidas da visita já estão aqui. Toque em Editar medidas para mudar, e marque os serviços de cada ambiente: lixar, massa, pintura e o que mais for fazer." },
-    { target: "orc-ajustes", title: "Ajustes do orçamento", text: "Opcional: tinta inclusa ou do cliente, desconto, forma de pagamento e observações para o PDF." },
-    { target: "orc-custo", title: "Seu custo e lucro", text: "Só você vê. Toque aqui para ver quanto custa a obra e quanto sobra de lucro. O cliente nunca vê." },
-    { target: "orc-salvar", title: "Preço e salvar", text: "O preço para o cliente aparece na hora e muda conforme você mexe. Toque em Salvar para guardar. Depois você gera o PDF e manda no WhatsApp." },
-  ];
   const t = result?.totals;
   // Serviços com preço de exemplo já têm o bloco "Confirme seus preços"; aqui só entram os outros avisos (materiais de exemplo viram uma linha).
   const demoServices = db.services.filter((sv) => sv.isDemo && allRooms.some((r) => r.services.some((x) => x.serviceId === sv.id)));
@@ -142,7 +134,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
           </details>
         ) : null}
 
-        <div data-tour="orc-cliente">
+        <div>
         <Card className="flex flex-col gap-3">
           <b>Cliente</b>
           {chosenClient ? (
@@ -161,7 +153,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         </Card>
         </div>
 
-        <div data-tour="orc-ambientes" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
         <h2 className="font-display text-[22px] font-bold leading-7">Ambientes e serviços</h2>
         {rooms.map((r, i) => {
           const m = result?.measures[i];
@@ -209,11 +201,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
             {pending && !editingId ? <p className="-mt-2 text-base text-support">Este ambiente já está no preço. Toque em <b>Adicionar ambiente</b> para guardar e escolher os serviços dele.</p> : null}
           </>
         ) : (
-          <Button variant="ghost" onClick={() => setShowForm(true)}>+ Adicionar ambiente</Button>
+          <Button variant="ghost" icon={Plus} onClick={() => setShowForm(true)}>Adicionar ambiente</Button>
         )}
         <PriceCheck services={demoServices} />
 
-        <details data-tour="orc-ajustes" className="rounded-2xl border border-slate-200 p-3">
+        <details className="rounded-2xl border border-slate-200 p-3">
           <summary className="flex cursor-pointer items-center gap-2 font-display text-lg font-bold"><Settings size={24} strokeWidth={2.2} aria-hidden className="text-brand" />Ajustes do orçamento (opcional)</summary>
           <div className="mt-3 flex flex-col gap-4">
             {result && result.materialLines.length > 0 ? (
@@ -269,7 +261,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 
         {t ? (
           <>
-            <div data-tour="orc-custo"><Button variant="ghost" icon={showCost ? EyeOff : Eye} aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "Esconder meu custo e lucro" : "Ver meu custo e lucro"}</Button></div>
+            <div><Button variant="ghost" icon={showCost ? EyeOff : Eye} aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "Esconder meu custo e lucro" : "Ver meu custo e lucro"}</Button></div>
             {showCost ? (
               <Card className="border-amber-300 bg-amber-50">
                 <b>Só para você</b>
@@ -281,15 +273,14 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         ) : null}
       </div>
 
-      <div data-tour="orc-salvar" className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="min-w-0 flex-1">
           <div className="text-base text-support">Preço para o cliente</div>
           <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
           <div className="text-base text-support">{canSave && result ? `Prazo: ${plural(result.schedule.workDays, "dia", "dias")} + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
         </div>
-        <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} disabled={!canSave} onClick={save}>Salvar</Button>
+        <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} icon={Check} disabled={!canSave} onClick={save}>Salvar</Button>
       </div>
-      <AutoTour id="orcamento" steps={steps} enabled={!quote} />
     </Screen>
   );
 }

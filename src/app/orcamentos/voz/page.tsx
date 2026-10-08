@@ -1,7 +1,7 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, Square } from "lucide-react";
+import { Mic, Square, Check, Trash2 } from "lucide-react";
 import { Button, Card, Field, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
 import { fmtClock, useRecorder } from "@/modules/audio";
@@ -149,7 +149,7 @@ function OrcamentoPorVoz() {
           <Card className="flex flex-col gap-2">
             <b>Sem internet: áudio guardado no aparelho</b>
             <p>Quando a internet voltar, o app transcreve sozinho e o orçamento fica esperando aqui para você conferir. Mantenha esta tela aberta ou volte depois.</p>
-            <Button variant="ghost" onClick={() => setPhase({ name: "idle" })}>Entendi</Button>
+            <Button variant="ghost" icon={Check} onClick={() => setPhase({ name: "idle" })}>Entendi</Button>
           </Card>
         ) : null}
 
@@ -164,7 +164,7 @@ function OrcamentoPorVoz() {
                 <div className="text-base">{new Date(p.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {fmtClock(p.seconds)} · {p.status === "ready" ? "pronto para conferir" : "esperando internet"}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {p.status === "ready" && p.draft ? <Button onClick={() => openReview(p.draft!, p.transcript ?? "", p.id, p.visitId)}>Conferir</Button> : <Button variant="ghost" onClick={() => void runPending(p.id)}>Tentar agora</Button>}
-                  <Button variant="ghost" onClick={() => void discardVoice(p.id)}>Apagar</Button>
+                  <Button variant="ghost" size="sm" icon={Trash2} onClick={() => void discardVoice(p.id)}>Apagar</Button>
                 </div>
               </div>
             ))}
@@ -225,8 +225,8 @@ function OrcamentoPorVoz() {
               {!simple && quote.totalCents > 0 && quote.priceOnly ? <p className="mt-1 text-base text-support">Só o preço, sem medidas: o app não calcula custo, lucro nem prazo.</p> : null}
               {!fields.clientName.trim() ? <p className="text-base text-support">Falta o nome do cliente.</p> : quote.totalCents === 0 ? <p className="text-base text-support">{simple ? "Falta o preço." : "Falta o preço ou as medidas."}</p> : null}
             </div>
-            <Button disabled={!canSave} onClick={save}>Salvar orçamento</Button>
-            <Button variant="ghost" onClick={() => setPhase({ name: "idle" })}>Gravar de novo</Button>
+            <Button icon={Check} disabled={!canSave} onClick={save}>Salvar orçamento</Button>
+            <Button variant="ghost" size="sm" icon={Mic} onClick={() => setPhase({ name: "idle" })}>Gravar de novo</Button>
           </>
         ) : null}
       </div>

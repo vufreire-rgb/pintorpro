@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Send, BellOff } from "lucide-react";
 import { Button, Section } from "./ui";
 import { cloudEnabled } from "@/modules/auth";
 import { disablePush, enablePush, PUSH_TEXT, testPush, usePushState } from "@/modules/push";
@@ -21,8 +21,8 @@ export function PushCard() {
       ) : null}
       {state === "on" ? (
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="ghost" disabled={busy} onClick={() => void run(async () => { try { setMsg((await testPush()) > 0 ? "Teste enviado. Deve chegar em instantes." : "Não encontrei este celular no servidor. Desligue e ligue de novo."); } catch { setMsg("Não consegui enviar o teste agora."); } })}>Enviar teste</Button>
-          <Button variant="danger" disabled={busy} onClick={() => void run(() => disablePush())}>Desligar</Button>
+          <Button variant="ghost" size="sm" icon={Send} disabled={busy} onClick={() => void run(async () => { try { setMsg((await testPush()) > 0 ? "Teste enviado. Deve chegar em instantes." : "Não encontrei este celular no servidor. Desligue e ligue de novo."); } catch { setMsg("Não consegui enviar o teste agora."); } })}>Enviar teste</Button>
+          <Button variant="danger" size="sm" icon={BellOff} disabled={busy} onClick={() => void run(() => disablePush())}>Desligar</Button>
         </div>
       ) : null}
       {msg ? <p role="status" className="text-base text-support">{msg}</p> : null}

@@ -44,7 +44,7 @@ export function RoomEditor({ draft, onChange, onSave, onCancel, title, saveLabel
       <div className="flex items-center justify-between"><span className="text-lg">Janelas</span><Stepper value={draft.windows} onChange={(n) => onChange({ ...draft, windows: n })} /></div>
       {summary ? <p className="text-base font-semibold text-brand">{summary}</p> : null}
       <Button icon={Check} disabled={!valid} onClick={onSave}>{saveLabel}</Button>
-      {onCancel ? <Button variant="ghost" onClick={onCancel}>Cancelar</Button> : null}
+      {onCancel ? <Button variant="ghost" size="sm" icon={X} onClick={onCancel}>Cancelar</Button> : null}
     </Card>
   );
 }

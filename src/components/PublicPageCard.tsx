@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Copy, Share2 } from "lucide-react";
+import { Copy, Share2, Check, Inbox, Power } from "lucide-react";
 import { Button, Chip, Field, LinkButton, Section, TextArea, TextInput } from "./ui";
 import { activatePage, deactivatePage, isValidSlug, pageErrorText, pageUrl, slugify, useMyPage } from "@/modules/publicPage";
 import type { Db } from "@/modules/types";
@@ -55,15 +55,15 @@ export function PublicPageCard({ db }: { db: Db }) {
       <Field label="Frase de apresentação (opcional)"><TextInput value={headline} placeholder="Ex.: Pintura residencial com capricho" onChange={(e) => setHeadline(e.target.value)} /></Field>
       <Field label="Sobre você (opcional)"><TextArea value={about} placeholder="Ex.: 10 anos de experiência. Atendo São Paulo e região." onChange={(e) => setAbout(e.target.value)} /></Field>
       <div className="flex items-center justify-between gap-3"><span>Mostrar os serviços que você faz</span><Chip active={showServices} onClick={() => setShowServices(!showServices)}>{showServices ? "Sim" : "Não"}</Chip></div>
-      <Button disabled={busy || !loaded || !validSlug} onClick={() => void save()}>{busy ? "Salvando…" : on ? "Atualizar página" : "Ativar página"}</Button>
+      <Button icon={Check} disabled={busy || !loaded || !validSlug} onClick={() => void save()}>{busy ? "Salvando…" : on ? "Atualizar página" : "Ativar página"}</Button>
       {on ? (
         <div className="flex flex-col gap-2">
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" icon={Copy} onClick={() => void copy()}>{copied ? "Copiado!" : "Copiar link"}</Button>
             <Button variant="ghost" icon={Share2} onClick={() => void share()}>Divulgar</Button>
           </div>
-          <LinkButton href="/pedidos" variant="ghost">Ver pedidos recebidos</LinkButton>
-          <Button variant="danger" disabled={busy} onClick={() => void off()}>Desativar página</Button>
+          <LinkButton href="/pedidos" variant="ghost" size="sm" icon={Inbox}>Ver pedidos recebidos</LinkButton>
+          <Button variant="danger" size="sm" icon={Power} disabled={busy} onClick={() => void off()}>Desativar página</Button>
         </div>
       ) : null}
       {msg ? <p role="status" className="text-base text-support">{msg}</p> : null}

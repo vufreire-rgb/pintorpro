@@ -49,7 +49,8 @@ export function BottomNav() {
 }
 
 type Variant = "primary" | "ghost" | "danger" | "success" | "danger-solid";
-type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; icon?: LucideIcon };
+type Size = "md" | "sm";
+type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; icon?: LucideIcon; size?: Size };
 /** primary/success = a ação principal da tela (verde, só uma por tela). ghost = secundário. danger = só texto vermelho ("Apagar"). */
 const VARIANT: Record<Variant, string> = {
   primary: "min-h-16 bg-accent-dark text-xl font-bold uppercase tracking-[0.02em] text-white active:bg-accent-dark/90",
@@ -63,19 +64,22 @@ const BASE = "inline-flex w-full items-center justify-center gap-2.5 rounded-2xl
 /** Classe de botão para links <a> externos. */
 export const buttonCls = (variant: Variant = "ghost", extra = ""): string => `${BASE} ${VARIANT[variant]} ${extra}`;
 
-export function Button({ variant = "primary", className = "", icon: Icon, children, ...p }: BtnProps) {
+/** Botão menor (secundário, em linha): altura 48px (ainda confortável para o dedo), texto e ícone menores. */
+const SMALL = "!min-h-12 !gap-2 !px-4 !text-base";
+
+export function Button({ variant = "primary", className = "", icon: Icon, size = "md", children, ...p }: BtnProps) {
   return (
-    <button {...p} className={`${BASE} ${VARIANT[variant]} ${className}`}>
-      {Icon ? <Icon size={24} strokeWidth={2.2} aria-hidden className="shrink-0" /> : null}
+    <button {...p} className={`${BASE} ${VARIANT[variant]} ${size === "sm" ? SMALL : ""} ${className}`}>
+      {Icon ? <Icon size={size === "sm" ? 20 : 24} strokeWidth={2.2} aria-hidden className="shrink-0" /> : null}
       {children}
     </button>
   );
 }
 
-export function LinkButton({ href, children, variant = "primary", className = "", icon: Icon }: { href: string; children: React.ReactNode; variant?: Variant; className?: string; icon?: LucideIcon }) {
+export function LinkButton({ href, children, variant = "primary", className = "", icon: Icon, size = "md", "aria-label": ariaLabel }: { href: string; children: React.ReactNode; variant?: Variant; className?: string; icon?: LucideIcon; size?: Size; "aria-label"?: string }) {
   return (
-    <Link href={href} className={`${BASE} ${VARIANT[variant]} ${className}`}>
-      {Icon ? <Icon size={24} strokeWidth={2.2} aria-hidden className="shrink-0" /> : null}
+    <Link href={href} aria-label={ariaLabel} className={`${BASE} ${VARIANT[variant]} ${size === "sm" ? SMALL : ""} ${className}`}>
+      {Icon ? <Icon size={size === "sm" ? 20 : 24} strokeWidth={2.2} aria-hidden className="shrink-0" /> : null}
       {children}
     </Link>
   );

@@ -3,14 +3,13 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InstallBanner } from "@/components/InstallBanner";
-import { AutoTour, type TourStep } from "@/components/Tour";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
 import { BrandHeader } from "@/components/BrandHeader";
 import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { SwipeRow } from "@/components/SwipeRow";
 import { CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
-import { createExampleVisit, deleteVisit, startVisit } from "@/modules/visits";
+import { deleteVisit, startVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
 import { countByFilter, filterVisits, firstFilledFilter, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
@@ -52,11 +51,6 @@ export default function Visitas() {
   const touchX = useRef<number | null>(null);
   const [askDelete, setAskDelete] = useState<{ id: string; name: string; scheduled: boolean } | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
-  const steps: TourStep[] = [
-    { target: "gravar", title: "Nova visita", text: "Toque em Nova visita e escolha: Começar agora abre a visita com fotos, medidas e áudio. Agendar marca uma visita para outro dia. Dá para colocá-la na agenda do celular, que avisa na hora." },
-    { target: "abas", title: "Suas visitas em 3 abas", text: "Agendadas, Sem orçamento e Orçamento feito. Toque numa aba ou deslize para os lados." },
-    { target: "lista", title: "Vamos treinar", text: "Cada visita aparece aqui. Vou abrir uma visita de exemplo para você treinar, e depois você apaga.", button: "Abrir visita de exemplo" },
-  ];
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
@@ -74,7 +68,7 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
-      <div data-tour="gravar" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         <Button icon={Plus} aria-expanded={choosing} onClick={() => setChoosing((o) => !o)}>Nova visita</Button>
         {choosing ? (
           <div className="grid grid-cols-2 gap-3">
@@ -84,7 +78,7 @@ export default function Visitas() {
         ) : null}
       </div>
       <FirstSteps db={db} />
-      <div data-tour="abas" role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -97,7 +91,7 @@ export default function Visitas() {
           </button>
         ))}
       </div>
-      <div data-tour="lista" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
       {list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
       {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque em Nova visita para começar: ela já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
@@ -162,7 +156,6 @@ export default function Visitas() {
         onCancel={() => setAskDelete(null)}
       />
       </div>
-      <AutoTour id="visitas" steps={steps} onFinish={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)} />
     </Screen>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { CalendarPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Card, Chip, Field, Loading, Screen, TextInput } from "@/components/ui";
@@ -43,7 +44,7 @@ export default function AgendarVisita() {
       ) : null}
       <Field label="Endereço da visita"><TextInput value={f.address || chosen?.address || ""} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
       <Field label="Anotação (opcional)"><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex.: portão azul, tocar interfone 32" /></Field>
-      <Button disabled={!ok} onClick={() => router.push(`/visitas/${createScheduledVisit(db, { clientId, ...f, address: f.address || chosen?.address || "", scheduledAt: fromLocalInput(when), notes })}`)}>Agendar</Button>
+      <Button icon={CalendarPlus} disabled={!ok} onClick={() => router.push(`/visitas/${createScheduledVisit(db, { clientId, ...f, address: f.address || chosen?.address || "", scheduledAt: fromLocalInput(when), notes })}`)}>Agendar</Button>
     </Screen>
   );
 }

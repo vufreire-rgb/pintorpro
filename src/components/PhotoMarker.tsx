@@ -4,7 +4,7 @@ import { drawMarks, isTooShort, MARK_COLORS, markAt, moveMark } from "@/modules/
 import { useFileUrl } from "@/modules/photos";
 import { shareMarkedPhoto } from "@/modules/share";
 import type { PhotoMark } from "@/modules/types";
-import { Maximize2, MousePointer2, MoveUpRight, Pencil, Plus, Minus, Ruler, Send, Trash2, Type, Undo2, X, type LucideIcon } from "lucide-react";
+import { Maximize2, MousePointer2, MoveUpRight, Pencil, Plus, Minus, Ruler, Send, Trash2, Type, Undo2, X, type LucideIcon, Check } from "lucide-react";
 import { Button, Chip } from "./ui";
 
 type Tool = "move" | "text" | "arrow" | "dim";
@@ -292,9 +292,9 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
         </div>
         {msg ? <p className="text-base text-support">{msg}</p> : null}
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="ghost" className="!px-2 !text-lg" onClick={onClose}>Cancelar</Button>
+          <Button variant="ghost" icon={X} className="!px-2 !text-lg" onClick={onClose}>Cancelar</Button>
           <Button variant="ghost" icon={Send} className="!gap-1 !px-2 !text-lg" disabled={busy || marks.length === 0} onClick={send}>{busy ? "…" : "Enviar"}</Button>
-          <Button className="!px-2 !text-lg" onClick={() => onSave(marks)}>Salvar</Button>
+          <Button icon={Check} className="!px-2 !text-lg" onClick={() => onSave(marks)}>Salvar</Button>
         </div>
       </div>
     </div>

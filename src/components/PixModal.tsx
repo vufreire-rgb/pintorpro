@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { qrDataUrl } from "@/modules/qr";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, X } from "lucide-react";
 import { Button } from "./ui";
 
 /** Mostra o QR Code do Pix (para o cliente escanear na hora) e o "copia e cola". */
@@ -34,7 +34,7 @@ export function PixModal({ code, title, amount, onClose }: { code: string; title
         </div>
         <p className="break-all rounded-xl bg-slate-50 p-3 text-base text-support" data-testid="pix-code">{code}</p>
         <Button icon={copied ? Check : Copy} onClick={copy}>{copied ? "Copiado" : "Copiar Pix copia e cola"}</Button>
-        <Button variant="ghost" onClick={onClose}>Fechar</Button>
+        <Button variant="ghost" size="sm" icon={X} onClick={onClose}>Fechar</Button>
       </div>
     </div>
   );

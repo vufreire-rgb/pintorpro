@@ -5,7 +5,7 @@ import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Copy, FileText, Link2, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { Bell, Copy, FileText, Hammer, Link2, Link2Off, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { enablePush, usePushState } from "@/modules/push";
 import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
@@ -63,10 +63,10 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
               <div className="flex flex-col gap-2 rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base" data-testid="link-status">
                 <div className="font-semibold">{viewedLabel(links[q.id])}</div>
                 {linkIsStale(q, links[q.id]) ? <div className="text-[#8A4B00]">Você editou o orçamento. Toque em &quot;Enviar o link de novo&quot; para o cliente ver a versão nova.</div> : null}
-                {push.state === "off" ? <Button variant="ghost" onClick={() => void enablePush().then(push.reload)}>Avisar no celular quando o cliente abrir</Button> : null}
+                {push.state === "off" ? <Button variant="ghost" size="sm" icon={Bell} onClick={() => void enablePush().then(push.reload)}>Avisar no celular quando o cliente abrir</Button> : null}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="ghost" onClick={() => { void navigator.clipboard?.writeText(linkUrl(links[q.id]!.token)); setLinkMsg(""); }}>Copiar link</Button>
-                  <Button variant="danger" onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button>
+                  <Button variant="ghost" size="sm" icon={Copy} onClick={() => { void navigator.clipboard?.writeText(linkUrl(links[q.id]!.token)); setLinkMsg(""); }}>Copiar link</Button>
+                  <Button variant="danger" size="sm" icon={Link2Off} onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button>
                 </div>
               </div>
             ) : null}
@@ -78,16 +78,21 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         {q.status === "open" ? (
           <>
             <CardTitle>O cliente respondeu?</CardTitle>
-            <Button icon={PartyPopper} onClick={() => { setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechou! Criar a obra</Button>
-            <Button variant="ghost" icon={X} onClick={() => setAskLose(true)}>Perdeu</Button>
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Button icon={PartyPopper} aria-label="Fechou! Criar a obra" onClick={() => { setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechou!</Button>
+              <Button variant="ghost" icon={X} className="!min-h-16" onClick={() => setAskLose(true)}>Perdeu</Button>
+            </div>
+            <p className="text-base text-support">Ao fechar, a obra é criada na aba Obras.</p>
           </>
         ) : q.status === "won" ? (
           <>
             <CardTitle>Fechado</CardTitle>
-            <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton>
+            <LinkButton href="/obras" variant="ghost" icon={Hammer}>Ver obra criada</LinkButton>
             <p className="text-base text-support">Fechou por engano? Volte para aberto ou marque como perdido.{quoteWorkHasData(db, q.id) ? " A obra já tem dados lançados e continua em Obras." : ""}</p>
-            <Button variant="ghost" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Voltar para aberto</Button>
-            <Button variant="ghost" icon={X} onClick={() => setAskLose(true)}>Perdeu</Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="ghost" size="sm" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Voltar para aberto</Button>
+              <Button variant="ghost" size="sm" icon={X} onClick={() => setAskLose(true)}>Perdeu</Button>
+            </div>
           </>
         ) : (
           <>
@@ -127,11 +132,12 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
       <Card className="flex flex-col gap-3">
         <CardTitle>Mais opções</CardTitle>
         {q.status === "won" ? (
-          <p className="text-base text-support">Orçamento fechado não pode ser editado. Para alterar, marque como <b>Aberto</b> antes.</p>
-        ) : (
-          <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost" icon={Pencil}>Editar orçamento</LinkButton>
-        )}
-        <Button variant="ghost" icon={Copy} onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar orçamento</Button>
+          <p className="text-base text-support">Orçamento fechado não pode ser editado. Para alterar, volte para aberto antes.</p>
+        ) : null}
+        <div className="grid grid-cols-2 gap-2">
+          {q.status === "won" ? null : <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost" size="sm" icon={Pencil} aria-label="Editar orçamento">Editar</LinkButton>}
+          <Button variant="ghost" size="sm" icon={Copy} className={q.status === "won" ? "col-span-2" : ""} aria-label="Duplicar orçamento" onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar</Button>
+        </div>
         <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
       </Card>
       <ConfirmDialog

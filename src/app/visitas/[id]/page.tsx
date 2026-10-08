@@ -7,9 +7,8 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
-import { AutoTour, type TourStep } from "@/components/Tour";
 import { Button, buttonCls, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, Screen, TextArea, TextArea2, TextInput } from "@/components/ui";
-import { AlarmClock, CalendarDays, CalendarPlus, Camera, Check, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
+import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Plus, Ruler, Trash2, User, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
@@ -49,13 +48,6 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const state = visitState(v);
   const rooms = v.rooms ?? [];
   const simple = isSimpleMode(db.company);
-  const steps: TourStep[] = ([
-    { target: "cliente", title: "Cliente e endereço", text: "Aqui ficam o cliente e o endereço da obra. Já deixei um cliente de exemplo. Num cliente de verdade, toque em Usar minha localização para preencher o endereço." },
-    { target: "fotos", title: "Fotos da obra", text: "Tire várias fotos. Depois toque no lápis para marcar setas e textos, e em + PDF para a foto aparecer no orçamento." },
-    { target: "medidas", title: "Medidas por parede", text: "Toque em Anotar as medidas, escreva a largura e a altura da Parede 1 e use + Parede para as outras. Escolha o tipo de pintura de cada uma e salve.", done: rooms.length > 0 },
-    { target: "observacoes", title: "Observações", text: "Escreva o que o cliente pediu e os problemas que viu, como mofo ou trincas. Isso fica guardado com a visita." },
-    { target: "orcar", title: "Montar o orçamento", text: simple ? "Quando terminar, toque aqui para fechar o preço com o cliente. Vou te mostrar o orçamento agora." : "Quando terminar, toque aqui. As medidas que você anotou já vão para o orçamento, sem digitar de novo. Vou te mostrar o orçamento agora.", button: "Ir para o orçamento" },
-  ] as TourStep[]).filter((st) => !(simple && st.target === "medidas"));
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -94,13 +86,13 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           {client?.phone ? <a className={buttonCls("ghost")} href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer"><MessageCircle size={24} strokeWidth={2.2} aria-hidden />Confirmar pelo WhatsApp</a> : null}
           <Button variant="ghost" icon={CalendarPlus} onClick={() => downloadVisitIcs(v, client)}>Adicionar à agenda do celular</Button>
           <Field label="Mudar dia e hora"><TextInput type="datetime-local" value={when || toLocalInput(v.scheduledAt)} onChange={(e) => setWhen(e.target.value)} /></Field>
-          {when ? <Button variant="ghost" onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
+          {when ? <Button variant="ghost" icon={Check} onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
         </Card>
       ) : (
         <div className="text-base text-support">Visita de {fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente · toque em <b>Salvar visita</b> ao terminar</div>
       )}
 
-      <div data-tour="cliente">
+      <div>
       <Card className="flex flex-col gap-3">
         {client && !changing ? (
           <>
@@ -120,7 +112,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               <div className="flex flex-wrap gap-2">
                 {db.clients.map((c) => <Chip key={c.id} active={v.clientId === c.id} onClick={() => { setVisitClient(v.id, c.id); setChanging(false); }}>{c.name}</Chip>)}
               </div>
-              <Button variant="ghost" onClick={() => setChanging(false)}>Cancelar</Button>
+              <Button variant="ghost" size="sm" icon={X} onClick={() => setChanging(false)}>Cancelar</Button>
             </>
           ) : <p className="flex items-start gap-2 text-lg text-support"><User size={24} strokeWidth={2.2} aria-hidden className="mt-0.5 shrink-0" />O nome e o telefone do cliente você coloca na hora de salvar a visita.</p>
         )}
@@ -134,7 +126,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
 
       <Card><AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} /></Card>
 
-      <div data-tour="fotos">
+      <div>
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Camera}>Fotos ({v.photoIds.length})</CardTitle>
         <PhotoGrid
@@ -164,7 +156,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       </Card>
       </div>
 
-      {simple ? null : <div data-tour="medidas">
+      {simple ? null : <div>
       <Card className="flex flex-col gap-3">
         <CardTitle icon={Ruler}>Medidas ({rooms.length})</CardTitle>
         {rooms.length === 0 ? <p className="text-base text-support">Anote aqui os ambientes e as medidas. Eles já viram o orçamento, sem digitar de novo.</p> : null}
@@ -186,20 +178,23 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             onCancel={() => setEditing(null)}
           />
         ) : (
-          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }}>{rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}</Button>
+          <Button variant="ghost" icon={rooms.length ? Plus : Ruler} onClick={() => { const b = blankRoom(rooms.length + 1); setDraft({ name: b.name, surfaces: b.surfaces!, doors: b.doors, windows: b.windows }); setEditing("novo"); }} aria-label={rooms.length ? "Anotar outro ambiente" : "Anotar as medidas de um ambiente"}>{rooms.length ? "Anotar outro ambiente" : "Anotar medidas"}</Button>
         )}
       </Card>
       </div>}
 
-      <div data-tour="observacoes">
+      <div>
       <Field label="Observações" hint="O que o cliente pediu, problemas que viu…">
         <TextArea value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </Field>
       </div>
 
-      <LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant={simple ? "primary" : "ghost"}>Ditar orçamento</LinkButton>
-      <div data-tour="orcar"><LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost">{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton></div>
-      {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost">Ver orçamento feito</LinkButton> : null}
+      <div className={simple ? "flex flex-col gap-3" : "grid grid-cols-2 gap-3"}>
+        <LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant={simple ? "primary" : "ghost"} size={simple ? "md" : "sm"} aria-label="Ditar orçamento">{simple ? "Ditar orçamento" : "Ditar"}</LinkButton>
+        {simple ? null : <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" size="sm" icon={FilePlus2} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}>{v.quoteId ? "Montar outro" : "Montar"}</LinkButton>}
+      </div>
+      {simple ? <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" size="sm" icon={FilePlus2}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton> : null}
+      {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento feito</LinkButton> : null}
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>
       <div className="h-20" aria-hidden />
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -223,8 +218,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             ) : null}
             <Field label={db.clients.length > 0 ? "Ou cadastre um novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
             <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Button disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>Salvar visita</Button>
-            <Button variant="ghost" onClick={() => setSaving(false)}>Voltar</Button>
+            <Button icon={Check} disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>Salvar visita</Button>
+            <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => setSaving(false)}>Voltar</Button>
           </div>
         </div>
       ) : null}
@@ -244,7 +239,6 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
           onClose={() => setCamera(false)}
         />
       ) : null}
-      <AutoTour id="visita" steps={steps} enabled={!!v.isExample} onFinish={() => router.push(`/orcamentos/novo?visita=${v.id}`)} />
     </Screen>
   );
 }

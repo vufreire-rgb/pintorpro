@@ -5,10 +5,8 @@ import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { SwipeRow, type SwipeAction } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
 import { CalendarDays, Check, ChartColumn, CircleCheck, Play, RotateCcw, TriangleAlert } from "lucide-react";
-import { createExampleWork, setWorkStatus, WORK_STATUS_LABEL } from "@/modules/works";
+import { setWorkStatus, WORK_STATUS_LABEL } from "@/modules/works";
 import type { Work, WorkStatus } from "@/modules/types";
-import { AutoTour, type TourStep } from "@/components/Tour";
-import { useRouter } from "next/navigation";
 import { lateCents } from "@/modules/finance";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
 import { useAppDb } from "@/modules/useApp";
@@ -35,25 +33,20 @@ function swipeFor(status: WorkStatus): [{ act: SwipeAction; to: WorkStatus } | n
 
 export default function Obras() {
   const db = useAppDb();
-  const router = useRouter();
   const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
   const move = (w: Work, to: WorkStatus, name: string) => {
     const prev = w.status;
     setWorkStatus(w.id, to);
     setUndo({ message: `${name}: ${WORK_STATUS_LABEL[to].toLowerCase()}.`, back: () => setWorkStatus(w.id, prev) });
   };
-  const steps: TourStep[] = [
-    { target: "obras-painel", title: "Resultado do mês", text: "Os valores ficam numa tela à parte, para o cliente não ver sem querer. Toque aqui para ver quanto vendeu, recebeu, gastou e o que falta receber." },
-    { target: "obras-lista", title: "Suas obras", text: "Quando você fecha um orçamento, a obra aparece aqui com o quanto falta receber. Vou abrir uma obra de exemplo para você conhecer, e depois você apaga.", button: "Abrir obra de exemplo" },
-  ];
   if (!db) return <Loading />;
   const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
   return (
     <Screen title="Obras" nav>
-      <div data-tour="obras-painel">
+      <div>
         <LinkButton href="/obras/resultado" variant="ghost" icon={ChartColumn}>Resultado do mês (valores)</LinkButton>
       </div>
-      <div data-tour="obras-lista" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
       {db.works.length === 0 ? <p className="text-lg text-support">Quando você fechar um orçamento, a obra aparece aqui.</p> : null}
       {works.length > 0 ? <p className="text-base text-support">Dica: deslize a obra para o lado para começar, concluir ou marcar pendência.</p> : null}
       {works.map((w) => {
@@ -79,7 +72,6 @@ export default function Obras() {
       })}
       {undo ? <UndoBar message={undo.message} onUndo={() => { undo.back(); setUndo(null); }} onDone={() => setUndo(null)} /> : null}
       </div>
-      <AutoTour id="obras" steps={steps} onFinish={() => router.push(`/obras/${db.works.find((x) => x.isExample)?.id ?? createExampleWork()}`)} />
     </Screen>
   );
 }
