@@ -59,6 +59,7 @@ export default function Painel() {
   const [period, setPeriod] = useState<"7d" | "mes">("7d");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [err, setErr] = useState<"forbidden" | "failed" | null>(null);
+  const [why, setWhy] = useState("");
   const [form, setForm] = useState<{ goal: number; date: string; tax: number; fixed: number; voice: number; receipt: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -69,7 +70,7 @@ export default function Painel() {
   };
   const load = useCallback(async (p: "7d" | "mes") => {
     setErr(null);
-    try { apply(await loadAdminStats(p)); } catch (e) { setErr(e instanceof Error && e.message === "forbidden" ? "forbidden" : "failed"); }
+    try { apply(await loadAdminStats(p)); } catch (e) { const m = e instanceof Error ? e.message : ""; setWhy(m); setErr(m.startsWith("forbidden") ? "forbidden" : "failed"); }
   }, []);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -78,7 +79,7 @@ export default function Painel() {
 
   if (!cloudEnabled) return <Screen title="Painel"><Card>O painel precisa da conta na nuvem do Medde.</Card></Screen>;
   if (err === "forbidden") return <Screen title="Painel"><Card className="flex flex-col gap-3"><b>Sem acesso</b><p className="text-support">Este painel é só do administrador do Medde.</p><Link href="/visitas" className="font-display font-semibold text-live">Voltar ao app</Link></Card></Screen>;
-  if (err === "failed") return <Screen title="Painel"><Card className="flex flex-col gap-3"><p>Não consegui carregar os números agora. Verifique a internet.</p><Button onClick={() => void load(period)}>Tentar de novo</Button></Card></Screen>;
+  if (err === "failed") return <Screen title="Painel"><Card className="flex flex-col gap-3"><p>Não consegui carregar os números agora. Verifique a internet.</p>{why ? <p className="break-words text-base text-support">Motivo: {why}</p> : null}<Button onClick={() => void load(period)}>Tentar de novo</Button></Card></Screen>;
   if (!stats || !form) return <Loading />;
 
   const { meta, assinantes: a, atual: c, deltas: d, dinheiro: m, funil: f } = stats;
@@ -86,7 +87,7 @@ export default function Painel() {
   const settings = (): AdminSettings => ({ goalSubscribers: Math.max(1, Math.round(form.goal)), goalDate: form.date || null, taxPct: form.tax, fixedCostCents: Math.round(form.fixed * 100), voiceCostCents: Math.round(form.voice * 100), receiptCostCents: Math.round(form.receipt * 100) });
   const save = async () => {
     setBusy(true); setSaved(false);
-    try { apply(await loadAdminStats(period, settings())); setSaved(true); } catch { setErr("failed"); } finally { setBusy(false); }
+    try { apply(await loadAdminStats(period, settings())); setSaved(true); } catch (e) { setWhy(e instanceof Error ? e.message : ""); setErr("failed"); } finally { setBusy(false); }
   };
 
   return (

@@ -57,10 +57,11 @@ export async function adminStatsOnServer(body: { period: "7d" | "mes"; settings?
   if (error) {
     const res = (error as { context?: Response }).context;
     if (res && typeof res.json === "function") {
-      const code = (await res.json().catch(() => null))?.error;
-      throw new Error(typeof code === "string" ? code : "failed");
+      const j = await res.json().catch(() => null);
+      const code = j?.error;
+      throw new Error((typeof code === "string" ? code : "failed") + (typeof j?.detail === "string" ? `: ${j.detail}` : ` (HTTP ${res.status})`));
     }
-    throw new Error("network");
+    throw new Error("network: " + (error as Error).message);
   }
   return data;
 }

@@ -74,7 +74,9 @@ Deno.serve(async (req: Request) => {
     ]);
     return reply(200, buildStats({ now: new Date(), users, subs, docs, voice, receipts, shared, settings }, kind) as unknown as Record<string, unknown>);
   } catch (e) {
-    console.error("admin-stats", e instanceof Error ? e.message : e);
-    return reply(500, { error: "failed" });
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error("admin-stats", detail);
+    // Só chega aqui quem já foi confirmado como administrador, então o motivo pode ser mostrado (ajuda a achar o problema).
+    return reply(500, { error: "failed", detail: detail.slice(0, 300) });
   }
 });
