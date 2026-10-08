@@ -44,7 +44,7 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(54321, r));
 
 const browser = await chromium.launch({ executablePath: exe, args: ["--disable-blink-features=AutomationControlled"] });
-const ctx = await browser.newContext({ ...devices["Pixel 7"] });
+const ctx = await browser.newContext({ ...devices["Pixel 7"], permissions: ["clipboard-read", "clipboard-write"] });
 await ctx.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
 const page = await ctx.newPage();
 const errors = [];
@@ -73,7 +73,7 @@ await page.getByText("Dona Maria").first().waitFor();
 
 // publica o link (sem navigator.share no navegador de teste: abre o WhatsApp em outra aba)
 await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(String(u)); return null; }; });
-await page.getByRole("button", { name: /Enviar link/ }).click();
+await page.getByRole("button", { name: "Enviar pelo WhatsApp" }).click();
 await page.waitForFunction(() => window.__opened.length > 0);
 const waUrl = decodeURIComponent((await page.evaluate(() => window.__opened[0])));
 check(waUrl.includes("wa.me") && waUrl.includes(`/o/${TOKEN}`), "WhatsApp abre com a mensagem e o link: " + waUrl.slice(0, 120));
@@ -82,6 +82,13 @@ const sent = JSON.stringify(calls.publish[0].keys);
 check(!/cost|custo|profit|lucro|photos|logo/i.test(sent), "o que vai para o link não tem custo, lucro, fotos nem logo: " + sent);
 await page.getByTestId("link-status").getByText("ainda não abriu").waitFor();
 check(true, "pintor vê: link enviado, cliente ainda não abriu");
+
+// copiar o link: ícone ao lado do botão de enviar
+check((await page.getByRole("button", { name: "Copiar link" }).count()) === 1 && (await page.getByRole("button", { name: /Ver PDF/ }).count()) === 0, "tela enxuta: ícone de copiar link e sem botão 'Ver PDF'");
+await page.getByRole("button", { name: "Copiar link" }).click();
+await page.getByText("Link copiado!").waitFor();
+check((await page.evaluate(() => navigator.clipboard.readText())).endsWith(`/o/${TOKEN}`), "copiar link coloca o endereço do orçamento na área de transferência");
+check((await page.getByRole("button", { name: /Avisar no celular quando/ }).count()) === 0, "sem botão 'avisar no celular' fixo na tela");
 
 // o cliente abre o link, sem login e num aparelho limpo
 const client = await (await browser.newContext({ ...devices["iPhone 13"] })).newPage();

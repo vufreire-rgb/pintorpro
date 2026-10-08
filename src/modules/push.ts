@@ -55,6 +55,9 @@ export async function disablePush(): Promise<void> {
 }
 
 /** Manda uma notificação de teste para os aparelhos do pintor. Devolve quantas foram enviadas. */
+/** Convite único para ligar os avisos (o Android exige um toque da pessoa): só se ainda está desligado e nunca foi perguntado. */
+export const shouldAskPush = (state: PushState | "loading", company: { pushAsked?: boolean } | null | undefined): boolean => state === "off" && !company?.pushAsked;
+
 export const testPush = (): Promise<number> => sendPushTest();
 
 export const PUSH_TEXT: Record<PushState, string> = {

@@ -5,13 +5,13 @@ import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
 import { Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Bell, Copy, FileText, Hammer, Link2, Link2Off, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { Bell, Copy, Eye, Hammer, Link2Off, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
-import { enablePush, usePushState } from "@/modules/push";
-import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
-import { isSimpleMode } from "@/modules/settings";
+import { enablePush, shouldAskPush, usePushState } from "@/modules/push";
+import { linkIsStale, publishLinkFor, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
+import { isSimpleMode, saveCompany } from "@/modules/settings";
 import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
-import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
+import { sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
 import { fmtDate, fmtNum, plural, UNIT_LABEL } from "@/shared/format";
@@ -27,6 +27,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const router = useRouter();
   const { links, reload } = useQuoteLinks();
   const [linkMsg, setLinkMsg] = useState("");
+  const [copied, setCopied] = useState(false);
   const push = usePushState();
   if (!db) return <Loading />;
   const q = db.quotes.find((x) => x.id === id);
@@ -39,6 +40,23 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
     setMsg("");
     try { await fn(); } catch { setMsg("Não foi possível gerar o PDF. Tente de novo."); } finally { setBusy(false); }
   };
+  const sendLink = () => run(async () => {
+    setLinkMsg("");
+    try { await shareLinkOnWhatsApp(db, q); reload(); } catch {
+      // sem internet para criar o link: o PDF segue por WhatsApp no lugar
+      try { await sharePdfOnWhatsApp(db, q); setLinkMsg("Não consegui criar o link (internet?). Mandei o PDF no lugar."); } catch { setLinkMsg("Não foi possível enviar agora. Tente de novo."); }
+    }
+  });
+  const copyLink = () => run(async () => {
+    setLinkMsg("");
+    try {
+      const url = await publishLinkFor(db, q);
+      reload();
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch { setLinkMsg("Não consegui copiar o link. Verifique a internet e tente de novo."); }
+  });
   return (
     <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
       {db.company && !db.company.pix?.key && !db.company.pixAsked ? <PixSetupCard company={db.company} /> : null}
@@ -52,26 +70,34 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
       </Card>
 
       <div className="flex flex-col gap-3">
-        <Button icon={Send} disabled={busy} onClick={() => run(() => sharePdfOnWhatsApp(db, q))}>{busy ? "Gerando PDF…" : "Enviar pelo WhatsApp"}</Button>
-        <Button variant="ghost" icon={FileText} disabled={busy} onClick={() => run(() => downloadPdf(db, q))}>Ver PDF</Button>
-        {msg ? <p className="text-base text-err">{msg}</p> : null}
         {cloudEnabled ? (
           <>
-            <Button variant="ghost" icon={Link2} disabled={busy} onClick={() => run(async () => { setLinkMsg(""); try { await shareLinkOnWhatsApp(db, q); reload(); } catch { setLinkMsg("Não consegui criar o link. Verifique a internet e tente de novo."); } })}>{links[q.id] ? "Enviar o link de novo" : "Enviar link (avisa quando abrir)"}</Button>
-            {linkMsg ? <p className="text-base text-err">{linkMsg}</p> : null}
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Button icon={Send} className="!px-3 !text-lg" disabled={busy} onClick={sendLink}>{busy ? "Enviando…" : "Enviar pelo WhatsApp"}</Button>
+              <Button variant="ghost" icon={Copy} aria-label="Copiar link" disabled={busy} className="!w-16 !px-0" onClick={copyLink} />
+            </div>
+            {copied ? <p role="status" className="text-base font-bold text-accent-dark">Link copiado!</p> : null}
             {links[q.id] ? (
-              <div className="flex flex-col gap-2 rounded-2xl border border-brand/25 bg-brand-soft p-3 text-base" data-testid="link-status">
-                <div className="font-semibold">{viewedLabel(links[q.id])}</div>
-                {linkIsStale(q, links[q.id]) ? <div className="text-[#8A4B00]">Você editou o orçamento. Toque em &quot;Enviar o link de novo&quot; para o cliente ver a versão nova.</div> : null}
-                {push.state === "off" ? <Button variant="ghost" size="sm" icon={Bell} onClick={() => void enablePush().then(push.reload)}>Avisar no celular quando o cliente abrir</Button> : null}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="ghost" size="sm" icon={Copy} onClick={() => { void navigator.clipboard?.writeText(linkUrl(links[q.id]!.token)); setLinkMsg(""); }}>Copiar link</Button>
-                  <Button variant="danger" size="sm" icon={Link2Off} onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button>
-                </div>
+              <div data-testid="link-status" className="flex flex-col gap-1 text-base text-support">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-brand"><Eye size={18} aria-hidden />{viewedLabel(links[q.id])}</span>
+                {linkIsStale(q, links[q.id]) ? <span className="text-[#8A4B00]">Você editou o orçamento. Ao enviar de novo, o cliente vê a versão nova.</span> : null}
               </div>
             ) : null}
+            {linkMsg ? <p className="text-base text-err">{linkMsg}</p> : null}
+            {links[q.id] && shouldAskPush(push.state, db.company) ? (
+              <Card className="flex flex-col gap-2 border-brand/25 bg-brand-soft">
+                <p className="text-base font-bold">Quer ser avisado no celular quando o cliente abrir o orçamento?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button size="sm" icon={Bell} onClick={() => void enablePush().then(() => { push.reload(); if (db.company) saveCompany({ ...db.company, pushAsked: true }); })}>Sim, avisar</Button>
+                  <Button variant="ghost" size="sm" onClick={() => db.company && saveCompany({ ...db.company, pushAsked: true })}>Agora não</Button>
+                </div>
+              </Card>
+            ) : null}
           </>
-        ) : null}
+        ) : (
+          <Button icon={Send} disabled={busy} onClick={() => run(() => sharePdfOnWhatsApp(db, q))}>{busy ? "Gerando PDF…" : "Enviar pelo WhatsApp"}</Button>
+        )}
+        {msg ? <p className="text-base text-err">{msg}</p> : null}
       </div>
 
       <Card className="flex flex-col gap-3">
@@ -138,6 +164,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
           {q.status === "won" ? null : <LinkButton href={`/orcamentos/novo?editar=${q.id}`} variant="ghost" size="sm" icon={Pencil} aria-label="Editar orçamento">Editar</LinkButton>}
           <Button variant="ghost" size="sm" icon={Copy} className={q.status === "won" ? "col-span-2" : ""} aria-label="Duplicar orçamento" onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar</Button>
         </div>
+        {cloudEnabled && links[q.id] ? <Button variant="danger" size="sm" icon={Link2Off} onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button> : null}
         <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
       </Card>
       <ConfirmDialog
