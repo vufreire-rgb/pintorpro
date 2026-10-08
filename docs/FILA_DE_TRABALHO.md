@@ -2,18 +2,27 @@
 
 Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o que mudar de lugar.
 
+## Já ligado no Supabase (2026-10-08, por rotinas do GitHub)
+- Todas as funções publicadas (`push`, `quote-link`, `public-page`, `voice-quote`, `receipt-scan` e as demais), com Verify JWT desligado.
+- SQL rodados: `0005`, `0006`, `0009` (`0007` e `0008` já estavam). Falta confirmar `0003_subscriptions.sql`.
+- Secrets no GitHub: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL`.
+
 ## Esperando você (destravam o resto)
-1. **Domínio com HTTPS:** DNS já está certo; falta a Vercel emitir o certificado (conferir em Settings → Domains; ver se há registro CAA no Hostinger se passar de 2 h).
-2. **3 secrets no GitHub** (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE`): ligam o anti-pausa e o backup do Supabase (`docs/BACKUP_E_PAUSA_SUPABASE.md`).
-3. **Supabase:** Redirect URLs (+ Site URL `https://medde.com.br` quando o HTTPS sair) e rodar `0003_subscriptions.sql` (`docs/LANCAMENTO_AUTENTICACAO.md`, `docs/ASSINATURA.md`).
-4. **Contador / CNPJ** e escolha do gateway (`docs/RESUMO_PARA_CONTADOR.pdf`).
-5. **Textos de privacidade, termos e exclusão de conta** (agente de burocracia) e e-mail de contato.
-6. **Google Play:** conta de desenvolvedor, chave de assinatura (no computador do titular), 12+ testadores para o teste fechado de 14 dias (`docs/ANDROID_BUILD.md`).
+1. **Chave da OpenAI** como secret `OPENAI_API_KEY` no GitHub, depois rodar a rotina "Supabase secrets". Liga voz e recibo.
+2. **Testar notificações** no app: Ajustes → Notificações → Ligar → Enviar teste; depois abrir um link de orçamento em outro aparelho.
+3. **Trocar token e senha do banco** (apareceram em conversa): criar novo token no Supabase e nova senha do banco, atualizando os secrets `SUPABASE_ACCESS_TOKEN` e `SUPABASE_DB_URL`.
+4. **Domínio com HTTPS:** DNS já está certo; falta a Vercel emitir o certificado (Settings → Domains; ver registro CAA no Hostinger se passar de 2 h).
+5. **Secrets do backup** (`SUPABASE_PUBLISHABLE_KEY`, `BACKUP_PASSPHRASE`; o `SUPABASE_DB_URL` já existe): ligam o anti-pausa e o backup (`docs/BACKUP_E_PAUSA_SUPABASE.md`).
+6. **Supabase:** Redirect URLs (+ Site URL `https://medde.com.br` quando o HTTPS sair) e conferir `0003_subscriptions.sql` (`docs/LANCAMENTO_AUTENTICACAO.md`, `docs/ASSINATURA.md`).
+7. **Contador / CNPJ** e escolha do gateway (`docs/RESUMO_PARA_CONTADOR.pdf`).
+8. **Textos finais de privacidade, termos e exclusão de conta** (rascunhos em `docs/rascunhos-juridicos/`, com advogado) e e-mail de contato. A política deve citar OpenAI, link do orçamento, página de pedidos e notificações.
+9. **Google Play:** conta de desenvolvedor já criada; faltam 12+ testadores, `.aab` (PWABuilder), impressão digital para `assetlinks.json` e prints reais (`docs/LOJA_PLAY_STORE.md`).
+10. **Decisões:** guias de uso (manter todos / só no primeiro uso / tirar), gravação da conversa inteira da visita (etapa 2), selo "feito com Medde" no rodapé.
 
 ## Fila do Claude (em ordem)
 | # | Item | Depende de | Estimativa |
 |---|---|---|---|
-| 1 | **Notificações do Medde** (ver abaixo) | Domínio com HTTPS e PWA estável | 2 a 3 dias |
+| 1 | **Notificações do Medde**: código pronto e funções no ar; falta teste real em Android e iPhone (ver abaixo) | Titular testar | 0,5 dia |
 | 2 | Função que recebe o aviso do gateway e atualiza a assinatura (webhook) | Escolha do gateway (CNPJ) | 1 a 2 dias |
 | 3 | `.aab` para o teste fechado do Google e `assetlinks.json` com a impressão digital | Domínio, chave de assinatura, conta Play | 0,5 a 1 dia |
 | 4 | Ligar o controle de assinatura (`NEXT_PUBLIC_BILLING_ENFORCE=1`) e, opcional, `0004_enforce_subscription.sql` | Item 2 e um link de pagamento | 0,5 dia |
@@ -64,9 +73,9 @@ Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o q
 
 
 ## Orçamento por voz — status (2026-10-07)
-Construído e testado com servidor falso; **falta ligar de verdade**: chave OpenAI → secret `OPENAI_API_KEY`, rodar `0005_voice_usage.sql`, publicar a função `voice-quote`. Passo a passo em `docs/ORCAMENTO_POR_VOZ.md`. Depois: testar com fala real de obra e ajustar o prompt/modelo.
+Construído e testado com servidor falso. `0005` e a função `voice-quote` já estão no ar; **falta só a chave OpenAI** (secret `OPENAI_API_KEY` + rotina "Supabase secrets"). Passo a passo em `docs/ORCAMENTO_POR_VOZ.md`. Depois: testar com fala real de obra e ajustar o prompt/modelo.
 
-## Novidades prontas na branch (2026-10-07), faltam só ligar no Supabase
+## Novidades (2026-10-07), ligadas no Supabase em 2026-10-08; faltam só a chave OpenAI e testes reais
 | Recurso | O que rodar/publicar | Guia |
 |---|---|---|
 | Voz (ditado) | secret `OPENAI_API_KEY`, `0005_voice_usage.sql`, função `voice-quote` | `docs/ORCAMENTO_POR_VOZ.md` |
@@ -77,7 +86,7 @@ Construído e testado com servidor falso; **falta ligar de verdade**: chave Open
 | Resultado do mês, Primeiros passos, modo simples, novo orçamento mais leve | nada (só app) | — |
 
 Todas as funções: **Verify JWT desligado**. Só voz e recibo usam a chave da OpenAI.
-Notificações push: prontas na branch, falta ligar (`docs/NOTIFICACOES.md`: `0009_push.sql`, função `push`, atualizar `quote-link` e `public-page`).
+Notificações push: `0009_push.sql` e função `push` no ar; falta testar com aparelho real (`docs/NOTIFICACOES.md`).
 
 
 ## Loja (Google Play)
