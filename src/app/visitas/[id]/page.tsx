@@ -85,7 +85,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       {state !== "done" && v.scheduledAt ? (
         <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
           <CardTitle icon={state === "late" ? AlarmClock : CalendarDays}>{state === "late" ? "Visita atrasada" : "Visita agendada"}</CardTitle>
-          <div className="font-display text-[28px] font-bold leading-[34px] text-brand">{whenLabel(v.scheduledAt)}</div>
+          <div className="font-display text-[28px] font-semibold leading-[34px] text-brand">{whenLabel(v.scheduledAt)}</div>
           <Button variant="ghost" className="!bg-white" icon={Play} onClick={() => startVisit(v.id)}>Começar a visita agora</Button>
           {client?.phone ? <a className={buttonCls("ghost", "!bg-white")} href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer"><MessageCircle size={24} strokeWidth={2.2} aria-hidden />Confirmar pelo WhatsApp</a> : null}
           <Button variant="ghost" className="!bg-white" icon={CalendarPlus} onClick={() => downloadVisitIcs(v, client)}>Adicionar à agenda do celular</Button>

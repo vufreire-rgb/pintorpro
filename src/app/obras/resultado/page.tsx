@@ -31,7 +31,7 @@ export default function ResultadoDoMes() {
 
         <Card className="text-center">
           <div className="text-base text-support">Sobrou no caixa em {monthLabel(month)}</div>
-          <div className={`font-display text-[40px] font-extrabold leading-[44px] ${r.netCents < 0 ? "text-err" : "text-brand"}`} data-testid="sobrou">{formatBRL(r.netCents)}</div>
+          <div className={`font-display text-[40px] font-semibold leading-[44px] ${r.netCents < 0 ? "text-err" : "text-brand"}`} data-testid="sobrou">{formatBRL(r.netCents)}</div>
           <div className="text-base text-support">Recebido menos gastos</div>
         </Card>
 

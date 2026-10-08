@@ -45,7 +45,7 @@ export default function Configuracoes() {
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
-      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meu negócio</h2>
+      <h2 className="mt-2 px-1 text-base font-semibold uppercase tracking-wide text-support">Meu negócio</h2>
       <SectionGroup>
       <Section title="Seu negócio" hint="Nome, WhatsApp e cidade" icon={Store}>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
@@ -117,7 +117,7 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </SectionGroup>
-      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Clientes e avisos</h2>
+      <h2 className="mt-2 px-1 text-base font-semibold uppercase tracking-wide text-support">Clientes e avisos</h2>
       <SectionGroup>
       <SectionLink href="/clientes" title="Meus clientes" hint="Lista, telefone e endereço" icon={Users} />
       {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
@@ -126,7 +126,7 @@ export default function Configuracoes() {
         <ReviewReminderForm saved={c.reviewReminder} onSave={(rr) => saveCompany({ ...c, reviewReminder: rr })} />
       </Section>
       </SectionGroup>
-      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meus orçamentos</h2>
+      <h2 className="mt-2 px-1 text-base font-semibold uppercase tracking-wide text-support">Meus orçamentos</h2>
       <SectionGroup>
       <Section title="Como você faz orçamento?" hint={simple ? "Só voz e preço fechado" : "Com cálculo: medidas e lucro"} icon={Calculator}>
         <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} hideTitle />
@@ -183,12 +183,12 @@ export default function Configuracoes() {
       </Section>
       </>}
       </SectionGroup>
-      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Conta e ajuda</h2>
+      <h2 className="mt-2 px-1 text-base font-semibold uppercase tracking-wide text-support">Conta e ajuda</h2>
       <InstallBanner always />
       {cloudEnabled && auth.status === "ready" ? <SubscriptionCard /> : null}
       {cloudEnabled && auth.status === "ready" ? (
         <Card className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold">Conta</h2>
+          <h2 className="font-display text-xl font-medium">Conta</h2>
           <p className="text-support">{auth.email}</p>
           <Button variant="ghost" disabled={leaving} onClick={async () => { setLeaving(true); if ((await prepareLogout()) === "unsent") { setLeaving(false); setAskLeave(true); } else await signOutAndWipe(); }}>{leaving ? "Saindo…" : "Sair"}</Button>
           <p className="text-base text-support">Ao sair, apagamos os dados e as fotos deste aparelho. Eles continuam guardados na sua conta.</p>

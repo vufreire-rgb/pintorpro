@@ -226,7 +226,7 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
     <div className="fixed inset-0 z-50 mx-auto flex max-w-md flex-col bg-slate-900" role="dialog" aria-modal="true" aria-label="Marcar a foto">
       <header className="flex items-start justify-between gap-3 bg-brand px-4 py-3 text-white">
         <div>
-          <div className="flex items-center gap-2 font-display text-xl font-bold"><Pencil size={22} strokeWidth={2.2} aria-hidden />Marcar a foto</div>
+          <div className="flex items-center gap-2 font-display text-xl font-semibold"><Pencil size={22} strokeWidth={2.2} aria-hidden />Marcar a foto</div>
           <div className="min-h-12 text-base text-white/85">{HINT[tool]}</div>
         </div>
         <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white/15" aria-label="Fechar sem salvar" onClick={onClose}><X size={24} strokeWidth={2.2} aria-hidden /></button>
@@ -244,7 +244,7 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
             aria-label={prompt.mark.kind === "dim" ? "Medida" : "Texto da marca"}
             className="min-h-12 min-w-0 flex-1 rounded-2xl border-2 border-field bg-white px-3 text-xl outline-none focus:border-live"
           />
-          <button className="min-h-12 rounded-2xl bg-accent-dark px-4 font-display text-lg font-bold text-white" onClick={confirmPrompt}>Incluir</button>
+          <button className="min-h-12 rounded-2xl bg-accent-dark px-4 font-display text-lg font-semibold text-white" onClick={confirmPrompt}>Incluir</button>
           <button className="grid min-h-12 w-12 place-items-center rounded-2xl bg-slate-200" aria-label="Cancelar" onClick={() => setPrompt(null)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
         </div>
       ) : null}

@@ -214,7 +214,7 @@ function OrcamentoPorVoz() {
 
             <div className="rounded-2xl border border-brand/25 bg-brand-soft p-4">
               <div className="text-base text-support">Preço para o cliente</div>
-              <div className="font-display text-[32px] font-extrabold leading-9 text-brand" data-testid="total">{quote.totalCents > 0 ? formatBRL(quote.totalCents) : "—"}</div>
+              <div className="font-display text-[32px] font-semibold leading-9 text-brand" data-testid="total">{quote.totalCents > 0 ? formatBRL(quote.totalCents) : "—"}</div>
               {!simple && quote.totalCents > 0 && !quote.priceOnly ? (
                 <p className={`mt-1 text-base font-semibold ${quote.profitCents < 0 ? "text-err" : "text-support"}`}>
                   {quote.profitCents < 0

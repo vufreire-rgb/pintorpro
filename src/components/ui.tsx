@@ -128,10 +128,10 @@ export function CardTitle({ icon: Icon, children }: { icon?: LucideIcon; childre
 export const ACTION_CLS = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-2 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70 disabled:opacity-50";
 
 /** Bloco que abre e fecha (para telas longas, como Ajustes). */
-const ROW = "flex min-h-[68px] items-center gap-3 px-4 py-2";
+const ROW = "flex min-h-[88px] items-center gap-3 px-4 py-2";
 
 function RowIcon({ icon: Icon }: { icon?: LucideIcon }) {
-  return Icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null;
+  return Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null;
 }
 
 /** Etiqueta pequena à direita da linha: mostra de relance se o recurso está ligado. */
@@ -144,22 +144,9 @@ export function SectionGroup({ children }: { children: React.ReactNode }) {
   return <div className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)] [&>*+*]:border-t [&>*+*]:border-line">{children}</div>;
 }
 
-/** Linha de ajuste que abre e fecha: ícone, título curto, uma linha de resumo, etiqueta de estado e seta. */
+/** Linha de ajuste que abre e fecha (Bloco Recolhível dentro de um SectionGroup): ícone, título curto, resumo, etiqueta de estado e seta. */
 export function Section({ title, hint, icon, badge, open = false, children }: { title: string; hint?: string; icon?: LucideIcon; badge?: { text: string; ok?: boolean }; open?: boolean; children: React.ReactNode }) {
-  return (
-    <details open={open} className="group">
-      <summary className={`${ROW} cursor-pointer list-none`}>
-        <RowIcon icon={icon} />
-        <span className="min-w-0 flex-1">
-          <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
-          {hint ? <span className="block truncate text-base leading-[22px] text-support">{hint}</span> : null}
-        </span>
-        <RowBadge badge={badge} />
-        <ChevronDown size={22} strokeWidth={2.2} aria-hidden className="shrink-0 text-support transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="flex flex-col gap-4 p-4 pt-1">{children}</div>
-    </details>
-  );
+  return <BlocoRecolhivel bare title={title} icon={icon} summary={hint} badge={badge} defaultOpen={open}>{children}</BlocoRecolhivel>;
 }
 
 /** Linha de ajuste que leva a outra tela. */
@@ -254,7 +241,7 @@ export function Stepper({ value, onChange, min = 0, max = 99 }: { value: number;
       <button type="button" aria-label="Diminuir" className="grid h-12 w-12 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => onChange(Math.max(min, value - 1))}>
         <Minus size={24} strokeWidth={2.2} aria-hidden />
       </button>
-      <span className="w-8 text-center font-display text-xl font-bold">{value}</span>
+      <span className="w-8 text-center font-display text-xl font-semibold">{value}</span>
       <button type="button" aria-label="Aumentar" className="grid h-12 w-12 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => onChange(Math.min(max, value + 1))}>
         <Plus size={24} strokeWidth={2.2} aria-hidden />
       </button>
@@ -286,8 +273,10 @@ export function ConfirmDialog({ open, title, text, confirmLabel = "Sim, apagar",
  * Começa fechado. O conteúdo fica sempre montado (só escondido), então nada que esteja dentro perde o estado.
  * Abre sozinho e não fecha enquanto `openWhen` for verdadeiro (gravando, erro de validação, item novo) ou quando algo dentro recebe foco.
  */
-export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen = false, openSignal = 0, defaultOpen = false, children }: {
+export function BlocoRecolhivel({ title, icon: Icon, summary, badge, bare = false, action, openWhen = false, openSignal = 0, defaultOpen = false, children }: {
   title: string; icon?: LucideIcon; summary?: string;
+  /** Etiqueta de estado à direita do resumo (Ajustes). */ badge?: { text: string; ok?: boolean };
+  /** Sem cartão próprio: para dentro de um SectionGroup. */ bare?: boolean;
   action?: { label: string; ariaLabel?: string; icon?: LucideIcon; onClick?: () => void; opens?: boolean; disabled?: boolean };
   openWhen?: boolean; /** Muda de valor quando algo foi adicionado: abre o bloco. */ openSignal?: number; defaultOpen?: boolean; children: React.ReactNode;
 }) {
@@ -303,7 +292,7 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen =
   }, [openSignal]);
   const shown = open || openWhen;
   return (
-    <section className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]">
+    <section className={bare ? "" : "overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]"}>
       <div className="flex min-h-[88px] items-center gap-2 px-4">
         <button type="button" aria-expanded={shown} aria-controls={bodyId} onClick={() => setOpen(!shown)} className="flex min-h-[88px] min-w-0 flex-1 items-center gap-3 text-left">
           {Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null}
@@ -312,6 +301,7 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen =
             {summary ? <span className="block truncate text-base leading-[22px] text-support">{summary}</span> : null}
           </span>
         </button>
+        <RowBadge badge={badge} />
         {action ? (
           <button type="button" aria-label={action.ariaLabel} disabled={action.disabled} onClick={() => { if (action.opens) setOpen(true); action.onClick?.(); }} className="inline-flex min-h-12 min-w-24 shrink-0 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-4 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70 disabled:opacity-50">
             {action.label}

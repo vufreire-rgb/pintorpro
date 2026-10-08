@@ -72,7 +72,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="min-w-0 flex-1">
           <div className="text-base text-support">Preço para o cliente</div>
-          <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{price > 0 ? formatBRL(Math.round(price * 100)) : "—"}</div>
+          <div className="font-display text-[28px] font-semibold leading-8 text-brand" data-testid="total">{price > 0 ? formatBRL(Math.round(price * 100)) : "—"}</div>
           {!canSave ? <div className="text-base text-support">{!hasClient ? "Falta o cliente" : "Falta o preço"}</div> : null}
         </div>
         <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} icon={Check} disabled={!canSave} onClick={save}>Salvar</Button>

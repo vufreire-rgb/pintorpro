@@ -24,8 +24,8 @@ export function PixModal({ code, title, amount, onClose }: { code: string; title
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-4 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-label="Pix">
       <div className="mx-auto flex max-h-[92dvh] w-full max-w-md flex-col gap-3 overflow-y-auto rounded-3xl bg-white p-5">
-        <h2 className="font-display text-[22px] font-bold leading-7">{title}</h2>
-        <div className="font-display text-[40px] font-extrabold leading-[44px] text-brand">{amount}</div>
+        <h2 className="font-display text-[22px] font-semibold leading-7">{title}</h2>
+        <div className="font-display text-[40px] font-semibold leading-[44px] text-brand">{amount}</div>
         <div className="grid place-items-center rounded-2xl bg-white p-2">
           {qr ? (
             // eslint-disable-next-line @next/next/no-img-element

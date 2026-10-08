@@ -14,7 +14,7 @@ export function BlockedScreen() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 p-6" data-testid="blocked-screen">
       <p className="text-base text-support">{APP_NAME}</p>
-      <h1 className="font-display text-[28px] font-bold leading-9">{m?.title ?? "Acesso bloqueado"}</h1>
+      <h1 className="font-display text-[28px] font-semibold leading-9">{m?.title ?? "Acesso bloqueado"}</h1>
       <p className="text-lg">{m?.text} Seus dados continuam guardados na sua conta.</p>
       {CHECKOUT_URL ? (
         <LinkButton href={CHECKOUT_URL}>Assinar por {PRICE_LABEL}</LinkButton>
