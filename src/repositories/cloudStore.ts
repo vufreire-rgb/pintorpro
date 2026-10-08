@@ -51,6 +51,20 @@ export async function deleteAccountOnServer(): Promise<void> {
   if (error) throw error;
 }
 
+/** Painel do administrador (Edge Function admin-stats). Falha com "forbidden" para quem não é o administrador, ou "network". */
+export async function adminStatsOnServer(body: { period: "7d" | "mes"; settings?: unknown }): Promise<unknown> {
+  const { data, error } = await c().functions.invoke("admin-stats", { method: "POST", body });
+  if (error) {
+    const res = (error as { context?: Response }).context;
+    if (res && typeof res.json === "function") {
+      const code = (await res.json().catch(() => null))?.error;
+      throw new Error(typeof code === "string" ? code : "failed");
+    }
+    throw new Error("network");
+  }
+  return data;
+}
+
 /** Chama uma função de IA do servidor mandando um arquivo. Falha com o código do erro: "daily_limit", "too_big", "ai_failed", "network"… */
 async function invokeAi(fn: string, field: string, blob: Blob, filename: string): Promise<unknown> {
   const body = new FormData();
