@@ -66,12 +66,12 @@ sub = trial(-1 * DAY);
 await page.goto(base + "/visitas");
 await page.getByText("Seu teste grátis terminou").waitFor();
 check(await visible(page.getByText(/bloqueado em 2 dias/)), "venceu há 1 dia: avisa que bloqueia em 2 dias e o app ainda funciona");
-check(await visible(page.getByRole("button", { name: /gravar visita/i })), "durante os 3 dias de aviso o app continua usável");
+check(await visible(page.getByRole("button", { name: /nova visita/i })), "durante os 3 dias de aviso o app continua usável");
 
 sub = trial(-4 * DAY);
 await page.goto(base + "/visitas");
 await page.getByTestId("blocked-screen").waitFor();
-check(!(await visible(page.getByRole("button", { name: /gravar visita/i }))), "passou dos 3 dias: o app NÃO abre");
+check(!(await visible(page.getByRole("button", { name: /nova visita/i }))), "passou dos 3 dias: o app NÃO abre");
 check(await page.getByRole("link", { name: /Assinar por R\$ 29,90 por mês/ }).getAttribute("href") === "https://pagar.exemplo/medde", "tela de bloqueio tem o botão de assinar");
 const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Baixar meus dados" }).click()]);
 check(/^medde-meus-dados-\d{4}-\d{2}-\d{2}\.json$/.test(dl.suggestedFilename()), "bloqueado ainda consegue baixar os próprios dados");
@@ -88,7 +88,7 @@ subFails = false;
 
 sub = { status: "active", trial_ends_at: iso(-60 * DAY), current_period_end: iso(30 * DAY) };
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 check(!(await visible(page.getByTestId("billing-banner"))), "assinatura em dia: acesso liberado e sem aviso");
 
 sub = { status: "active", trial_ends_at: iso(-60 * DAY), current_period_end: iso(-1 * DAY) };

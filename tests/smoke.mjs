@@ -21,10 +21,11 @@ await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next()
 await page.waitForURL(base + "/visitas");
 await shot("01-primeiro-acesso");
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 await shot("02-painel");
 
-await page.getByRole("button", { name: /gravar visita/i }).click();                       // um toque: a visita já existe, sem cliente
+await page.getByRole("button", { name: /nova visita/i }).click();
+await page.getByRole("button", { name: "Começar agora" }).click();                       // um toque: a visita já existe, sem cliente
 await page.getByText("Fotos (0)").waitFor();
 await page.getByText("Endereço da obra").locator("..").locator("input, textarea").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)

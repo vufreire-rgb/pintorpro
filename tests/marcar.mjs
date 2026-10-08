@@ -20,7 +20,8 @@ await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) loc
 const marks = () => page.evaluate(() => { const v = JSON.parse(localStorage.getItem("pintorpro:v1")).visits[0]; return Object.values(v.photoMeta ?? {}).flatMap((m) => m.marks ?? []); });
 
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).click();
+await page.getByRole("button", { name: /nova visita/i }).click();
+await page.getByRole("button", { name: "Começar agora" }).click();
 await page.getByText("Fotos (0)").waitFor();
 await page.getByTestId("photo-input").setInputFiles("tests/foto-teste.png");
 await page.getByText("Fotos (1)").waitFor();

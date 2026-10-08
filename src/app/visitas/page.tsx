@@ -7,9 +7,9 @@ import { AutoTour, type TourStep } from "@/components/Tour";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
 import { BrandHeader } from "@/components/BrandHeader";
-import { Badge, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { SwipeRow } from "@/components/SwipeRow";
-import { CalendarDays, ClipboardList, FilePlus2, FileText, Play, Trash2 } from "lucide-react";
+import { CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
 import { createExampleVisit, deleteVisit, startVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
@@ -48,11 +48,12 @@ export default function Visitas() {
   const [picked, setPicked] = useState<VisitFilter | null>(null);
   const filter: VisitFilter = picked ?? (db ? firstFilledFilter(db.visits) : "scheduled");
   const router = useRouter();
+  const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
   const [askDelete, setAskDelete] = useState<{ id: string; name: string; scheduled: boolean } | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
   const steps: TourStep[] = [
-    { target: "gravar", title: "Gravar ou agendar", text: "Gravar visita começa uma visita agora, com fotos, medidas e áudio. Agendar marca uma visita para outro dia. Dá para colocá-la na agenda do celular, que avisa na hora." },
+    { target: "gravar", title: "Nova visita", text: "Toque em Nova visita e escolha: Começar agora abre a visita com fotos, medidas e áudio. Agendar marca uma visita para outro dia. Dá para colocá-la na agenda do celular, que avisa na hora." },
     { target: "abas", title: "Suas visitas em 3 abas", text: "Agendadas, Sem orçamento e Orçamento feito. Toque numa aba ou deslize para os lados." },
     { target: "lista", title: "Vamos treinar", text: "Cada visita aparece aqui. Vou abrir uma visita de exemplo para você treinar, e depois você apaga.", button: "Abrir visita de exemplo" },
   ];
@@ -73,9 +74,14 @@ export default function Visitas() {
         }}
       >
       <BrandHeader />
-      <div data-tour="gravar" className="grid grid-cols-2 gap-3">
-        <QuickVisitButton label="Gravar visita" className="!px-3 !text-lg" />
-        <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
+      <div data-tour="gravar" className="flex flex-col gap-3">
+        <Button icon={Plus} aria-expanded={choosing} onClick={() => setChoosing((o) => !o)}>Nova visita</Button>
+        {choosing ? (
+          <div className="grid grid-cols-2 gap-3">
+            <QuickVisitButton label="Começar agora" variant="ghost" className="!px-3 !text-lg" />
+            <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
+          </div>
+        ) : null}
       </div>
       <FirstSteps db={db} />
       <div data-tour="abas" role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
@@ -93,7 +99,7 @@ export default function Visitas() {
       </div>
       <div data-tour="lista" className="flex flex-col gap-4">
       {list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
-      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque no botão verde para começar: ele já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
+      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque em Nova visita para começar: ela já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);

@@ -24,20 +24,20 @@ const db = {
 };
 await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 const active = await page.evaluate(async () => { const r = await navigator.serviceWorker.ready; return !!r.active; });
 check(active, "service worker ativo");
 await page.reload();                    // garante que os arquivos foram guardados
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 await page.goto(base + "/orcamentos");  // visita outra tela para guardá-la também
 await page.getByText("Orçamentos").first().waitFor();
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 
 // 3) sem internet
 await ctx.setOffline(true);
 await page.reload();
-check(await page.getByRole("button", { name: /gravar visita/i }).isVisible(), "Visitas abre SEM internet");
+check(await page.getByRole("button", { name: /nova visita/i }).isVisible(), "Visitas abre SEM internet");
 await page.goto(base + "/orcamentos").catch(() => {});
 check(await page.getByText("Orçamentos").first().isVisible().catch(() => false), "tela já visitada abre SEM internet");
 // Tela nunca aberta + sem internet: verificado manualmente com o servidor desligado (o modo offline simulado do Playwright
@@ -46,7 +46,7 @@ await ctx.setOffline(false);
 
 // 4) banner de instalação
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /gravar visita/i }).waitFor();
+await page.getByRole("button", { name: /nova visita/i }).waitFor();
 check(await page.getByText("Instale o Medde no celular").isVisible(), "aviso de instalação aparece em Visitas");
 await page.screenshot({ path: `${process.env.OUT ?? "/tmp"}/pwa-visitas.png` });
 await page.getByRole("button", { name: "Agora não" }).click();
