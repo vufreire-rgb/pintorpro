@@ -3,8 +3,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
-import { Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
-import { Eye, EyeOff, Ruler, Settings, X, Plus, Check } from "lucide-react";
+import { BlocoRecolhivel, Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
+import { Eye, EyeOff, Home, Settings, X, Plus, Check } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { PriceCheck } from "@/components/PriceCheck";
 import { ServicePicker } from "@/components/ServicePicker";
@@ -140,7 +140,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
           {chosenClient ? (
             <div className="flex items-start justify-between gap-2">
               <div><div className="text-lg font-semibold">{chosenClient.name}</div>{chosenClient.phone ? <div className="text-support">{chosenClient.phone}</div> : null}</div>
-              {!quote ? <button className="min-h-10 px-2 text-brand underline" onClick={() => setClientId("")}>Trocar</button> : null}
+              {!quote ? <button className="min-h-12 px-2 font-display text-lg font-semibold text-live" onClick={() => setClientId("")}>Trocar</button> : null}
             </div>
           ) : (
             <>
@@ -154,21 +154,25 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         </div>
 
         <div className="flex flex-col gap-4">
-        <h2 className="font-display text-[22px] font-bold leading-7">Ambientes e serviços</h2>
+        <h2 className="font-display text-xl font-medium leading-[26px]">Ambientes e serviços</h2>
         {rooms.map((r, i) => {
           const m = result?.measures[i];
           return (
-            <Card key={r.id} className="flex flex-col gap-3">
+            <BlocoRecolhivel
+              key={r.id}
+              title={r.name}
+              icon={Home}
+              summary={`${m ? `${(m.wallsNetM2 + m.ceilingM2 + m.floorM2).toLocaleString("pt-BR", { maximumFractionDigits: 2 })} m²` : "— m²"} · ${plural(r.services.length, "serviço", "serviços")}`}
+              openWhen={editingId === r.id}
+              action={editingId === r.id ? undefined : { label: "Editar medidas", opens: true, onClick: () => openEdit(r) }}
+            >
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <b className="text-lg">{r.name}</b>
-                  <div className="text-base text-support">{r.surfaces?.length ? surfacesSummary(r.surfaces, openingCount(r, "door"), openingCount(r, "window")) : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m, altura ${fmtNum(r.heightM)} m${m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}`}</div>
-                </div>
-                <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}><X size={20} strokeWidth={2.4} aria-hidden /></button>
+                <div className="text-base text-support">{r.surfaces?.length ? surfacesSummary(r.surfaces, openingCount(r, "door"), openingCount(r, "window")) : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m, altura ${fmtNum(r.heightM)} m${m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}`}</div>
+                <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}><X size={20} strokeWidth={2.4} aria-hidden /></button>
               </div>
               {editingId === r.id ? (
                 <RoomEditor title="Medidas do ambiente" draft={draft} onChange={setDraft} onSave={saveEdit} onCancel={() => setEditingId(null)} saveLabel="Salvar medidas" />
-              ) : <Button variant="ghost" icon={Ruler} onClick={() => openEdit(r)}>Editar medidas</Button>}
+              ) : null}
               <ServicePicker services={db.services.filter((sv) => enabled.includes(sv.id))} selected={r.services.map((x) => x.serviceId)} onToggle={(id) => toggleService(r.id, id)} />
               {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
                 <details>
@@ -191,7 +195,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
                   </div>
                 </details>
               ) : null}
-            </Card>
+            </BlocoRecolhivel>
           );
         })}
         </div>
@@ -205,9 +209,8 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         )}
         <PriceCheck services={demoServices} />
 
-        <details className="rounded-2xl border border-slate-200 p-3">
-          <summary className="flex cursor-pointer items-center gap-2 font-display text-lg font-bold"><Settings size={24} strokeWidth={2.2} aria-hidden className="text-brand" />Ajustes do orçamento (opcional)</summary>
-          <div className="mt-3 flex flex-col gap-4">
+        <BlocoRecolhivel title="Ajustes do orçamento (opcional)" icon={Settings}>
+          <div className="flex flex-col gap-4">
             {result && result.materialLines.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <b>Materiais</b>
@@ -249,11 +252,11 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               {paymentLink.trim() ? <Field label="Entrada (% do valor total)"><NumberInput value={depositPct} onChange={(n) => setDepositPct(Math.min(100, Math.max(1, n || 50)))} /></Field> : null}
             </div>
           </div>
-        </details>
+        </BlocoRecolhivel>
 
         {notes2.length > 0 ? (
-          <details className="rounded-2xl border border-slate-300 bg-slate-50 p-3 text-base text-ink">
-            <summary className="cursor-pointer font-semibold">Avisos ({notes2.length})</summary>
+          <details className="rounded-[20px] border border-line bg-white p-4 text-base text-ink">
+            <summary className="cursor-pointer font-display font-semibold">Avisos ({notes2.length})</summary>
             <ul className="mt-2 list-disc pl-5">{notes2.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
             <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>
           </details>
@@ -263,20 +266,20 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
           <>
             <div><Button variant="ghost" icon={showCost ? EyeOff : Eye} aria-expanded={showCost} onClick={() => setShowCost((o) => !o)}>{showCost ? "Esconder meu custo e lucro" : "Ver meu custo e lucro"}</Button></div>
             {showCost ? (
-              <Card className="border-amber-300 bg-amber-50">
-                <b>Só para você</b>
+              <div className="rounded-[20px] bg-[#FFF3D6] p-4 text-lg leading-[26px] text-[#8A4B00]">
+                <b className="font-display font-semibold">Só para você</b>
                 <div>Custo estimado: {formatBRL(t.costCents)}</div>
                 <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
-              </Card>
+              </div>
             ) : null}
           </>
         ) : null}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-line bg-white px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">
         <div className="min-w-0 flex-1">
           <div className="text-base text-support">Preço para o cliente</div>
-          <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
+          <div className="font-display text-[40px] font-semibold leading-[44px] text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
           <div className="text-base text-support">{canSave && result ? `Prazo: ${plural(result.schedule.workDays, "dia", "dias")} + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
         </div>
         <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} icon={Check} disabled={!canSave} onClick={save}>Salvar</Button>
