@@ -86,11 +86,11 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <Card className="flex flex-col gap-3 border-brand/30 bg-brand-soft">
           <CardTitle icon={state === "late" ? AlarmClock : CalendarDays}>{state === "late" ? "Visita atrasada" : "Visita agendada"}</CardTitle>
           <div className="font-display text-[28px] font-bold leading-[34px] text-brand">{whenLabel(v.scheduledAt)}</div>
-          <Button variant="ghost" icon={Play} onClick={() => startVisit(v.id)}>Começar a visita agora</Button>
-          {client?.phone ? <a className={buttonCls("ghost")} href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer"><MessageCircle size={24} strokeWidth={2.2} aria-hidden />Confirmar pelo WhatsApp</a> : null}
-          <Button variant="ghost" icon={CalendarPlus} onClick={() => downloadVisitIcs(v, client)}>Adicionar à agenda do celular</Button>
+          <Button variant="ghost" className="!bg-white" icon={Play} onClick={() => startVisit(v.id)}>Começar a visita agora</Button>
+          {client?.phone ? <a className={buttonCls("ghost", "!bg-white")} href={waUrl(client.phone, confirmationText(v, client, db.company))} target="_blank" rel="noreferrer"><MessageCircle size={24} strokeWidth={2.2} aria-hidden />Confirmar pelo WhatsApp</a> : null}
+          <Button variant="ghost" className="!bg-white" icon={CalendarPlus} onClick={() => downloadVisitIcs(v, client)}>Adicionar à agenda do celular</Button>
           <Field label="Mudar dia e hora"><TextInput type="datetime-local" value={when || toLocalInput(v.scheduledAt)} onChange={(e) => setWhen(e.target.value)} /></Field>
-          {when ? <Button variant="ghost" icon={Check} onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
+          {when ? <Button variant="ghost" className="!bg-white" icon={Check} onClick={() => { rescheduleVisit(v.id, fromLocalInput(when)); setWhen(""); }}>Salvar novo horário</Button> : null}
         </Card>
       ) : (
         <div className="text-base leading-[22px] text-support">{fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente</div>

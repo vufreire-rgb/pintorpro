@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
-import { Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Bell, Copy, Eye, Hammer, Link2Off, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { BlocoRecolhivel, Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Bell, Copy, Eye, Hammer, Link2Off, ListChecks, MoreHorizontal, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { enablePush, shouldAskPush, usePushState } from "@/modules/push";
 import { linkIsStale, publishLinkFor, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
@@ -61,9 +61,9 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
     <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
       {db.company && !db.company.pix?.key && !db.company.pixAsked ? <PixSetupCard company={db.company} /> : null}
       <Card>
-        <div className="flex items-start justify-between gap-2"><div className="font-display text-[22px] font-bold leading-7">{client?.name}</div><Badge tone={q.status === "won" ? "ok" : q.status === "lost" ? "lost" : "open"}>{q.status === "won" ? "Fechado" : q.status === "lost" ? "Perdido" : "Aberto"}</Badge></div>
+        <div className="flex items-start justify-between gap-2"><div className="text-lg font-bold">{client?.name}</div><Badge tone={q.status === "won" ? "ok" : q.status === "lost" ? "lost" : "open"}>{q.status === "won" ? "Fechado" : q.status === "lost" ? "Perdido" : "Aberto"}</Badge></div>
         <div className="text-lg text-support">{q.siteAddress}</div>
-        <div className="mt-2 font-display text-[40px] font-extrabold leading-[44px] text-brand">{formatBRL(t.totalCents)}</div>
+        <div className="mt-2 font-display text-[40px] font-semibold leading-[44px] text-brand">{formatBRL(t.totalCents)}</div>
         <div className="flex flex-wrap items-center gap-2 text-base text-support">
           {priceOnly ? null : <>Prazo: {plural(q.result.schedule.totalDays, "dia", "dias")} · </>}Válido até {fmtDate(q.validUntil)}{isExpired(q) ? <Badge tone="warn">Vencido</Badge> : null}
         </div>
@@ -86,10 +86,10 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
             {linkMsg ? <p className="text-base text-err">{linkMsg}</p> : null}
             {links[q.id] && shouldAskPush(push.state, db.company) ? (
               <Card className="flex flex-col gap-2 border-brand/25 bg-brand-soft">
-                <p className="text-base font-bold">Quer ser avisado no celular quando o cliente abrir o orçamento?</p>
+                <p className="text-base">Quer ser avisado no celular quando o cliente abrir o orçamento?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button size="sm" icon={Bell} onClick={() => void enablePush().then(() => { push.reload(); if (db.company) saveCompany({ ...db.company, pushAsked: true }); })}>Sim, avisar</Button>
-                  <Button variant="ghost" size="sm" onClick={() => db.company && saveCompany({ ...db.company, pushAsked: true })}>Agora não</Button>
+                  <Button variant="ghost" size="sm" className="!bg-white" onClick={() => db.company && saveCompany({ ...db.company, pushAsked: true })}>Agora não</Button>
                 </div>
               </Card>
             ) : null}
@@ -129,8 +129,8 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         )}
       </Card>
 
-      {priceOnly && isSimpleMode(db.company) ? null : <Card className="border-amber-300 bg-amber-50">
-        <div className="mb-1 font-display text-lg font-bold">Só para você (não vai no PDF)</div>
+      {priceOnly && isSimpleMode(db.company) ? null : <div className="rounded-[20px] bg-[#FFF3D6] p-4 text-lg leading-[26px] text-[#8A4B00]">
+        <div className="mb-1 font-display text-lg font-semibold">Só para você (não vai no PDF)</div>
         {priceOnly ? (
           <p>Este orçamento tem só o preço, sem medidas. Por isso o app não calcula custo, lucro nem prazo. Para ver o lucro, toque em Editar orçamento e coloque as medidas.</p>
         ) : (
@@ -139,24 +139,22 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
             <div>Lucro estimado: {formatBRL(t.profitCents)} ({fmtNum(t.profitMargin * 100, 1)}%)</div>
           </>
         )}
-      </Card>}
+      </div>}
 
-      <Card>
-        <div className="mb-2 font-display text-[22px] font-bold leading-7">Serviços</div>
+      <BlocoRecolhivel title="Serviços" icon={ListChecks} summary={plural(q.result.serviceLines.length, "serviço", "serviços")}>
         {q.input.extras.map((e, i) => (
           <div key={i} className="flex justify-between gap-2 text-base text-ink"><span>{e.description}</span></div>
         ))}
         {q.input.rooms.map((r) => (
           <div key={r.id} className="mb-2">
-            <div className="text-lg font-bold">{r.name}</div>
+            <div className="font-display text-lg font-medium">{r.name}</div>
             {q.result.serviceLines.filter((l) => l.roomId === r.id).map((l) => (
               <div key={l.serviceId} className="flex justify-between gap-2 text-base text-ink"><span>{l.name} — {fmtNum(l.quantity)} {UNIT_LABEL[l.unit]}</span><span>{formatBRL(l.totalCents)}</span></div>
             ))}
           </div>
         ))}
-      </Card>
-      <Card className="flex flex-col gap-3">
-        <CardTitle>Mais opções</CardTitle>
+      </BlocoRecolhivel>
+      <BlocoRecolhivel title="Mais opções" icon={MoreHorizontal}>
         {q.status === "won" ? (
           <p className="text-base text-support">Orçamento fechado não pode ser editado. Para alterar, volte para aberto antes.</p>
         ) : null}
@@ -166,7 +164,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         </div>
         {cloudEnabled && links[q.id] ? <Button variant="danger" size="sm" icon={Link2Off} onClick={() => { void unpublishLinkFor(q.id).then(reload); }}>Cancelar link</Button> : null}
         <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
-      </Card>
+      </BlocoRecolhivel>
       <ConfirmDialog
         open={askLose}
         title="Marcar como perdido?"
@@ -183,7 +181,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { void unpublishLinkFor(q.id); deleteQuote(q.id); router.replace("/orcamentos"); }}
       />
-      <Link href="/orcamentos/novo" className="text-center text-lg font-bold text-brand underline">Fazer outro orçamento</Link>
+      <Link href="/orcamentos/novo" className="text-center font-display text-lg font-semibold text-live">Fazer outro orçamento</Link>
     </Screen>
   );
 }
