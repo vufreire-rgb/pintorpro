@@ -19,6 +19,27 @@ export const PIX_TYPE_LABEL: Record<PixKeyType, string> = {
   random: "Chave aleatória",
 };
 
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/**
+ * Tipo da chave pelo jeito que foi digitada, para a pessoa não ter que escolher.
+ * "ask": 11 números soltos podem ser CPF ou celular; o app NÃO adivinha (errar mandaria o Pix para a chave errada).
+ * null: ainda não dá para saber (vazio, incompleto ou estranho).
+ */
+export function guessPixType(raw: string): PixKeyType | "ask" | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (v.includes("@")) return "email";
+  if (UUID_RE.test(v)) return "random";
+  const d = v.replace(/\D/g, "");
+  if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(v)) return "doc";
+  if (d.length === 14) return "doc";
+  const phoneLike = v.startsWith("+") || v.startsWith("(");
+  if (d.length === 10 || ((d.length === 12 || d.length === 13) && d.startsWith("55"))) return "phone";
+  if (d.length === 11) return phoneLike ? "phone" : "ask";
+  return null;
+}
+
 /** CRC16-CCITT (polinômio 0x1021, início 0xFFFF), em 4 letras maiúsculas. */
 export function crc16(text: string): string {
   let crc = 0xffff;

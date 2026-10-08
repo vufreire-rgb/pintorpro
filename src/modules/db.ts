@@ -41,4 +41,11 @@ export function updateDb(fn: (db: Db) => Db): void {
   writeRaw(JSON.stringify(fn(getSnapshot())));
 }
 
+/** Grava só se a função mudou alguma coisa (devolve o mesmo objeto quando nada muda). Evita regravar a cada tela. */
+export function updateDbIfChanged(fn: (db: Db) => Db): void {
+  const cur = getSnapshot();
+  const next = fn(cur);
+  if (next !== cur) writeRaw(JSON.stringify(next));
+}
+
 export const uid = (): string => crypto.randomUUID();

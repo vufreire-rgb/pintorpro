@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPlan, chargeMessage, lateCents, planGapCents, planView, valorPorExtenso } from "./finance";
-import { crc16, normalizePixKey, pixPayload, pixText } from "./pix";
+import { crc16, guessPixType, normalizePixKey, pixPayload, pixText } from "./pix";
 import type { Work } from "./types";
 
 const w = (o: Partial<Work> = {}): Work => ({ id: "w", quoteId: "q", clientId: "c", title: "t", status: "scheduled", createdAt: "", plannedDays: 3, plannedHours: 24, plannedTotalCents: 300000, plannedCostCents: 0, ...o });
@@ -105,4 +105,28 @@ describe("valor por extenso", () => {
     [4880000, "quarenta e oito mil e oitocentos reais"],
     [123456789, "um milhão, duzentos e trinta e quatro mil, quinhentos e sessenta e sete reais e oitenta e nove centavos"],
   ])("%i -> %s", (c, text) => expect(valorPorExtenso(c)).toBe(text));
+});
+
+describe("tipo da chave Pix reconhecido sozinho", () => {
+  it("reconhece e-mail, chave aleatória, CNPJ, CPF formatado e celular", () => {
+    expect(guessPixType("silva@exemplo.com")).toBe("email");
+    expect(guessPixType("123e4567-e89b-12d3-a456-426614174000")).toBe("random");
+    expect(guessPixType("12.345.678/0001-95")).toBe("doc");
+    expect(guessPixType("12345678000195")).toBe("doc");
+    expect(guessPixType("123.456.789-09")).toBe("doc");
+    expect(guessPixType("(11) 99999-1111")).toBe("phone");
+    expect(guessPixType("+55 11 99999-1111")).toBe("phone");
+    expect(guessPixType("1133334444")).toBe("phone");
+    expect(guessPixType("5511999991111")).toBe("phone");
+  });
+  it("11 números soltos: pergunta, não adivinha (CPF ou celular)", () => {
+    expect(guessPixType("11999991111")).toBe("ask");
+    expect(guessPixType("11 99999-1111")).toBe("ask");
+    expect(guessPixType("12345678909")).toBe("ask");
+  });
+  it("vazio ou incompleto: ainda não sabe", () => {
+    expect(guessPixType("")).toBeNull();
+    expect(guessPixType("123")).toBeNull();
+    expect(guessPixType("abc")).toBeNull();
+  });
 });

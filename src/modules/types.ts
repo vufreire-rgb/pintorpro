@@ -70,6 +70,8 @@ export interface Quote {
   createdAt: string;
   validUntil: string;
   closedAt?: string;
+  /** Perdido sozinho (ficou sem resposta bem depois da validade). Some ao reabrir. */
+  autoClosed?: boolean;
   paymentTerms: string;
   notes: string;
   input: QuoteInput;
@@ -154,6 +156,8 @@ export interface Work {
   payments?: Payment[];
   /** Gastos reais da obra, para comparar lucro previsto × real. */
   expenses?: Expense[];
+  /** A pessoa reabriu a obra de propósito: o app não a conclui sozinho de novo. */
+  keepOpen?: boolean;
   /** Obra de treino criada pelo guia; fica fora dos números do painel. */
   isExample?: boolean;
   /** Dias que o pintor realmente trabalhou na obra. */

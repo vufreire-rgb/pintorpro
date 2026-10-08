@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
-import { Eye, Inbox, Mic, Pencil, Plus } from "lucide-react";
-import { isExpired } from "@/modules/quotes";
+import { Check, Eye, Inbox, Mic, Pencil, Plus, RotateCcw, X } from "lucide-react";
+import { SwipeRow } from "@/components/SwipeRow";
+import { UndoBar } from "@/components/UndoBar";
+import { isExpired, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { usePendingVoice } from "@/modules/voice";
 import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
@@ -25,6 +27,7 @@ export default function Orcamentos() {
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
+  const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
   if (!db) return <Loading />;
   const list = db.quotes.filter((q) => q.status === tab);
   return (
@@ -74,14 +77,41 @@ export default function Orcamentos() {
       </div>
       {tab === "open" && list.length > 0 ? <div className="text-lg text-support">Total em aberto: <b>{formatBRL(list.reduce((s, q) => s + q.result.totals.totalCents, 0))}</b></div> : null}
       {list.length === 0 ? <p className="text-lg text-support">Nada por aqui.</p> : null}
-      {list.map((q) => (
-        <Link key={q.id} href={`/orcamentos/${q.id}`}>
-          <Card>
-            <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {db.clients.find((c) => c.id === q.clientId)?.name}</b><b className="font-display">{formatBRL(q.result.totals.totalCents)}</b></div>
-            <div className="mt-1 flex items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
-          </Card>
-        </Link>
-      ))}
+      {tab === "open" && list.length > 0 ? <p className="text-base text-support">Dica: deslize o orçamento para a direita se fechou, ou para a esquerda se perdeu.</p> : null}
+      {tab === "lost" && list.length > 0 ? <p className="text-base text-support">Dica: deslize para a direita para reabrir.</p> : null}
+      {list.map((q) => {
+        const name = db.clients.find((c) => c.id === q.clientId)?.name ?? "cliente";
+        const card = (
+          <Link href={`/orcamentos/${q.id}`}>
+            <Card>
+              <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {name}</b><b className="font-display">{formatBRL(q.result.totals.totalCents)}</b></div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{q.autoClosed ? <Badge tone="lost">Sem resposta</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
+            </Card>
+          </Link>
+        );
+        if (q.status === "open") {
+          return (
+            <SwipeRow
+              key={q.id}
+              right={{ label: "Fechou", icon: <Check size={24} aria-hidden />, className: "bg-[#0A8545]" }}
+              left={{ label: "Perdeu", icon: <X size={24} aria-hidden />, className: "bg-[#5B6B80]" }}
+              onRight={() => { setQuoteStatus(q.id, "won"); setUndo({ message: `Fechou: ${name}. A obra foi criada.`, back: () => reopenQuote(q.id) }); }}
+              onLeft={() => { setQuoteStatus(q.id, "lost"); setUndo({ message: `Perdido: ${name}.`, back: () => reopenQuote(q.id) }); }}
+            >{card}</SwipeRow>
+          );
+        }
+        if (q.status === "lost") {
+          return (
+            <SwipeRow
+              key={q.id}
+              right={{ label: "Reabrir", icon: <RotateCcw size={24} aria-hidden />, className: "bg-brand" }}
+              onRight={() => { reopenQuote(q.id); setUndo({ message: `Reaberto: ${name}.`, back: () => setQuoteStatus(q.id, "lost") }); }}
+            >{card}</SwipeRow>
+          );
+        }
+        return <div key={q.id}>{card}</div>;
+      })}
+      {undo ? <UndoBar message={undo.message} onUndo={() => { undo.back(); setUndo(null); }} onDone={() => setUndo(null)} /> : null}
       </div>
     </Screen>
   );

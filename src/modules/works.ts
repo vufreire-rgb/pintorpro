@@ -13,7 +13,9 @@ export const WORK_STATUS_LABEL: Record<WorkStatus, string> = {
 const patch = (id: string, fn: (w: Work) => Work) =>
   updateDb((db) => ({ ...db, works: db.works.map((w) => (w.id === id ? fn(w) : w)) }));
 
-export const setWorkStatus = (id: string, status: WorkStatus) => patch(id, (w) => ({ ...w, status }));
+/** Reabrir uma obra concluída marca `keepOpen`, para o app não concluir de novo sozinho. */
+export const setWorkStatus = (id: string, status: WorkStatus) =>
+  patch(id, (w) => ({ ...w, status, keepOpen: status === "done" ? undefined : w.status === "done" && status === "in_progress" ? true : w.keepOpen }));
 
 /** Define o início; se ainda não há término (ou ficou antes do início), sugere um pelos dias previstos. */
 export const setWorkStart = (id: string, startDate: string) =>

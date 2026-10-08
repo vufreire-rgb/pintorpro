@@ -17,7 +17,7 @@ export function firstSteps(db: Db): FirstStep[] {
   const works = db.works.filter((w) => !w.isExample);
   return [
     { id: "logo", label: "Colocar seu logo no orçamento", href: "/configuracoes", done: !!db.company?.logoId },
-    { id: "pix", label: "Cadastrar sua chave Pix", href: "/configuracoes", done: !!db.company?.pix },
+    { id: "pix", label: "Cadastrar sua chave Pix", href: "/configuracoes", done: !!db.company?.pix?.key },
     { id: "visita", label: "Registrar sua primeira visita", href: "/visitas/nova", done: visits.length > 0 },
     { id: "orcamento", label: "Fazer seu primeiro orçamento", href: "/orcamentos/novo", done: quotes.length > 0 },
     { id: "fechar", label: "Fechar um orçamento (vira obra)", href: "/orcamentos", done: quotes.some((q) => q.status === "won") },

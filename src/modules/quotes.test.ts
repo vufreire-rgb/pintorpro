@@ -12,7 +12,8 @@ vi.mock("@/repositories/fileStore", () => ({ putFile: vi.fn(async () => undefine
 
 import { deleteClient, updateClient } from "./clients";
 import { newDb } from "./db";
-import { deleteQuote, duplicateQuote, saveQuote, setQuoteStatus, updateQuote } from "./quotes";
+import { deleteQuote, duplicateQuote, reopenQuote, saveQuote, setQuoteStatus, updateQuote } from "./quotes";
+import { applyAutoStatus } from "./autoStatus";
 import { deleteVisit } from "./visits";
 import { deleteWork } from "./works";
 import type { Db, QuoteInput } from "./types";
@@ -114,5 +115,51 @@ describe("visitas e clientes", () => {
   it("editar cliente altera só aquele cliente", () => {
     updateClient("c1", { name: "Ana Maria", phone: "2", address: "Rua Z" });
     expect(read().clients[0]).toMatchObject({ id: "c1", name: "Ana Maria", address: "Rua Z" });
+  });
+});
+
+describe("reabrir e perder sozinho", () => {
+  it("reabrir logo depois de fechar desfaz a obra vazia", () => {
+    const id = make();
+    setQuoteStatus(id, "won");
+    expect(read().works).toHaveLength(1);
+    reopenQuote(id);
+    expect(read().quotes[0]!.status).toBe("open");
+    expect(read().works).toHaveLength(0);
+  });
+
+  it("reabrir NÃO apaga obra que já tem pagamento", () => {
+    const id = make();
+    setQuoteStatus(id, "won");
+    const d = read();
+    d.works[0]!.payments = [{ id: "p", date: "2026-10-02", amountCents: 1000, note: "" }];
+    write(d);
+    reopenQuote(id);
+    expect(read().works).toHaveLength(1);
+    expect(read().quotes[0]!.status).toBe("open");
+  });
+
+  it("orçamento aberto muito depois da validade vira Perdido sozinho; reabrir renova a validade", () => {
+    const id = make();
+    const d = read();
+    d.quotes[0]!.validUntil = new Date(Date.now() - 15 * 86400000).toISOString();
+    const after = applyAutoStatus(d);
+    expect(after.quotes[0]!.status).toBe("lost");
+    expect(after.quotes[0]!.autoClosed).toBe(true);
+    write(after);
+    reopenQuote(id);
+    const q = read().quotes[0]!;
+    expect(q.status).toBe("open");
+    expect(q.autoClosed).toBeUndefined();
+    expect(Date.parse(q.validUntil)).toBeGreaterThan(Date.now());
+    const again = read();
+    expect(applyAutoStatus(again)).toBe(again);
+  });
+
+  it("dentro dos 14 dias de folga continua aberto e nada é regravado", () => {
+    make();
+    const d = read();
+    d.quotes[0]!.validUntil = new Date(Date.now() - 10 * 86400000).toISOString();
+    expect(applyAutoStatus(d)).toBe(d);
   });
 });

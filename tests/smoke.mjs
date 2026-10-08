@@ -122,7 +122,7 @@ const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 60000 }
 const path = `${process.env.OUT ?? "/tmp"}/orcamento.pdf`;
 await dl.saveAs(path);
 
-await page.getByRole("button", { name: "Fechado" }).click();
+await page.getByRole("button", { name: "Fechou! Criar a obra" }).click();
 await page.goto(base + "/obras");
 await page.getByText("Maria Souza").waitFor();
 await shot("09-obras");

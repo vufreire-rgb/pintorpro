@@ -4,13 +4,13 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
-import { Badge, Button, Card, CardTitle, Chip, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Copy, FileText, Link2, Pencil, Send, Trash2 } from "lucide-react";
+import { Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Copy, FileText, Link2, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { enablePush, usePushState } from "@/modules/push";
 import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
 import { isSimpleMode } from "@/modules/settings";
-import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, setQuoteStatus } from "@/modules/quotes";
+import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -73,14 +73,26 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         ) : null}
       </div>
 
-      <Card className="flex flex-col gap-2">
-        <CardTitle>Situação</CardTitle>
-        <div className="flex flex-wrap gap-2">
-          <Chip active={q.status === "open"} onClick={() => setQuoteStatus(q.id, "open")}>Aberto</Chip>
-          <Chip active={q.status === "won"} onClick={() => { if (q.status !== "won") setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechado</Chip>
-          <Chip active={q.status === "lost"} onClick={() => setQuoteStatus(q.id, "lost")}>Perdido</Chip>
-        </div>
-        {q.status === "won" ? <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton> : null}
+      <Card className="flex flex-col gap-3">
+        {q.status === "open" ? (
+          <>
+            <CardTitle>O cliente respondeu?</CardTitle>
+            <Button icon={PartyPopper} onClick={() => { setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechou! Criar a obra</Button>
+            <Button variant="ghost" icon={X} onClick={() => setQuoteStatus(q.id, "lost")}>Perdeu</Button>
+          </>
+        ) : q.status === "won" ? (
+          <>
+            <CardTitle>Fechado</CardTitle>
+            <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton>
+            {!db.works.some((w) => w.quoteId === q.id && (w.payments?.length || w.expenses?.length || w.startDate || w.status !== "scheduled")) ? <Button variant="ghost" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Desfazer: reabrir orçamento</Button> : null}
+          </>
+        ) : (
+          <>
+            <CardTitle>{q.autoClosed ? "Perdido sozinho" : "Perdido"}</CardTitle>
+            {q.autoClosed ? <p className="text-base text-support">Ficou muito tempo sem resposta depois da validade, então o app tirou da lista de abertos.</p> : null}
+            <Button variant="ghost" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Reabrir (renova a validade)</Button>
+          </>
+        )}
       </Card>
 
       {priceOnly && isSimpleMode(db.company) ? null : <Card className="border-amber-300 bg-amber-50">

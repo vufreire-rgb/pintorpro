@@ -11,7 +11,8 @@ import { cloudEnabled, useAuthState } from "@/modules/auth";
 import { downloadMyData, prepareLogout, signOutAndWipe } from "@/modules/account";
 import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
-import { normalizePixKey, PIX_TYPE_LABEL, pixPayload, type PixKeyType } from "@/modules/pix";
+import { normalizePixKey, pixPayload } from "@/modules/pix";
+import { PixKeyInput } from "@/components/PixKeyInput";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
 import { isSimpleMode, resetTours, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
 import { useAppDb } from "@/modules/useApp";
@@ -113,17 +114,10 @@ export default function Configuracoes() {
       <div data-tour="aj-pix">
       <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
         <p className="text-base text-support">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(PIX_TYPE_LABEL) as PixKeyType[]).map((t) => (
-            <Chip key={t} active={(c.pix?.type ?? "doc") === t} onClick={() => set({ pix: { type: t, key: "", name: c.pix?.name, city: c.pix?.city } })}>{PIX_TYPE_LABEL[t]}</Chip>
-          ))}
-        </div>
-        <Field label={`Sua chave Pix (${PIX_TYPE_LABEL[c.pix?.type ?? "doc"].toLowerCase()})`}>
-          <TextInput value={c.pix?.key ?? ""} inputMode={(c.pix?.type ?? "doc") === "email" ? "email" : "text"} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: e.target.value, name: c.pix?.name, city: c.pix?.city } })} />
-        </Field>
-        {c.pix?.key ? (
-          normalizePixKey(c.pix.type, c.pix.key) ? <p className="inline-flex items-center gap-1.5 text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden />Chave válida</p> : <p className="text-base text-err">Essa chave não parece certa para o tipo escolhido.</p>
-        ) : null}
+        <PixKeyInput
+          initial={c.pix?.key ? { type: c.pix.type, key: c.pix.key } : undefined}
+          onChange={(v) => set({ pix: { type: v?.type ?? c.pix?.type ?? "doc", key: v?.key ?? "", name: c.pix?.name, city: c.pix?.city } })}
+        />
         <Field label="Nome que aparece para quem paga" hint="Até 25 letras. Se ficar vazio, usamos o nome do seu negócio.">
           <TextInput value={c.pix?.name ?? ""} maxLength={25} onChange={(e) => set({ pix: { type: c.pix?.type ?? "doc", key: c.pix?.key ?? "", name: e.target.value, city: c.pix?.city } })} />
         </Field>

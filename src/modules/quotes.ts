@@ -103,7 +103,7 @@ export function deleteQuote(id: string): void {
 export function setQuoteStatus(quoteId: string, status: QuoteStatus): void {
   updateDb((db) => {
     const quotes = db.quotes.map((q) =>
-      q.id === quoteId ? { ...q, status, closedAt: status === "open" ? undefined : new Date().toISOString() } : q,
+      q.id === quoteId ? { ...q, status, autoClosed: undefined, closedAt: status === "open" ? undefined : new Date().toISOString() } : q,
     );
     const q = quotes.find((x) => x.id === quoteId);
     let works = db.works;
@@ -123,6 +123,24 @@ export function setQuoteStatus(quoteId: string, status: QuoteStatus): void {
       };
       works = [work, ...works];
     }
+    return { ...db, quotes, works };
+  });
+}
+
+/**
+ * Reabre um orçamento fechado ou perdido (vale também para "desfazer" logo depois de fechar).
+ * Se a validade já passou, renova por mais um período. A obra criada ao fechar só some se ainda estiver vazia
+ * (sem pagamento, sem gasto, sem data), para nunca perder nada que a pessoa lançou.
+ */
+export function reopenQuote(quoteId: string): void {
+  updateDb((db) => {
+    const now = Date.now();
+    const quotes = db.quotes.map((q) =>
+      q.id === quoteId
+        ? { ...q, status: "open" as const, closedAt: undefined, autoClosed: undefined, validUntil: Date.parse(q.validUntil) < now ? new Date(now + VALIDITY_DAYS * DAY).toISOString() : q.validUntil }
+        : q,
+    );
+    const works = db.works.filter((w) => !(w.quoteId === quoteId && w.status === "scheduled" && !w.payments?.length && !w.expenses?.length && !w.startDate));
     return { ...db, quotes, works };
   });
 }

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, QrCode, Receipt, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, CircleCheck, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, QrCode, Receipt, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AutoTour, type TourStep } from "@/components/Tour";
@@ -18,7 +18,7 @@ import { waUrl } from "@/modules/visitList";
 import { useAppDb } from "@/modules/useApp";
 import { dateBR, ymd, paidCents, paidPct, remainingCents } from "@/modules/workInfo";
 import { addInstallment, addPayment, deleteWork, removeInstallment, removePayment, setPlan, setWorkEnd, setWorkStart, setWorkStatus, updateInstallment, WORK_STATUS_LABEL } from "@/modules/works";
-import type { PaymentMethod, WorkStatus } from "@/modules/types";
+import type { PaymentMethod } from "@/modules/types";
 import { formatBRL, toCents } from "@/shared/money";
 import { plural } from "@/shared/format";
 
@@ -114,11 +114,15 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
       <Card className="flex flex-col gap-3">
         <div className="text-support">{quote?.siteAddress || "Sem endereço"}</div>
         <ContactActions phone={client?.phone} address={quote?.siteAddress || client?.address} location={visit?.location} />
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(WORK_STATUS_LABEL) as WorkStatus[]).map((s) => (
-            <Chip key={s} active={w.status === s} onClick={() => setWorkStatus(w.id, s)}>{WORK_STATUS_LABEL[s]}</Chip>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={w.status === "done" ? "ok" : w.status === "issues" ? "warn" : "open"}>{WORK_STATUS_LABEL[w.status]}</Badge>
+          {w.status === "scheduled" ? <Button variant="ghost" className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Começar a obra</Button> : null}
+          {w.status === "in_progress" || w.status === "issues" ? <Button variant="ghost" icon={CircleCheck} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
+          {w.status === "in_progress" ? <Button variant="ghost" icon={TriangleAlert} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "issues")}>Tem pendência</Button> : null}
+          {w.status === "issues" ? <Button variant="ghost" className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Resolvi a pendência</Button> : null}
+          {w.status === "done" ? <Button variant="ghost" icon={RotateCcw} className="!w-auto !min-h-12 !px-4 !text-base" onClick={() => setWorkStatus(w.id, "in_progress")}>Reabrir</Button> : null}
         </div>
+        {w.status === "scheduled" || w.status === "in_progress" ? <p className="text-base text-support">A situação muda sozinha: começa na data de início e conclui quando tudo foi pago e o término passou.</p> : null}
       </Card>
 
       <div data-tour="obra-datas">

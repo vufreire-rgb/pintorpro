@@ -89,7 +89,13 @@ await page.getByText("Receba a entrada por Pix").waitFor();
 check(true, "depois do primeiro orçamento aparece o convite do Pix");
 await page.getByLabel(/Sua chave Pix/).fill("123");
 check(await page.getByRole("button", { name: "Salvar chave Pix" }).isDisabled(), "chave inválida não deixa salvar");
-await page.getByRole("button", { name: "E-mail", exact: true }).click();
+// 11 números soltos: o app pergunta (CPF ou celular), não adivinha
+await page.getByLabel(/Sua chave Pix/).fill("11999991111");
+await page.getByText("Esses números são de").waitFor();
+check(await page.getByRole("button", { name: "Salvar chave Pix" }).isDisabled(), "11 números soltos: só vale depois de escolher CPF ou celular");
+await page.getByRole("button", { name: "Celular", exact: true }).click();
+check(await page.getByRole("button", { name: "Salvar chave Pix" }).isEnabled(), "escolhendo 'Celular' a chave vale");
+// e-mail: reconhecido sozinho, sem escolher tipo
 await page.getByLabel(/Sua chave Pix/).fill("silva@exemplo.com");
 await page.getByRole("button", { name: "Salvar chave Pix" }).click();
 await page.waitForTimeout(300);
