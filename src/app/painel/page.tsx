@@ -109,9 +109,11 @@ export default function Painel() {
         <Tile label="Em teste grátis" value={String(a.emTeste)} delta={a.deltaEmTeste} />
         <Tile label="Orçamentos gerados" value={c.orcamentos.toLocaleString("pt-BR")} delta={d.orcamentos} />
         <Tile label="Taxa de fechamento" value={c.taxaFechamentoPct === null ? "—" : `${c.taxaFechamentoPct}%`} delta={d.taxaFechamento} />
-        <Tile label="Valor orçado" value={formatBRL(c.valorOrcadoCents)} delta={d.valorOrcado} />
-        <Tile label="Valor fechado" value={formatBRL(c.valorFechadoCents)} />
       </div>
+      <Card className="flex flex-col">
+        <div className="flex items-baseline justify-between gap-3 py-2"><span className="text-base text-support">Valor orçado</span><span className="flex flex-wrap items-baseline justify-end gap-2"><Delta text={d.valorOrcado} /><b className="font-display text-2xl font-semibold tabular-nums">{formatBRL(c.valorOrcadoCents)}</b></span></div>
+        <div className="flex items-baseline justify-between gap-3 border-t border-line py-2"><span className="text-base text-support">Valor fechado</span><b className="font-display text-2xl font-semibold tabular-nums">{formatBRL(c.valorFechadoCents)}</b></div>
+      </Card>
       {a.testeVencido + a.atrasados + a.cancelados > 0 ? <p className="text-base text-support">Também: {a.testeVencido} com teste vencido, {a.atrasados} atrasados e {a.cancelados} cancelados.</p> : null}
 
       <Card>
