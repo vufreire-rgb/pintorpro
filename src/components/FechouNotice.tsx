@@ -10,7 +10,7 @@ export function FechouNotice({ owner, number, onClose }: { owner?: string; numbe
   }, [onClose]);
   const first = (owner ?? "").trim().split(/\s+/)[0];
   return (
-    <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md flex-col gap-3 rounded-[20px] border border-slate-200 bg-white p-[18px] shadow-xl" role="status">
+    <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-md flex-col gap-3 rounded-[20px] border border-line bg-white p-[18px] shadow-xl" role="status">
       <div className="flex items-center gap-4">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/simbolo-colorido.svg" alt="" className="h-12 w-12 shrink-0" />

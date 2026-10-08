@@ -11,7 +11,7 @@ import { UNIT_LABEL } from "@/shared/format";
 function Row({ s }: { s: ServiceConfig }) {
   const [price, setPrice] = useState(s.salePriceCents / 100);
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
+    <div className="flex flex-col gap-2 rounded-xl bg-[#F3F6FA] p-3">
       <b>{s.name}</b>
       <p className="text-base text-support">Quanto você cobra por {UNIT_LABEL[s.unit] ?? s.unit}? Sugestão: {formatBRL(s.salePriceCents)}</p>
       <NumberInput aria-label={`Preço de ${s.name}`} value={price} onChange={setPrice} />
@@ -34,7 +34,7 @@ export function PriceCheck({ services }: { services: ServiceConfig[] }) {
       <CardTitle>Confirme seus preços</CardTitle>
       <p className="text-base text-support">{n === 1 ? "Este valor é de exemplo." : `${n} valores são de exemplo.`} Se estiverem bons, confirme de uma vez ou ajuste um por um.</p>
       <Button icon={Check} onClick={() => services.forEach((s) => updateService(s.id, { salePriceCents: s.salePriceCents }))}>{n > 1 ? "Confirmar todos como estão" : "Confirmar como está"}</Button>
-      <details className="rounded-xl border border-slate-200 p-3">
+      <details className="rounded-2xl border border-line p-3">
         <summary className="cursor-pointer text-base font-bold text-brand">Ajustar um por um</summary>
         <div className="mt-3 flex flex-col gap-3">{services.map((s) => <Row key={s.id} s={s} />)}</div>
       </details>

@@ -69,7 +69,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
           <Field label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados."><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         </Card>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="min-w-0 flex-1">
           <div className="text-base text-support">Preço para o cliente</div>
           <div className="font-display text-[28px] font-extrabold leading-8 text-brand" data-testid="total">{price > 0 ? formatBRL(Math.round(price * 100)) : "—"}</div>

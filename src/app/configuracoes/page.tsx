@@ -27,7 +27,7 @@ import { AlarmClock, Calculator, Check, Download, FileText, ImagePlus, Package, 
 function LogoPreview({ id }: { id: string }) {
   const url = useFileUrl(id);
   // eslint-disable-next-line @next/next/no-img-element
-  return url ? <img src={url} alt="Seu logo" className="h-20 w-20 rounded-xl border border-slate-200 bg-white object-contain" /> : <div className="h-20 w-20 rounded-xl bg-slate-100" />;
+  return url ? <img src={url} alt="Seu logo" className="h-20 w-20 rounded-2xl border border-line bg-white object-contain" /> : <div className="h-20 w-20 rounded-xl bg-[#F3F6FA]" />;
 }
 
 export default function Configuracoes() {

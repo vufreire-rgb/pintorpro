@@ -234,7 +234,7 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
 
       <div ref={stage} className="relative min-h-0 flex-1 touch-none select-none overflow-hidden" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         {prompt ? (
-        <div className="absolute inset-x-0 top-0 z-10 flex gap-2 bg-slate-100/95 p-3" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
+        <div className="absolute inset-x-0 top-0 z-10 flex gap-2 bg-[#F3F6FA]/95 p-3" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
           <input
             autoFocus
             value={prompt.value}
@@ -284,7 +284,7 @@ export function PhotoMarker({ photoId, initial, onSave, onClose }: { photoId: st
               aria-label={`Cor ${c}`}
               aria-pressed={(selected?.color ?? color) === c}
               onClick={() => pickColor(c)}
-              className={`h-10 w-10 rounded-full border-2 ${(selected?.color ?? color) === c ? "border-slate-900 ring-2 ring-brand" : "border-slate-300"}`}
+              className={`h-10 w-10 rounded-full border-2 ${(selected?.color ?? color) === c ? "border-slate-900 ring-2 ring-brand" : "border-line"}`}
               style={{ backgroundColor: c }}
             />
           ))}

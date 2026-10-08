@@ -30,9 +30,9 @@ export function PixModal({ code, title, amount, onClose }: { code: string; title
           {qr ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={qr} alt="QR Code do Pix" className="h-64 w-64" data-testid="pix-qr" />
-          ) : <div className="h-64 w-64 animate-pulse rounded-xl bg-slate-100" />}
+          ) : <div className="h-64 w-64 animate-pulse rounded-xl bg-[#F3F6FA]" />}
         </div>
-        <p className="break-all rounded-xl bg-slate-50 p-3 text-base text-support" data-testid="pix-code">{code}</p>
+        <p className="break-all rounded-xl bg-[#F3F6FA] p-3 text-base text-support" data-testid="pix-code">{code}</p>
         <Button icon={copied ? Check : Copy} onClick={copy}>{copied ? "Copiado" : "Copiar Pix copia e cola"}</Button>
         <Button variant="ghost" size="sm" icon={X} onClick={onClose}>Fechar</Button>
       </div>

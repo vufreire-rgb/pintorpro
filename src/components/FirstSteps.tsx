@@ -15,11 +15,11 @@ export function FirstSteps({ db }: { db: Db }) {
   if (done === steps.length) return null;
   return (
     <div data-testid="primeiros-passos">
-      <details className="group rounded-2xl border border-slate-200 bg-white">
+      <details className="group rounded-2xl border border-line bg-white">
         <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-2">
           <span className="min-w-0 flex-1">
             <span className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">Primeiros passos</b><span className="text-base text-support">{done} de {steps.length}</span></span>
-            <span className="mt-1 block h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done}>
+            <span className="mt-1 block h-2 overflow-hidden rounded-full bg-[#F3F6FA]" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done}>
               <span className="block h-full rounded-full bg-accent-dark" style={{ width: `${(done / steps.length) * 100}%` }} />
             </span>
           </span>

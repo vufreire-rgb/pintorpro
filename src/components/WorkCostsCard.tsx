@@ -58,7 +58,7 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
     <Card className="flex flex-col gap-3">
       <CardTitle icon={TrendingUp}>Custos e lucro</CardTitle>
       <div>
-        <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 border-b border-slate-200 pb-1 text-base font-bold"><span /><span className="w-24 text-right">Previsto</span><span className="w-24 text-right">Real</span></div>
+        <div className="grid grid-cols-[1fr_auto_auto] gap-x-2 border-b border-line pb-1 text-base font-bold"><span /><span className="w-24 text-right">Previsto</span><span className="w-24 text-right">Real</span></div>
         <Row label="Combinado" planned={formatBRL(p.revenueCents)} real={formatBRL(p.revenueCents)} />
         <Row label="Gastos" planned={plan(p.plannedSpendCents)} real={formatBRL(p.spentCents)} />
         <Row label="Sobrou no bolso" planned={plan(p.plannedPocketCents)} real={formatBRL(p.realPocketCents)} strong />
@@ -72,12 +72,12 @@ export function WorkCostsCard({ w, quote }: { w: Work; quote?: Quote }) {
       <div className="flex items-center justify-between"><span className="text-lg">Dias trabalhados</span><Stepper value={w.daysWorked ?? 0} onChange={(n) => setDaysWorked(w.id, n)} /></div>
       {p.realDiariaCents === null ? <p className="-mt-1 text-base text-support">Informe os dias para calcular o lucro depois da diária (previsto: {w.plannedDays}).</p> : null}
       {expenses.map((e) => (
-        <div key={e.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
+        <div key={e.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#F3F6FA] p-3">
           <div className="min-w-0"><b>{formatBRL(e.amountCents)}</b><div className="text-base text-support">{EXPENSE_LABEL[e.kind]}{e.note ? ` · ${e.note}` : ""} · {dateBR(e.date)}</div></div>
-          <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" aria-label="Remover gasto" onClick={() => removeExpense(w.id, e.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
+          <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F3F6FA]" aria-label="Remover gasto" onClick={() => removeExpense(w.id, e.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
         </div>
       ))}
-      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+      <div className="flex flex-col gap-3 rounded-2xl border border-line p-3">
         <b>Lançar gasto</b>
         {cloudEnabled ? (
           <>

@@ -11,7 +11,7 @@ export function ServicePicker({ services, selected, onToggle }: { services: Svc[
   return (
     <div className="flex flex-col gap-2">
       <p className="text-base"><b>Serviços:</b> {chosen.length ? chosen.map((s) => s.name).join(" · ") : <span className="text-err">nenhum escolhido</span>}</p>
-      <details open={chosen.length === 0} className="rounded-xl border border-slate-200 p-3">
+      <details open={chosen.length === 0} className="rounded-2xl border border-line p-3">
         <summary className="cursor-pointer text-base font-bold text-brand">Mudar serviços</summary>
         <div className="mt-3 flex flex-col gap-3">
           {groups.map(({ g, items }) => (

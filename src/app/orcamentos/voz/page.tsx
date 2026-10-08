@@ -131,7 +131,7 @@ function OrcamentoPorVoz() {
             <Card className="flex flex-col gap-2">
               <b className="text-lg">Fale o orçamento do seu jeito</b>
               <p>Diga o nome do cliente, os cômodos com as medidas, o que vai ser feito e o preço. Exemplo:</p>
-              <p className="rounded-xl bg-slate-50 p-3 italic">“Cliente dona Maria, telefone 11 98888-7777. Sala de 4 por 5, pé direito 2,70, pintar teto e paredes. Quarto 3 por 3,5. Fechado em 2.800 reais, metade de entrada.”</p>
+              <p className="rounded-xl bg-[#F3F6FA] p-3 italic">“Cliente dona Maria, telefone 11 98888-7777. Sala de 4 por 5, pé direito 2,70, pintar teto e paredes. Quarto 3 por 3,5. Fechado em 2.800 reais, metade de entrada.”</p>
               <p className="text-base text-support">Você confere tudo antes de salvar. O áudio não fica guardado: ele só vira texto e é descartado.</p>
             </Card>
             {phase.name === "error" ? <p role="alert" className="text-base text-err">{phase.text}</p> : null}
@@ -160,7 +160,7 @@ function OrcamentoPorVoz() {
             <b>Áudios aguardando ({pending.length})</b>
             {pendingError ? <p role="alert" className="text-base text-err">{pendingError}</p> : null}
             {pending.map((p) => (
-              <div key={p.id} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
+              <div key={p.id} className="flex flex-col gap-2 rounded-xl bg-[#F3F6FA] p-3">
                 <div className="text-base">{new Date(p.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })} · {fmtClock(p.seconds)} · {p.status === "ready" ? "pronto para conferir" : "esperando internet"}</div>
                 <div className="grid grid-cols-2 gap-2">
                   {p.status === "ready" && p.draft ? <Button onClick={() => openReview(p.draft!, p.transcript ?? "", p.id, p.visitId)}>Conferir</Button> : <Button variant="ghost" onClick={() => void runPending(p.id)}>Tentar agora</Button>}
@@ -190,7 +190,7 @@ function OrcamentoPorVoz() {
               <b>Ambientes</b>
               {quote.rooms.length === 0 ? <p className="text-support">Nenhuma medida entendida. Tudo bem se você deu o preço fechado: ele vira um item só. Ou grave de novo falando as medidas.</p> : null}
               {quote.rooms.map((r) => (
-                <div key={r.id} className="rounded-xl bg-slate-50 p-3">
+                <div key={r.id} className="rounded-xl bg-[#F3F6FA] p-3">
                   <b>{r.name}</b>
                   <div className="text-base text-support">{r.surfaces?.length ? surfacesSummary(r.surfaces, r.openings.filter((o) => o.kind === "door").reduce((n, o) => n + o.qty, 0), r.openings.filter((o) => o.kind === "window").reduce((n, o) => n + o.qty, 0)) : ""}</div>
                 </div>
@@ -207,7 +207,7 @@ function OrcamentoPorVoz() {
               <Field label="Observações (aparecem no PDF)"><TextInput value={fields.notes} onChange={(e) => setFields({ ...fields, notes: e.target.value })} /></Field>
             </Card>
 
-            <details className="rounded-2xl border border-slate-200 p-3">
+            <details className="rounded-2xl border border-line p-3">
               <summary className="cursor-pointer font-semibold">O que eu ouvi</summary>
               <p className="mt-2 whitespace-pre-wrap text-support">{phase.transcript}</p>
             </details>

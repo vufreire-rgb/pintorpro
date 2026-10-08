@@ -8,7 +8,7 @@ import { APP_NAME } from "@/shared/brand";
 
 type State = { name: "loading" } | { name: "ok"; p: PageSnapshot } | { name: "gone" } | { name: "offline" };
 
-const inputCls = "min-h-14 w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-lg outline-none focus:border-[var(--brand)]";
+const inputCls = "min-h-14 w-full rounded-2xl border-2 border-line bg-white px-4 text-lg outline-none focus:border-[var(--brand)]";
 
 /** Página pública do pintor: o cliente conhece o trabalho e pede um orçamento, sem instalar nada e sem login. */
 export default function PaginaDoPintor() {
@@ -69,7 +69,7 @@ export default function PaginaDoPintor() {
       {p.services.length ? (
         <section>
           <b className="font-display text-lg">O que eu faço</b>
-          <div className="mt-2 flex flex-wrap gap-2">{p.services.map((s) => <span key={s} className="rounded-full border border-slate-200 px-3 py-1.5 text-base">{s}</span>)}</div>
+          <div className="mt-2 flex flex-wrap gap-2">{p.services.map((s) => <span key={s} className="rounded-full border border-line px-3 py-1.5 text-base">{s}</span>)}</div>
         </section>
       ) : null}
 
@@ -79,7 +79,7 @@ export default function PaginaDoPintor() {
           <p className="mt-1 text-lg">{p.company} vai entrar em contato pelo WhatsApp que você informou.</p>
         </section>
       ) : (
-        <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4">
+        <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-line p-4">
           <h2 className="font-display text-xl font-semibold">Peça um orçamento</h2>
           <label className="flex flex-col gap-1 text-lg font-semibold">Seu nome<input required minLength={2} maxLength={80} className={inputCls} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoComplete="name" /></label>
           <label className="flex flex-col gap-1 text-lg font-semibold">Seu WhatsApp (com DDD)<input required type="tel" inputMode="tel" maxLength={20} placeholder="(11) 99999-9999" className={inputCls} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} autoComplete="tel" /></label>

@@ -136,7 +136,7 @@ function RowIcon({ icon: Icon }: { icon?: LucideIcon }) {
 
 /** Etiqueta pequena à direita da linha: mostra de relance se o recurso está ligado. */
 function RowBadge({ badge }: { badge?: { text: string; ok?: boolean } }) {
-  return badge ? <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold ${badge.ok ? "bg-[#E3F4EA] text-[#07602F]" : "bg-slate-100 text-support"}`}>{badge.text}</span> : null;
+  return badge ? <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold ${badge.ok ? "bg-[#E3F4EA] text-[#07602F]" : "bg-[#F3F6FA] text-support"}`}>{badge.text}</span> : null;
 }
 
 /** Lista de ajustes: várias linhas num cartão só, separadas por um fio (mais limpo que um cartão por linha). */
@@ -251,11 +251,11 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
 export function Stepper({ value, onChange, min = 0, max = 99 }: { value: number; onChange: (n: number) => void; min?: number; max?: number }) {
   return (
     <div className="flex items-center gap-3">
-      <button type="button" aria-label="Diminuir" className="grid h-12 w-12 place-items-center rounded-full bg-slate-100" onClick={() => onChange(Math.max(min, value - 1))}>
+      <button type="button" aria-label="Diminuir" className="grid h-12 w-12 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => onChange(Math.max(min, value - 1))}>
         <Minus size={24} strokeWidth={2.2} aria-hidden />
       </button>
       <span className="w-8 text-center font-display text-xl font-bold">{value}</span>
-      <button type="button" aria-label="Aumentar" className="grid h-12 w-12 place-items-center rounded-full bg-slate-100" onClick={() => onChange(Math.min(max, value + 1))}>
+      <button type="button" aria-label="Aumentar" className="grid h-12 w-12 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => onChange(Math.min(max, value + 1))}>
         <Plus size={24} strokeWidth={2.2} aria-hidden />
       </button>
     </div>

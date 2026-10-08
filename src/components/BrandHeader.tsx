@@ -19,7 +19,7 @@ export function BrandMark({ size = 48 }: { size?: number }) {
   return (
     <div
       data-testid="brand-mark"
-      className={`grid shrink-0 place-items-center overflow-hidden font-display font-extrabold tracking-tight ${c.logoId ? "border border-slate-200 bg-white" : "text-white"}`}
+      className={`grid shrink-0 place-items-center overflow-hidden font-display font-extrabold tracking-tight ${c.logoId ? "border border-line bg-white" : "text-white"}`}
       style={{ width: size, height: size, borderRadius: Math.round(size * 0.29), fontSize: Math.round(size * 0.42), ...(c.logoId ? {} : { backgroundColor: color }) }}
     >
       {c.logoId ? <Logo id={c.logoId} /> : initialsOf(c.name)}
@@ -37,7 +37,7 @@ export function BrandHeader() {
     <div className="flex items-center gap-3.5">
       <div
         data-testid="brand-mark"
-        className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[14px] font-display text-xl font-extrabold tracking-tight ${c.logoId ? "border border-slate-200 bg-white" : "text-white"}`}
+        className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[14px] font-display text-xl font-extrabold tracking-tight ${c.logoId ? "border border-line bg-white" : "text-white"}`}
         style={c.logoId ? undefined : { backgroundColor: color }}
       >
         {c.logoId ? <Logo id={c.logoId} /> : initialsOf(c.name)}

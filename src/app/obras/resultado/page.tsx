@@ -24,9 +24,9 @@ export default function ResultadoDoMes() {
     <Screen title="Resultado do mês" back="/obras">
       <div className="flex flex-col gap-4 pb-8">
         <div className="flex items-center justify-between gap-2">
-          <button aria-label="Mês anterior" className="grid h-12 w-12 place-items-center rounded-full border-2 border-slate-200 bg-white" onClick={() => setMonth(shiftMonth(month, -1))}><ChevronLeft size={24} aria-hidden /></button>
+          <button aria-label="Mês anterior" className="grid h-12 w-12 place-items-center rounded-full border-2 border-line bg-white" onClick={() => setMonth(shiftMonth(month, -1))}><ChevronLeft size={24} aria-hidden /></button>
           <b className="font-display text-xl" data-testid="mes">{monthLabel(month).replace(/^./, (c) => c.toUpperCase())}</b>
-          <button aria-label="Próximo mês" disabled={month >= now} className="grid h-12 w-12 place-items-center rounded-full border-2 border-slate-200 bg-white disabled:opacity-40" onClick={() => setMonth(shiftMonth(month, 1))}><ChevronRight size={24} aria-hidden /></button>
+          <button aria-label="Próximo mês" disabled={month >= now} className="grid h-12 w-12 place-items-center rounded-full border-2 border-line bg-white disabled:opacity-40" onClick={() => setMonth(shiftMonth(month, 1))}><ChevronRight size={24} aria-hidden /></button>
         </div>
 
         <Card className="text-center">

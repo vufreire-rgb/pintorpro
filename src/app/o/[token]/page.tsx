@@ -67,7 +67,7 @@ export default function Orcamento() {
 
       <section className="grid grid-cols-3 gap-2 text-center">
         {[["Prazo", q.days], ["Pagamento", q.payment], ["Validade", q.validity]].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-slate-200 p-2">
+          <div key={label} className="rounded-2xl border border-line p-2">
             <div className="text-base text-support">{label}</div>
             <div className="text-base font-semibold leading-5">{value}</div>
           </div>
@@ -75,7 +75,7 @@ export default function Orcamento() {
       </section>
 
       {q.rooms.map((r, i) => (
-        <section key={i} className="rounded-2xl border border-slate-200 p-4">
+        <section key={i} className="rounded-2xl border border-line p-4">
           <div className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">{r.name}</b>{q.showRoomPrices && r.price ? <b>{r.price}</b> : null}</div>
           {r.facts ? <div className="text-base text-support">{r.facts}</div> : null}
           <ul className="mt-2 list-disc pl-5 text-base leading-6">{r.items.map((it, j) => <li key={j}>{it}</li>)}</ul>
@@ -83,10 +83,10 @@ export default function Orcamento() {
         </section>
       ))}
 
-      {q.notes ? <section className="rounded-2xl border border-slate-200 p-4"><b className="font-display text-lg">Observações</b><p className="mt-1 whitespace-pre-wrap text-base">{q.notes}</p></section> : null}
+      {q.notes ? <section className="rounded-2xl border border-line p-4"><b className="font-display text-lg">Observações</b><p className="mt-1 whitespace-pre-wrap text-base">{q.notes}</p></section> : null}
 
       {q.pix ? (
-        <section className="flex flex-col items-center gap-2 rounded-2xl border border-slate-200 p-4 text-center">
+        <section className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-center">
           <b className="font-display text-lg">Pagar a entrada por Pix</b>
           <div className="text-base text-support">{q.pix.amount} · {q.pix.pct}</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -100,7 +100,7 @@ export default function Orcamento() {
       ) : null}
 
       {q.terms.exclusions.length || q.terms.before.length || q.terms.warranty ? (
-        <details className="rounded-2xl border border-slate-200 p-4">
+        <details className="rounded-2xl border border-line p-4">
           <summary className="cursor-pointer font-display text-lg font-semibold">Combinados e garantia</summary>
           {q.terms.exclusions.length ? <><b className="mt-3 block">Não está incluso</b><ul className="list-disc pl-5 text-base">{q.terms.exclusions.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}
           {q.terms.before.length ? <><b className="mt-3 block">Antes de começar</b><ul className="list-disc pl-5 text-base">{q.terms.before.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}

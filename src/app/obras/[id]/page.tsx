@@ -7,7 +7,7 @@ import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { WorkCostsCard } from "@/components/WorkCostsCard";
 import { PixModal } from "@/components/PixModal";
-import { ACTION_CLS, Badge, Button, Card, CardTitle, Chip, ConfirmDialog, Field, LinkButton, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
+import { ACTION_CLS, BlocoRecolhivel, Badge, Button, Card, Chip, ConfirmDialog, Field, LinkButton, Loading, NumberInput, Screen, TextInput } from "@/components/ui";
 import { buildPlan, chargeMessage, lateCents, planGapCents, planView, PLAN_PRESET_LABEL, type InstallmentState, type PlanPreset } from "@/modules/finance";
 import { normalizePixKey, pixPayload } from "@/modules/pix";
 import { storePhotos, useFileUrl } from "@/modules/photos";
@@ -56,6 +56,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const proofInput = useRef<HTMLInputElement>(null);
+  const registerForm = useRef<HTMLDivElement>(null);
   const send = async (job: () => Promise<"shared" | "downloaded" | "missing">, fail: string) => {
     setBusy(true);
     setMsg("");
@@ -118,21 +119,16 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         {w.status === "scheduled" || w.status === "in_progress" ? <p className="text-base text-support">A situação muda sozinha: começa na data de início e conclui quando tudo foi pago e o término passou.</p> : null}
       </Card>
 
-      <div>
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={CalendarDays}>Datas</CardTitle>
+      <BlocoRecolhivel title="Datas" icon={CalendarDays} summary={w.startDate || w.endDate ? `${w.startDate ? dateBR(w.startDate) : "—"} a ${w.endDate ? dateBR(w.endDate) : "—"}` : undefined}>
         <p className="text-base text-support">Previsto no orçamento: {plural(w.plannedDays, "dia", "dias")} de trabalho.</p>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Começa em"><TextInput type="date" value={w.startDate ?? ""} onChange={(e) => setWorkStart(w.id, e.target.value)} /></Field>
           <Field label="Termina em"><TextInput type="date" value={w.endDate ?? ""} min={w.startDate} onChange={(e) => setWorkEnd(w.id, e.target.value)} /></Field>
         </div>
         {w.startDate ? <Button variant="ghost" icon={CalendarPlus} onClick={() => downloadWorkIcs(w, client, quote?.siteAddress ?? "")}>Adicionar à agenda do celular</Button> : <p className="text-base text-support">Escolha o dia de início para lembrar na agenda.</p>}
-      </Card>
-      </div>
+      </BlocoRecolhivel>
 
-      <div>
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={Landmark}>Plano de pagamento</CardTitle>
+      <BlocoRecolhivel title="Plano de pagamento" icon={Landmark} summary={view.length ? `${view.filter((p) => p.state === "paid").length} de ${view.length} pagas` : undefined}>
         {late > 0 ? <p className="flex items-center gap-2 rounded-xl bg-[#FFF3D6] p-3 font-bold text-[#8A4B00]"><TriangleAlert size={20} strokeWidth={2.4} aria-hidden />{formatBRL(late)} em atraso</p> : null}
         {view.length === 0 || changePlan ? (
           <>
@@ -145,7 +141,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         ) : (
           <>
             {view.map((p) => (
-              <div key={p.id} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3">
+              <div key={p.id} className="flex flex-col gap-2 rounded-2xl bg-[#F3F6FA] p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div><b>{p.label}</b><div className="text-base text-support">vence {dateBR(p.dueDate)}</div></div>
                   <div className="flex flex-col items-end gap-1"><b className="font-display text-lg">{formatBRL(p.amountCents)}</b><Badge tone={STATE_BADGE[p.state].tone}>{STATE_BADGE[p.state].text}</Badge></div>
@@ -175,12 +171,14 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           </>
         )}
         {!pixOk ? <p className="text-base text-support">Cadastre sua chave Pix em Ajustes para mandar o Pix copia e cola nas cobranças.</p> : null}
-      </Card>
-      </div>
+      </BlocoRecolhivel>
 
-      <div>
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={Wallet}>Dinheiro da obra</CardTitle>
+      <BlocoRecolhivel
+        title="Dinheiro da obra"
+        icon={Wallet}
+        summary={`Falta ${formatBRL(left)}`}
+        action={{ label: "Registrar", ariaLabel: "Registrar pagamento", opens: true, onClick: () => setTimeout(() => registerForm.current?.scrollIntoView({ block: "center", behavior: "smooth" }), 200) }}
+      >
         <div className="grid grid-cols-3 gap-2 text-center">
           <div><div className="text-base text-support">Combinado</div><b>{formatBRL(w.plannedTotalCents)}</b></div>
           <div><div className="text-base text-support">Recebido</div><b className="text-accent-dark">{formatBRL(paidCents(w))}</b></div>
@@ -188,7 +186,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
         </div>
         <div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-accent" style={{ width: `${paidPct(w)}%` }} /></div>
         {payments.map((p) => (
-          <div key={p.id} className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-3">
+          <div key={p.id} className="flex items-center justify-between gap-2 rounded-2xl bg-[#F3F6FA] p-3">
             <div className="min-w-0 flex-1">
               <b>{formatBRL(p.amountCents)}</b>
               <div className="text-base text-support">{p.note} · {dateBR(p.date)}{p.method ? ` · ${METHOD_LABEL[p.method]}` : ""}</div>
@@ -196,10 +194,10 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
               {p.proofId ? <button className="ml-4 mt-1 inline-flex min-h-11 items-center gap-1.5 text-base font-bold text-brand underline disabled:opacity-50" disabled={busy} onClick={() => send(() => shareProof(db, w, p), "Não consegui enviar o comprovante. Tente de novo.")}><Send size={20} strokeWidth={2.2} aria-hidden />Enviar comprovante</button> : null}
             </div>
             {p.proofId ? <ProofThumb id={p.proofId} /> : null}
-            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-slate-100" aria-label="Remover pagamento" onClick={() => removePayment(w.id, p.id, p.proofId)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
+            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white" aria-label="Remover pagamento" onClick={() => removePayment(w.id, p.id, p.proofId)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
         ))}
-        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 p-3">
+        <div ref={registerForm} className="flex flex-col gap-3 rounded-2xl border border-line p-3">
           <b>Registrar pagamento</b>
           <div className="flex flex-wrap gap-2">
             {nextInst ? <Chip active={false} onClick={() => { setNote(nextInst.label); setAmount((nextInst.amountCents - nextInst.coveredCents) / 100); }}>{nextInst.label} · {formatBRL(nextInst.amountCents - nextInst.coveredCents)}</Chip> : null}
@@ -214,24 +212,22 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
           <Button variant="ghost" icon={Paperclip} onClick={() => proofInput.current?.click()}>{proof ? `${proof.name.slice(0, 24)} (trocar)` : "Anexar comprovante (opcional)"}</Button>
           <Button icon={Check} disabled={amount <= 0 || busy} onClick={register}>Registrar</Button>
         </div>
-      </Card>
-      </div>
+      </BlocoRecolhivel>
 
       <div><WorkCostsCard w={w} quote={quote} /></div>
 
-      <Card className="flex flex-col gap-3">
-        <CardTitle icon={ClipboardList}>Orçamento e visita</CardTitle>
+      <BlocoRecolhivel title="Orçamento e visita" icon={ClipboardList} summary={quote ? `Orçamento nº ${String(quote.number).padStart(3, "0")}` : undefined}>
         {quote ? <LinkButton href={`/orcamentos/${quote.id}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento nº {String(quote.number).padStart(3, "0")}</LinkButton> : null}
         {visit ? (
           <>
-            {visit.notes ? <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-ink">{visit.notes}</p> : null}
+            {visit.notes ? <p className="whitespace-pre-wrap rounded-2xl bg-[#F3F6FA] p-3 text-ink">{visit.notes}</p> : null}
             {(visit.rooms ?? []).length > 0 ? <p className="text-base text-support">{visit.rooms!.map((r) => r.name).join(" · ")}</p> : null}
             <PhotoGrid ids={visit.photoIds} marksOf={(pid) => visit.photoMeta?.[pid]?.marks} />
             {(visit.audios ?? []).map((a) => <Player key={a.id} id={a.id} />)}
-            <Link href={`/visitas/${visit.id}`} className="text-brand underline">Abrir a visita completa</Link>
+            <Link href={`/visitas/${visit.id}`} className="font-display font-semibold text-live">Abrir a visita completa</Link>
           </>
         ) : <p className="text-base text-support">Este orçamento não veio de uma visita gravada.</p>}
-      </Card>
+      </BlocoRecolhivel>
 
       {msg ? <button className="fixed inset-x-4 bottom-4 z-30 mx-auto max-w-md rounded-2xl bg-slate-900 p-4 text-left text-white shadow-lg" onClick={() => setMsg("")}>{msg}<span className="mt-1 block text-base text-white/70">Toque para fechar</span></button> : null}
       {pixModal ? <PixModal {...pixModal} onClose={() => setPixModal(null)} /> : null}

@@ -19,10 +19,10 @@ export function RoomEditor({ draft, onChange, onSave, onCancel, title, saveLabel
       <CardTitle>{title}</CardTitle>
       <Field label="Nome do ambiente"><TextInput placeholder="Ex.: Sala" value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} /></Field>
       {draft.surfaces.map((s) => (
-        <div key={s.id} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3" data-testid="surface">
+        <div key={s.id} className="flex flex-col gap-2 rounded-xl bg-[#F3F6FA] p-3" data-testid="surface">
           <div className="flex items-center justify-between">
             <b className="text-lg">{s.label}</b>
-            <button type="button" className="grid h-12 w-12 place-items-center rounded-full bg-slate-100" aria-label={`Remover ${s.label}`} onClick={() => onChange({ ...draft, surfaces: removeSurface(draft.surfaces, s.id) })}><X size={20} strokeWidth={2.4} aria-hidden /></button>
+            <button type="button" className="grid h-12 w-12 place-items-center rounded-full bg-[#F3F6FA]" aria-label={`Remover ${s.label}`} onClick={() => onChange({ ...draft, surfaces: removeSurface(draft.surfaces, s.id) })}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Field label={s.kind === "wall" ? "Largura (m)" : "Comprimento (m)"}><NumberInput aria-label={`${s.label} largura`} value={s.widthM} onChange={(n) => setSurface(s.id, { widthM: n })} /></Field>
