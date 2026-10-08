@@ -1,0 +1,36 @@
+TEXTOS PARA COLAR NO PLAY CONSOLE (pt-BR)
+==========================================
+
+NOME DO APP (até 30 caracteres)
+Medde - Orçamento de Pintura
+
+DESCRIÇÃO CURTA (até 80 caracteres)
+Visitas, orçamentos e obras para pintores. Fale o preço e envie pelo WhatsApp.
+
+DESCRIÇÃO COMPLETA
+O Medde é o app do pintor que quer orçar rápido e saber quanto realmente ganha.
+
+• VISITAS: registre a visita com fotos, medidas por parede e observações, direto no celular.
+• ORÇAMENTO RÁPIDO: calcule pelas medidas e pelos seus preços, ou fale o valor e o app monta o orçamento para você conferir.
+• ENVIE E ACOMPANHE: mande o orçamento em PDF ou por link no WhatsApp e veja quando o cliente abriu. Receba a entrada por Pix.
+• OBRAS E DINHEIRO: pagamentos, parcelas, gastos (com foto do recibo) e o resultado do mês: vendido, recebido, gasto e o que sobrou.
+• SUA PÁGINA: tenha um link para o cliente pedir orçamento e receba o pedido no app.
+• AVISOS NO CELULAR quando o cliente abre o orçamento ou chega um pedido novo.
+
+Feito para quem trabalha na obra: telas simples, botões grandes e funciona mesmo com internet fraca. Você escolhe se quer calcular por medidas ou só falar o preço fechado.
+
+Teste grátis por 30 dias.
+
+CATEGORIA: Negócios
+E-MAIL DE CONTATO: (o seu e-mail público)
+SITE: https://medde.com.br
+POLÍTICA DE PRIVACIDADE: https://medde.com.br/privacidade
+EXCLUSÃO DE CONTA (URL): https://medde.com.br/excluir-conta
+
+NOTAS DA VERSÃO (primeira versão do teste fechado)
+Primeira versão do Medde para teste. Conte pra gente o que achou!
+
+ARQUIVOS GRÁFICOS
+- Ícone: icone-512.png (512 x 512)
+- Imagem de destaque: imagem-de-destaque-1024x500.png
+- Prints do celular: pasta prints-exemplo (são de EXEMPLO; troque por prints reais do seu celular, com fotos de verdade)

@@ -2,6 +2,8 @@
 
 Atualizado em 2026-10-08. Ordem = prioridade combinada com o titular. Marque o que mudar de lugar.
 
+> **Guia completo para finalizar sozinho (PDF):** `docs/GUIA_FINALIZAR_SOZINHO.pdf`; arquivos da loja em `docs/kit-play-store/`.
+
 ## Já ligado no Supabase (2026-10-08, por rotinas do GitHub)
 - Todas as funções publicadas (`push`, `quote-link`, `public-page`, `voice-quote`, `receipt-scan` e as demais), com Verify JWT desligado.
 - SQL rodados: `0005`, `0006`, `0009` (`0007` e `0008` já estavam). Falta confirmar `0003_subscriptions.sql`.
