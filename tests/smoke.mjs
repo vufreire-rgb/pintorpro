@@ -128,7 +128,8 @@ await page.goto(base + "/obras");
 await page.getByText("Maria Souza").waitFor();
 await shot("09-obras");
 await page.goto(base + "/visitas");
-await page.getByRole("button", { name: /Visitas com orçamento feito \(1\)/ }).click();
+// só há visitas já orçadas: a lista abre direto nelas (sem o botão)
+await page.getByText("Visitas com orçamento feito").first().waitFor();
 await page.getByText("Maria Souza").first().waitFor();
 // apagar visita
 await page.getByText("Maria Souza").first().click();

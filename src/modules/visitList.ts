@@ -48,10 +48,10 @@ export const countByFilter = (visits: Visit[], now = Date.now()) => ({
   scheduled: visits.filter((v) => visitState(v, now) !== "done").length,
 });
 
-/** Aba que a lista de visitas abre: Agendadas se houver; senão "A orçar" (visitas já orçadas ficam num link à parte). */
-export function firstFilledFilter(visits: Visit[], now = Date.now()): "scheduled" | "todo" {
+/** Lista que a tela de visitas abre: Agendadas se houver; senão A orçar; senão (só há visitas já orçadas) as orçadas. */
+export function firstFilledFilter(visits: Visit[], now = Date.now()): "scheduled" | "todo" | "quoted" {
   const c = countByFilter(visits, now);
-  return c.scheduled > 0 ? "scheduled" : c.todo > 0 ? "todo" : "scheduled";
+  return c.scheduled > 0 ? "scheduled" : c.todo > 0 ? "todo" : c.quoted > 0 ? "quoted" : "scheduled";
 }
 
 const startOfDay = (t: number) => new Date(new Date(t).setHours(0, 0, 0, 0)).getTime();
