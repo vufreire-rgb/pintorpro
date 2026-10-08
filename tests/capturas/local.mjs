@@ -10,7 +10,6 @@ const { snap, count } = criarCaptura(process.env.OUTD);
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome", args: ["--disable-blink-features=AutomationControlled", "--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] });
 const mk = async () => { const ctx = await browser.newContext({ ...devices["Pixel 7"], viewport: { width: 390, height: 844 }, locale: "pt-BR", timezoneId: "America/Sao_Paulo", permissions: ["microphone", "camera"] }); await ctx.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1")); return [ctx, await ctx.newPage()]; };
 const next = (page) => page.getByRole("button", { name: /Continuar|Começar/ }).click();
-const abrir = async (page, nome) => { const b = page.getByRole("button", { name: nome }).first(); if ((await b.getAttribute("aria-expanded").catch(() => null)) === "false") await b.click(); };
 
 let [ctx, page] = await mk();
 await page.goto(base);

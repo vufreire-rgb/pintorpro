@@ -48,6 +48,7 @@ export const isToken = (t: unknown): t is string => typeof t === "string" && /^[
 export function sanitizeSnapshot(raw: unknown): SharedQuote | null {
   if (!raw || typeof raw !== "object") return null;
   if (JSON.stringify(raw).length > MAX_JSON) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const o = raw as Record<string, any>;
   const p = (o.painter ?? {}) as Record<string, unknown>;
   const dep = o.deposit && typeof o.deposit === "object" ? (o.deposit as Record<string, unknown>) : null;
