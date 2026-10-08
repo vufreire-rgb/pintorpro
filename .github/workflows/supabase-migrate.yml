@@ -27,6 +27,15 @@ jobs:
           if [ -z "$SUPABASE_DB_URL" ]; then echo "::error::Falta o secret SUPABASE_DB_URL. Veja docs/DEPLOY_AUTOMATICO.md."; exit 1; fi
           if ! echo "$ARQUIVO" | grep -Eq '^[0-9]{4}_[a-z0-9_]+\.sql$'; then echo "::error::Nome inválido: $ARQUIVO"; exit 1; fi
           if [ ! -f "supabase/migrations/$ARQUIVO" ]; then echo "::error::Não existe supabase/migrations/$ARQUIVO"; exit 1; fi
+          # Diagnóstico sem expor a senha: mostra só o formato do endereço salvo.
+          python3 - <<'PY'
+          import os, urllib.parse as u
+          r = u.urlsplit(os.environ["SUPABASE_DB_URL"])
+          pw = u.unquote(r.password or "")
+          print("formato:", r.scheme, "| usuario:", r.username, "| servidor:", r.hostname, "| porta:", r.port, "| banco:", r.path)
+          print("senha: tamanho", len(pw), "| so letras/numeros:", pw.isalnum(), "| espaco/aspas:", any(c in pw for c in " \"'"))
+          print("endereco: espaco no comeco/fim:", os.environ["SUPABASE_DB_URL"] != os.environ["SUPABASE_DB_URL"].strip())
+          PY
           sudo apt-get install -y -qq postgresql-client >/dev/null
           psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "supabase/migrations/$ARQUIVO"
           echo "Pronto: $ARQUIVO executado."
