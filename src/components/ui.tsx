@@ -1,23 +1,23 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, FileText, MapPin, Minus, PaintRoller, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
 
 export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3">
+      <header className="sticky top-0 z-10 flex min-h-[72px] items-center gap-3 border-b border-line bg-white px-5 py-3">
         {back ? (
-          <Link href={back} className="grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-ink" aria-label="Voltar">
+          <Link href={back} className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#F3F6FA] text-ink" aria-label="Voltar">
             <ArrowLeft size={24} strokeWidth={2.2} aria-hidden />
           </Link>
         ) : null}
-        <h1 className="text-[28px] font-bold leading-[34px]">{title}</h1>
+        <h1 className={`min-w-0 font-display font-semibold ${nav ? "text-[28px] leading-[34px]" : "text-2xl leading-[30px]"}`}>{title}</h1>
         {corner ? <div className="ml-auto">{corner}</div> : null}
       </header>
-      <main className={`flex flex-1 flex-col gap-4 p-4 ${nav ? "pb-28" : "pb-8"}`}>{children}</main>
+      <main className={`flex flex-1 flex-col gap-3.5 px-5 py-4 ${nav ? "pb-28" : "pb-8"}`}>{children}</main>
       {nav ? <BottomNav /> : null}
     </div>
   );
@@ -33,11 +33,11 @@ const NAV = [
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid h-20 max-w-md grid-cols-4 items-center border-t border-slate-200 bg-white px-1 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid h-20 max-w-md grid-cols-4 items-center border-t border-line bg-white px-1 pb-[env(safe-area-inset-bottom)]">
       {NAV.map(([href, label, Icon]) => {
         const here = path === href || path.startsWith(href + "/");
         return (
-          <Link key={href} href={href} aria-current={here ? "page" : undefined} className={`flex flex-col items-center gap-1 text-[14px] leading-4 ${here ? "font-bold text-brand" : "text-support"}`}>
+          <Link key={href} href={href} aria-current={here ? "page" : undefined} className={`flex flex-col items-center gap-1 text-[14px] leading-4 ${here ? "font-bold text-brand" : "font-normal text-support"}`}>
             <span className={`flex h-8 w-14 items-center justify-center rounded-2xl ${here ? "bg-brand-soft" : ""}`}>
               <Icon size={24} strokeWidth={2.2} aria-hidden />
             </span>
@@ -54,19 +54,19 @@ type Size = "md" | "sm";
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; icon?: LucideIcon; size?: Size };
 /** primary/success = a ação principal da tela (verde, só uma por tela). ghost = secundário. danger = só texto vermelho ("Apagar"). */
 const VARIANT: Record<Variant, string> = {
-  primary: "min-h-16 bg-accent-dark text-xl font-bold uppercase tracking-[0.02em] text-white active:bg-accent-dark/90",
-  success: "min-h-16 bg-accent-dark text-xl font-bold uppercase tracking-[0.02em] text-white active:bg-accent-dark/90",
-  ghost: "min-h-14 border-2 border-brand bg-white text-xl font-bold text-brand active:bg-brand-soft disabled:text-support",
-  danger: "min-h-12 bg-transparent text-lg font-bold text-err active:bg-red-50",
-  "danger-solid": "min-h-14 bg-err text-xl font-bold text-white active:opacity-90",
+  primary: "min-h-16 bg-accent-dark text-xl font-semibold uppercase tracking-[0.02em] text-white active:bg-accent-dark/90",
+  success: "min-h-16 bg-accent-dark text-xl font-semibold uppercase tracking-[0.02em] text-white active:bg-accent-dark/90",
+  ghost: "min-h-14 bg-brand-soft text-lg font-semibold text-brand active:bg-brand-soft/70 disabled:text-support",
+  danger: "min-h-12 bg-transparent text-lg font-semibold text-err active:bg-red-50",
+  "danger-solid": "min-h-14 bg-err text-lg font-semibold text-white active:opacity-90",
 };
 const BASE = "inline-flex w-full items-center justify-center gap-2.5 rounded-2xl px-5 font-display disabled:opacity-50";
 
 /** Classe de botão para links <a> externos. */
 export const buttonCls = (variant: Variant = "ghost", extra = ""): string => `${BASE} ${VARIANT[variant]} ${extra}`;
 
-/** Botão menor (secundário, em linha): altura 48px (ainda confortável para o dedo), texto e ícone menores. */
-const SMALL = "!min-h-12 !gap-2 !px-4 !text-base";
+/** Pílula de ação: altura 48, largura mínima 96, raio 24, texto 17. */
+const SMALL = "!min-h-12 !min-w-24 !gap-2 !rounded-3xl !px-4 !text-[17px]";
 
 export function Button({ variant = "primary", className = "", icon: Icon, size = "md", children, ...p }: BtnProps) {
   return (
@@ -117,7 +117,7 @@ export function Ruler({ total, current, label }: { total: number; current: numbe
 /** Título de cartão com ícone de traço (sem emoji). */
 export function CardTitle({ icon: Icon, children }: { icon?: LucideIcon; children: React.ReactNode }) {
   return (
-    <h2 className="flex items-center gap-2 font-display text-[22px] font-bold leading-7">
+    <h2 className="flex items-center gap-2 font-display text-xl font-medium leading-[26px]">
       {Icon ? <Icon size={24} strokeWidth={2.2} aria-hidden className="shrink-0 text-brand" /> : null}
       {children}
     </h2>
@@ -125,7 +125,7 @@ export function CardTitle({ icon: Icon, children }: { icon?: LucideIcon; childre
 }
 
 /** Botão pequeno de ação dentro de um cartão (secundário, com ícone). */
-export const ACTION_CLS = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-brand bg-white px-2 font-display text-base font-bold text-brand active:bg-brand-soft disabled:opacity-50";
+export const ACTION_CLS = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-2 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70 disabled:opacity-50";
 
 /** Bloco que abre e fecha (para telas longas, como Ajustes). */
 const ROW = "flex min-h-[68px] items-center gap-3 px-4 py-2";
@@ -141,7 +141,7 @@ function RowBadge({ badge }: { badge?: { text: string; ok?: boolean } }) {
 
 /** Lista de ajustes: várias linhas num cartão só, separadas por um fio (mais limpo que um cartão por linha). */
 export function SectionGroup({ children }: { children: React.ReactNode }) {
-  return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white [&>*+*]:border-t [&>*+*]:border-slate-200">{children}</div>;
+  return <div className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)] [&>*+*]:border-t [&>*+*]:border-line">{children}</div>;
 }
 
 /** Linha de ajuste que abre e fecha: ícone, título curto, uma linha de resumo, etiqueta de estado e seta. */
@@ -151,8 +151,8 @@ export function Section({ title, hint, icon, badge, open = false, children }: { 
       <summary className={`${ROW} cursor-pointer list-none`}>
         <RowIcon icon={icon} />
         <span className="min-w-0 flex-1">
-          <span className="block font-display text-lg font-bold leading-6">{title}</span>
-          {hint ? <span className="block truncate text-base text-support">{hint}</span> : null}
+          <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
+          {hint ? <span className="block truncate text-base leading-[22px] text-support">{hint}</span> : null}
         </span>
         <RowBadge badge={badge} />
         <ChevronDown size={22} strokeWidth={2.2} aria-hidden className="shrink-0 text-support transition-transform group-open:rotate-180" />
@@ -168,8 +168,8 @@ export function SectionLink({ href, title, hint, icon }: { href: string; title: 
     <Link href={href} className={ROW}>
       <RowIcon icon={icon} />
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-lg font-bold leading-6">{title}</span>
-        {hint ? <span className="block truncate text-base text-support">{hint}</span> : null}
+        <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
+        {hint ? <span className="block truncate text-base leading-[22px] text-support">{hint}</span> : null}
       </span>
       <ChevronRight size={22} strokeWidth={2.2} aria-hidden className="shrink-0 text-support" />
     </Link>
@@ -178,13 +178,13 @@ export function SectionLink({ href, title, hint, icon }: { href: string; title: 
 
 /** Cartão. Cor de fundo e de borda podem ser trocadas pelo `className` (ex.: "bg-brand-soft border-brand/30"). */
 export const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <section className={`rounded-[20px] border p-4 shadow-sm ${/\bbg-/.test(className) ? "" : "bg-white"} ${/(^|\s)border-(brand|accent|slate|amber|red|blue|emerald|green|white|black)/.test(className) ? "" : "border-slate-200"} ${className}`}>{children}</section>
+  <section className={`rounded-[20px] border p-4 shadow-[0_1px_2px_rgba(15,59,122,.05)] ${/\bbg-/.test(className) ? "" : "bg-white"} ${/(^|\s)border-(brand|accent|slate|amber|red|blue|emerald|green|white|black)/.test(className) ? "" : "border-line"} ${className}`}>{children}</section>
 );
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-base font-bold leading-5">{label}</span>
+      <span className="text-base font-normal leading-[22px] text-support">{label}</span>
       {children}
       {hint ? <span className="text-base text-support">{hint}</span> : null}
     </label>
@@ -240,7 +240,7 @@ export function Chip({ active, onClick, children }: { active: boolean; onClick: 
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex min-h-12 items-center gap-2 rounded-full border-2 px-[18px] text-lg font-bold ${active ? "border-brand bg-brand-soft text-brand" : "border-field bg-white text-ink"}`}
+      className={`inline-flex min-h-12 items-center gap-2 rounded-full border-2 px-[18px] text-lg font-normal ${active ? "border-brand bg-brand-soft text-ink" : "border-field bg-white text-ink"}`}
     >
       {active ? <Check size={20} strokeWidth={2.6} aria-hidden /> : null}
       {children}
@@ -280,3 +280,91 @@ export function ConfirmDialog({ open, title, text, confirmLabel = "Sim, apagar",
     </div>
   );
 }
+
+/**
+ * Bloco recolhível (padrão "leve"): círculo de ícone, nome, resumo de uma linha, pílula opcional e seta.
+ * Começa fechado. O conteúdo fica sempre montado (só escondido), então nada que esteja dentro perde o estado.
+ * Abre sozinho e não fecha enquanto `openWhen` for verdadeiro (gravando, erro de validação, item novo) ou quando algo dentro recebe foco.
+ */
+export function BlocoRecolhivel({ title, icon: Icon, summary, action, openWhen = false, defaultOpen = false, children }: {
+  title: string; icon?: LucideIcon; summary?: string;
+  action?: { label: string; ariaLabel?: string; icon?: LucideIcon; onClick?: () => void; opens?: boolean };
+  openWhen?: boolean; defaultOpen?: boolean; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const bodyId = useId();
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (openWhen) setOpen(true);
+  }, [openWhen]);
+  const shown = open || openWhen;
+  const ActionIcon = action?.icon;
+  return (
+    <section className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]">
+      <div className="flex min-h-[88px] items-center gap-2 px-4">
+        <button type="button" aria-expanded={shown} aria-controls={bodyId} onClick={() => setOpen(!shown)} className="flex min-h-[88px] min-w-0 flex-1 items-center gap-3 text-left">
+          {Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null}
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
+            {summary ? <span className="block truncate text-base leading-[22px] text-support">{summary}</span> : null}
+          </span>
+        </button>
+        {action ? (
+          <button type="button" aria-label={action.ariaLabel} onClick={() => { if (action.opens) setOpen(true); action.onClick?.(); }} className="inline-flex min-h-12 min-w-24 shrink-0 items-center justify-center gap-1.5 rounded-3xl bg-brand-soft px-4 font-display text-[17px] font-semibold text-brand active:bg-brand-soft/70">
+            {ActionIcon ? <ActionIcon size={20} strokeWidth={2.2} aria-hidden /> : null}
+            {action.label}
+          </button>
+        ) : null}
+        <ChevronDown size={20} strokeWidth={2.2} aria-hidden onClick={() => setOpen(!shown)} className={`shrink-0 text-support transition-transform duration-150 motion-reduce:transition-none ${shown ? "rotate-180" : ""}`} />
+      </div>
+      <div id={bodyId} className={`grid transition-[grid-template-rows,visibility] duration-150 motion-reduce:transition-none ${shown ? "visible grid-rows-[1fr]" : "invisible grid-rows-[0fr]"}`} onFocusCapture={() => setOpen(true)}>
+        <div className="overflow-hidden">
+          <div className="flex flex-col gap-3 border-t border-line p-4">{children}</div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Linha de dado: círculo de ícone, rótulo, valor (até 2 linhas) e seta. Tocar abre o campo no lugar;
+ * com o valor vazio, já abre para editar. As ações ligadas ao campo (`actions`) aparecem logo abaixo.
+ */
+export function LinhaDeDado({ icon: Icon, label, value, editor, actions }: { icon?: LucideIcon; label: string; value: string; editor: React.ReactNode; actions?: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const bodyId = useId();
+  const editing = open || !value.trim();
+  return (
+    <section className="overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]">
+      <button type="button" aria-expanded={editing} aria-controls={bodyId} onClick={() => setOpen(!editing)} className="flex min-h-[88px] w-full items-center gap-3 px-4 py-3 text-left">
+        {Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null}
+        <span className="min-w-0 flex-1">
+          <span className="block text-base leading-[22px] text-support">{label}</span>
+          {editing ? null : <span className="line-clamp-2 break-words text-lg leading-[26px]">{value}</span>}
+        </span>
+        <ChevronDown size={20} strokeWidth={2.2} aria-hidden className={`shrink-0 text-support transition-transform duration-150 motion-reduce:transition-none ${editing ? "rotate-180" : ""}`} />
+      </button>
+      <div id={bodyId} hidden={!editing} className="flex flex-col gap-3 px-4 pb-4">
+        {editor}
+        {actions}
+      </div>
+    </section>
+  );
+}
+
+/** Cartão de observação: o próprio cartão é o campo (sem caixa interna). Foco = borda 2 azul e halo; ditar fica num círculo à direita. */
+export function CartaoDeObservacao({ label, hint, mic, children }: { label: string; hint?: string; mic?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <label className="flex gap-3 rounded-[20px] border border-line bg-white p-4 shadow-[0_1px_2px_rgba(15,59,122,.05)] focus-within:border-2 focus-within:border-live focus-within:p-[15px] focus-within:shadow-[0_0_0_4px_#E8EFFA]">
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-base leading-[22px] text-support">{label}</span>
+        {children}
+        {hint ? <span className="text-base leading-[22px] text-support">{hint}</span> : null}
+      </span>
+      {mic ? <span className="shrink-0">{mic}</span> : null}
+    </label>
+  );
+}
+
+/** Campo de texto sem caixa, para dentro de um CartaoDeObservacao: cresce com o texto. */
+export const bareTextCls = "min-h-24 w-full resize-none bg-transparent text-lg leading-[26px] outline-none placeholder:text-support/70";

@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "@fontsource/outfit/latin-400.css";
+@import "@fontsource/outfit/latin-500.css";
+@import "@fontsource/outfit/latin-600.css";
 @import "@fontsource/outfit/latin-700.css";
 @import "@fontsource/outfit/latin-800.css";
 @import "@fontsource/atkinson-hyperlegible/latin-400.css";
@@ -17,6 +20,7 @@
   --color-support: #4a5b70;
   --color-field: #6f829b; /* borda de campo e de opção não escolhida */
   --color-live: #1d5fc4; /* links e foco */
+  --color-line: #d3dbe6; /* borda de cartão e divisória */
   --color-err: #c0262d; /* só erro e "Apagar" */
 }
 

@@ -57,11 +57,11 @@ function LoginScreen() {
       <header className="flex flex-col items-center gap-3 px-6 pb-10 pt-14 text-center text-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/simbolo-sobre-escuro.svg" alt="" className="h-24 w-24" />
-        <h1 className="text-4xl font-bold tracking-tight">{APP_NAME}</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">{APP_NAME}</h1>
         <p className="text-lg text-white/80">{APP_TAGLINE}</p>
       </header>
       <section className="flex flex-1 flex-col gap-4 rounded-t-3xl bg-white p-6 pb-10">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-2xl font-semibold">{title}</h2>
         {mode === "up" ? <p className="-mt-2 text-support">Beta gratuito.</p> : null}
         {mode === "reset" ? <p className="-mt-2 text-support">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</p> : null}
         <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
@@ -101,7 +101,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (auth.status === "error")
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-4 p-6">
-        <h1 className="text-2xl font-bold">Não conseguimos carregar seus dados</h1>
+        <h1 className="text-2xl font-semibold">Não conseguimos carregar seus dados</h1>
         <p className="text-lg text-support">Verifique sua internet e tente de novo. Seus dados continuam guardados na sua conta, nada foi apagado.</p>
         <Button onClick={retryLoad}>Tentar de novo</Button>
       </div>
