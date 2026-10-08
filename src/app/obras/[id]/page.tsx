@@ -154,7 +154,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
                   </div>
                 ) : null}
                 <details>
-                  <summary className="cursor-pointer text-base font-semibold text-brand">Editar parcela</summary>
+                  <summary className="flex min-h-12 cursor-pointer items-center text-base font-semibold text-brand">Editar parcela</summary>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <Field label="Vence em"><TextInput type="date" value={p.dueDate} onChange={(e) => e.target.value && updateInstallment(w.id, p.id, { dueDate: e.target.value })} /></Field>
                     <Field label="Valor (R$)"><NumberInput value={p.amountCents / 100} onChange={(n) => updateInstallment(w.id, p.id, { amountCents: toCents(n) })} /></Field>

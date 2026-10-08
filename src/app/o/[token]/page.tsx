@@ -101,7 +101,7 @@ export default function Orcamento() {
 
       {q.terms.exclusions.length || q.terms.before.length || q.terms.warranty ? (
         <details className="rounded-2xl border border-line p-4">
-          <summary className="cursor-pointer font-display text-lg font-semibold">Combinados e garantia</summary>
+          <summary className="flex min-h-12 cursor-pointer items-center font-display text-lg font-semibold">Combinados e garantia</summary>
           {q.terms.exclusions.length ? <><b className="mt-3 block">Não está incluso</b><ul className="list-disc pl-5 text-base">{q.terms.exclusions.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}
           {q.terms.before.length ? <><b className="mt-3 block">Antes de começar</b><ul className="list-disc pl-5 text-base">{q.terms.before.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}
           {q.terms.warranty ? <><b className="mt-3 block">Garantia</b><p className="text-base">{q.terms.warranty}</p></> : null}

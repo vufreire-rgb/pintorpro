@@ -35,7 +35,7 @@ export function PriceCheck({ services }: { services: ServiceConfig[] }) {
       <p className="text-base text-support">{n === 1 ? "Este valor é de exemplo." : `${n} valores são de exemplo.`} Se estiverem bons, confirme de uma vez ou ajuste um por um.</p>
       <Button icon={Check} onClick={() => services.forEach((s) => updateService(s.id, { salePriceCents: s.salePriceCents }))}>{n > 1 ? "Confirmar todos como estão" : "Confirmar como está"}</Button>
       <details className="rounded-2xl border border-line p-3">
-        <summary className="cursor-pointer text-base font-bold text-brand">Ajustar um por um</summary>
+        <summary className="flex min-h-12 cursor-pointer items-center text-base font-bold text-brand">Ajustar um por um</summary>
         <div className="mt-3 flex flex-col gap-3">{services.map((s) => <Row key={s.id} s={s} />)}</div>
       </details>
     </Card>

@@ -42,6 +42,26 @@ export function criarCaptura(out, startIndex = 0) {
     const base = `${out}/${id}-${slug(name)}`;
     await page.screenshot({ path: base + ".png", fullPage: full });
     if (full) await page.evaluate(() => document.querySelectorAll("style").forEach((el) => el.textContent?.includes("display: none !important") && el.remove()));
+    // auditoria rápida: alvos de toque abaixo de 44 px e textos abaixo de 16 px (fora da barra de baixo)
+    const aud = await page.evaluate(() => {
+      const out = { toque: [], texto: [] };
+      for (const el of document.querySelectorAll("button, a[href], input, select, textarea, summary")) {
+        if (el.closest("nav") || el.closest("[hidden]")) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0 || getComputedStyle(el).visibility === "hidden") continue;
+        if (el.tagName === "INPUT" && (el.type === "file" || el.type === "hidden")) continue;
+        if (r.height < 44) out.toque.push(`${(el.getAttribute("aria-label") || el.textContent || el.tagName).trim().slice(0, 40)} (${Math.round(r.height)}px)`);
+      }
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        const t = n.textContent.trim(); const el = n.parentElement;
+        if (!t || !el || el.closest("nav") || getComputedStyle(el).visibility === "hidden" || el.getBoundingClientRect().height === 0) continue;
+        const fs = parseFloat(getComputedStyle(el).fontSize);
+        if (fs < 15.9) out.texto.push(`${t.slice(0, 40)} (${fs}px)`);
+      }
+      return out;
+    });
+    if (inv) fs.writeFileSync(base + ".aud.json", JSON.stringify(aud, null, 1));
     if (inv) fs.writeFileSync(base + ".json", JSON.stringify(await inventario(page), null, 1));
   }
   return { snap, count: () => n };

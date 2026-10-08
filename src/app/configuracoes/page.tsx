@@ -61,7 +61,7 @@ export default function Configuracoes() {
             {c.logoId ? <LogoPreview id={c.logoId} /> : <div className="grid h-20 w-20 place-items-center rounded-xl bg-brand text-base text-white">sem logo</div>}
             <div className="flex flex-1 flex-col gap-2">
               <Button variant="ghost" size="sm" icon={ImagePlus} onClick={() => logoInput.current?.click()}>{c.logoId ? "Trocar logo" : "Enviar meu logo"}</Button>
-              {c.logoId ? <button className="min-h-10 text-err underline" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
+              {c.logoId ? <button className="min-h-12 font-display font-semibold text-err" onClick={() => { void removePhotoFile(c.logoId!); set({ logoId: undefined }); }}>Remover logo</button> : null}
             </div>
           </div>
           <input ref={logoInput} type="file" accept="image/*" hidden data-testid="logo-input" onChange={async (e) => {

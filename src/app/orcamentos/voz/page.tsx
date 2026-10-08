@@ -208,7 +208,7 @@ function OrcamentoPorVoz() {
             </Card>
 
             <details className="rounded-2xl border border-line p-3">
-              <summary className="cursor-pointer font-semibold">O que eu ouvi</summary>
+              <summary className="flex min-h-12 cursor-pointer items-center font-semibold">O que eu ouvi</summary>
               <p className="mt-2 whitespace-pre-wrap text-support">{phase.transcript}</p>
             </details>
 

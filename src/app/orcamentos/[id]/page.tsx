@@ -181,7 +181,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         onCancel={() => setAskDelete(false)}
         onConfirm={() => { void unpublishLinkFor(q.id); deleteQuote(q.id); router.replace("/orcamentos"); }}
       />
-      <Link href="/orcamentos/novo" className="text-center font-display text-lg font-semibold text-live">Fazer outro orçamento</Link>
+      <Link href="/orcamentos/novo" className="inline-flex min-h-12 items-center justify-center font-display text-lg font-semibold text-live">Fazer outro orçamento</Link>
     </Screen>
   );
 }

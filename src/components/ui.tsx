@@ -136,7 +136,7 @@ function RowIcon({ icon: Icon }: { icon?: LucideIcon }) {
 
 /** Etiqueta pequena à direita da linha: mostra de relance se o recurso está ligado. */
 function RowBadge({ badge }: { badge?: { text: string; ok?: boolean } }) {
-  return badge ? <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold ${badge.ok ? "bg-[#E3F4EA] text-[#07602F]" : "bg-[#F3F6FA] text-support"}`}>{badge.text}</span> : null;
+  return badge ? <span className={`shrink-0 rounded-full px-2.5 py-1 text-base font-bold ${badge.ok ? "bg-[#E3F4EA] text-[#07602F]" : "bg-[#F3F6FA] text-support"}`}>{badge.text}</span> : null;
 }
 
 /** Lista de ajustes: várias linhas num cartão só, separadas por um fio (mais limpo que um cartão por linha). */

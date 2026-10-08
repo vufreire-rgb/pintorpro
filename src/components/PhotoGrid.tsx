@@ -21,18 +21,18 @@ function Thumb({ id, onRemove, selected, onToggle, marks, onMark }: { id: string
         <button
           onClick={onToggle}
           aria-label={selected ? "Tirar do PDF" : "Pôr no PDF"}
-          className={`absolute bottom-1 left-1 inline-flex min-h-10 items-center gap-1 rounded-full px-2.5 text-base font-bold ${selected ? "bg-accent-dark text-white" : "bg-black/70 text-white"}`}
+          className={`absolute bottom-1 left-1 inline-flex min-h-12 items-center gap-1 rounded-full px-3 text-base font-bold ${selected ? "bg-accent-dark text-white" : "bg-black/70 text-white"}`}
         >
           {selected ? <Check size={18} strokeWidth={3} aria-hidden /> : null}{selected ? "No PDF" : "+ PDF"}
         </button>
       ) : null}
       {onMark ? (
-        <button onClick={onMark} aria-label="Marcar a foto" className="absolute left-1 top-1 inline-flex h-10 min-w-10 items-center justify-center gap-1 rounded-full bg-black/70 px-2 text-base font-bold text-white">
+        <button onClick={onMark} aria-label="Marcar a foto" className="absolute left-1 top-1 inline-flex h-12 min-w-12 items-center justify-center gap-1 rounded-full bg-black/70 px-2 text-base font-bold text-white">
           <Pencil size={20} strokeWidth={2.2} aria-hidden />{marks?.length ? marks.length : ""}
         </button>
       ) : null}
       {onRemove ? (
-        <button onClick={onRemove} aria-label="Remover foto" className="absolute right-1 top-1 grid h-10 w-10 place-items-center rounded-full bg-black/70 text-white"><X size={20} strokeWidth={2.4} aria-hidden /></button>
+        <button onClick={onRemove} aria-label="Remover foto" className="absolute right-1 top-1 grid h-12 w-12 place-items-center rounded-full bg-black/70 text-white"><X size={20} strokeWidth={2.4} aria-hidden /></button>
       ) : null}
     </div>
   );
@@ -41,7 +41,7 @@ function Thumb({ id, onRemove, selected, onToggle, marks, onMark }: { id: string
 export function PhotoGrid({ ids, onRemove, selectedIds, onToggle, marksOf, onMark }: { ids: string[]; onRemove?: (id: string) => void; selectedIds?: string[]; onToggle?: (id: string) => void; marksOf?: (id: string) => PhotoMark[] | undefined; onMark?: (id: string) => void }) {
   if (ids.length === 0) return null;
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-3">
       {ids.map((id) => <Thumb key={id} id={id} onRemove={onRemove ? () => onRemove(id) : undefined} selected={selectedIds?.includes(id)} onToggle={onToggle ? () => onToggle(id) : undefined} marks={marksOf?.(id)} onMark={onMark ? () => onMark(id) : undefined} />)}
     </div>
   );

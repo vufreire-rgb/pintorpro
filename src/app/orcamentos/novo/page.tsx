@@ -127,7 +127,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         ) : null}
         {visit && (visit.notes || visit.photoIds.length > 0 || (visit.audios ?? []).length > 0) ? (
           <details className="rounded-2xl border border-brand/25 bg-brand-soft p-3" open={rooms.length === 0}>
-            <summary className="cursor-pointer text-base font-semibold">Suas anotações da visita</summary>
+            <summary className="flex min-h-12 cursor-pointer items-center text-base font-semibold">Suas anotações da visita</summary>
             {visit.notes ? <p className="mt-2 whitespace-pre-wrap">{visit.notes}</p> : null}
             <div className="mt-2"><PhotoGrid ids={visit.photoIds} marksOf={(pid) => visit.photoMeta?.[pid]?.marks} /></div>
             <AudioList audios={visit.audios ?? []} />
@@ -176,7 +176,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <ServicePicker services={db.services.filter((sv) => enabled.includes(sv.id))} selected={r.services.map((x) => x.serviceId)} onToggle={(id) => toggleService(r.id, id)} />
               {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
                 <details>
-                  <summary className="cursor-pointer text-base font-semibold text-brand">Demãos e quantidades</summary>
+                  <summary className="flex min-h-12 cursor-pointer items-center text-base font-semibold text-brand">Demãos e quantidades</summary>
                   <div className="mt-2 flex flex-col gap-2">
                     {r.services.map((sel) => {
                       const svc = db.services.find((x) => x.id === sel.serviceId);
@@ -256,9 +256,9 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 
         {notes2.length > 0 ? (
           <details className="rounded-[20px] border border-line bg-white p-4 text-base text-ink">
-            <summary className="cursor-pointer font-display font-semibold">Avisos ({notes2.length})</summary>
+            <summary className="flex min-h-12 cursor-pointer items-center font-display font-semibold">Avisos ({notes2.length})</summary>
             <ul className="mt-2 list-disc pl-5">{notes2.slice(0, 6).map((w) => <li key={w}>{w}</li>)}</ul>
-            <a href="/configuracoes" className="mt-2 block text-brand underline">Conferir valores em Ajustes</a>
+            <a href="/configuracoes" className="flex min-h-12 items-center font-display font-semibold text-live">Conferir valores em Ajustes</a>
           </details>
         ) : null}
 

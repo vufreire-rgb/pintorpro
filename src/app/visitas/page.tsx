@@ -54,7 +54,7 @@ export default function Visitas() {
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
-    <Screen title="Visitas" nav corner={<Link href="/configuracoes" aria-label={`${db.company?.name ?? "Meu negócio"} · Ajustes`}><BrandMark size={38} /></Link>}>
+    <Screen title="Visitas" nav corner={<Link href="/configuracoes" className="grid h-12 w-12 place-items-center" aria-label={`${db.company?.name ?? "Meu negócio"} · Ajustes`}><BrandMark size={38} /></Link>}>
       <div
         className="flex flex-col gap-4"
         onTouchStart={(e) => { touchX.current = e.touches[0]!.clientX; }}
