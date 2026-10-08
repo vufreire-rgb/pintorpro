@@ -119,6 +119,7 @@ check(true, "link que não existe: mensagem clara");
 
 // cancelar o link
 await page.goBack();
+await page.getByRole("button", { name: /^Mais opções/ }).click();
 await page.getByRole("button", { name: "Cancelar link" }).click();
 await page.waitForTimeout(600);
 check(calls.revoked === 1, "cancelar link avisa o servidor");

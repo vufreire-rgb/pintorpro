@@ -136,6 +136,7 @@ check((await page.getByText("Ambientes", { exact: true }).count()) === 0 && (awa
 check((await page.getByTestId("total").textContent())?.replace(/\s/g, "").includes("1.800,00"), "modo simples: total = preço ditado");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
 await page.waitForURL(/\/orcamentos\/[^/]+$/);
+await page.getByRole("button", { name: /^Serviços/ }).click();
 await page.getByText("Pintura: Sala").first().waitFor();
 check((await page.getByText("Só para você").count()) === 0, "modo simples: orçamento sem bloco de custo/lucro");
 // 6) ditar de dentro da visita: cliente e endereço da visita, orçamento ligado a ela
