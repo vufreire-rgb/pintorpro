@@ -368,3 +368,7 @@ export function CartaoDeObservacao({ label, hint, mic, children }: { label: stri
 
 /** Campo de texto sem caixa, para dentro de um CartaoDeObservacao: cresce com o texto. */
 export const bareTextCls = "min-h-24 w-full resize-none bg-transparent text-lg leading-[26px] outline-none placeholder:text-support/70";
+
+/** Abas (segmentadas): ativa = fundo azul névoa + texto azul semibold; inativa = sem fundo, texto de apoio normal. */
+export const TAB_LIST_CLS = "grid gap-1 rounded-2xl bg-white p-1 border border-line";
+export const tabCls = (active: boolean): string => `flex min-h-12 items-center justify-center gap-2 rounded-xl px-1 text-base leading-tight ${active ? "bg-brand-soft font-display font-semibold text-brand" : "font-normal text-support"}`;

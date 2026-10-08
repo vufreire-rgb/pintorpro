@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen, TAB_LIST_CLS, tabCls } from "@/components/ui";
 import { Check, Eye, Inbox, Mic, Pencil, Plus, RotateCcw, X } from "lucide-react";
 import { SwipeRow } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
@@ -63,14 +63,14 @@ export default function Orcamentos() {
         )}
         {newRequests > 0 ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="!px-3 !text-lg">{newRequests} {newRequests === 1 ? "pedido novo" : "pedidos novos"} de clientes</LinkButton> : null}
       </div>
-      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-2xl bg-slate-100 p-1">
+      <div role="tablist" className={`${TAB_LIST_CLS} grid-cols-3`}>
         {TABS.map((s) => (
           <button
             key={s}
             role="tab"
             aria-selected={tab === s}
             onClick={() => setTab(s)}
-            className={`min-h-12 rounded-xl px-1 text-base font-bold leading-tight ${tab === s ? "bg-brand text-white" : "text-ink"}`}
+            className={tabCls(tab === s)}
           >
             {STATUS_LABEL[s]} ({db.quotes.filter((q) => q.status === s).length})
           </button>

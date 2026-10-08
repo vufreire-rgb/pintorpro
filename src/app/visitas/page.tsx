@@ -6,7 +6,7 @@ import { InstallBanner } from "@/components/InstallBanner";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
 import { BrandMark } from "@/components/BrandHeader";
-import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen, TAB_LIST_CLS, tabCls } from "@/components/ui";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ArrowLeft, CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
 import { deleteVisit, startVisit } from "@/modules/visits";
@@ -36,7 +36,7 @@ const QUOTED_EMPTY = "Nenhuma visita com orçamento feito ainda.";
 
 function VisitBadge({ v }: { v: Visit }) {
   const st = visitState(v);
-  if (st === "scheduled") return <span className="inline-flex items-center gap-1.5 font-bold text-brand"><CalendarDays size={18} strokeWidth={2.2} aria-hidden />{whenLabel(v.scheduledAt!)}</span>;
+  if (st === "scheduled") return <span className="inline-flex items-center gap-1.5 font-semibold text-brand"><CalendarDays size={18} strokeWidth={2.2} aria-hidden />{whenLabel(v.scheduledAt!)}</span>;
   if (st === "late") return <Badge tone="warn">Atrasada · {whenLabel(v.scheduledAt!)}</Badge>;
   return v.quoteId ? <Badge tone="ok">Orçamento feito</Badge> : <Badge tone="warn">Falta orçar</Badge>;
 }
@@ -80,21 +80,21 @@ export default function Visitas() {
       <FirstSteps db={db} />
       {filter === "quoted" ? (
         <div className="flex items-center justify-between gap-2">
-          <h2 className="font-display text-xl font-bold">Visitas com orçamento feito</h2>
+          <h2 className="font-display text-xl font-medium">Visitas com orçamento feito</h2>
           <Button variant="ghost" size="sm" icon={ArrowLeft} className="!w-auto" onClick={() => setPicked(counts.scheduled > 0 ? "scheduled" : "todo")}>Voltar</Button>
         </div>
       ) : (
-        <div role="tablist" className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
+        <div role="tablist" className={`${TAB_LIST_CLS} grid-cols-2`}>
           {TABS.map((t) => (
             <button
               key={t.id}
               role="tab"
               aria-selected={filter === t.id}
               onClick={() => setPicked(t.id)}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-1 text-base font-bold leading-tight ${filter === t.id ? "bg-brand text-white" : "text-ink"}`}
+              className={tabCls(filter === t.id)}
             >
               {t.label}
-              <span className={`rounded-lg px-2 py-0.5 text-sm ${filter === t.id ? "bg-white text-brand" : "bg-white/70 text-brand"}`}>{counts[t.id]}</span>
+              <span className="text-base">{counts[t.id]}</span>
             </button>
           ))}
         </div>
@@ -113,7 +113,7 @@ export default function Visitas() {
               <Thumb id={v.photoIds[0]} />
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between gap-2">
-                  <b className="truncate text-lg">{client?.name ?? "Cliente a definir"}</b>
+                  <b className="truncate text-lg font-bold">{client?.name ?? "Cliente a definir"}</b>
                   
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2"><VisitBadge v={v} />{v.isExample ? <Badge tone="lost">Exemplo</Badge> : null}</div>
