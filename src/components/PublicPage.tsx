@@ -5,7 +5,7 @@ export function PublicPage({ title, children }: { title: string; children?: Reac
   return (
     <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-4 p-6">
       <p className="text-base text-support">{APP_NAME}</p>
-      <h1 className="font-display text-[28px] font-bold leading-9">{title}</h1>
+      <h1 className="font-display text-[28px] font-semibold leading-9">{title}</h1>
       {children ?? <p className="text-lg">Texto em preparação.</p>}
     </main>
   );

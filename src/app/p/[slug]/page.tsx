@@ -31,7 +31,7 @@ export default function PaginaDoPintor() {
   if (state.name !== "ok") {
     return (
       <main className="mx-auto grid min-h-dvh max-w-md place-items-center p-6 text-center">
-        <div><h1 className="font-display text-2xl font-bold">{state.name === "gone" ? "Página não encontrada" : "Não consegui abrir agora"}</h1><p className="mt-2 text-lg text-support">{state.name === "gone" ? "Este endereço não existe ou foi desativado." : "Verifique sua internet e tente de novo em instantes."}</p></div>
+        <div><h1 className="font-display text-2xl font-semibold">{state.name === "gone" ? "Página não encontrada" : "Não consegui abrir agora"}</h1><p className="mt-2 text-lg text-support">{state.name === "gone" ? "Este endereço não existe ou foi desativado." : "Verifique sua internet e tente de novo em instantes."}</p></div>
       </main>
     );
   }
@@ -56,13 +56,13 @@ export default function PaginaDoPintor() {
       <header className="flex items-center gap-3">
         <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-2xl font-bold text-white" style={{ background: brand }} aria-hidden>{p.initials}</div>
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-bold leading-7">{p.company}</h1>
+          <h1 className="font-display text-2xl font-semibold leading-7">{p.company}</h1>
           {p.city ? <div className="text-base text-support">{p.city}</div> : null}
         </div>
       </header>
 
       <section className="rounded-2xl p-4" style={{ background: tintOf(brand) }}>
-        <p className="font-display text-xl font-bold leading-6">{p.headline || "Peça seu orçamento de pintura"}</p>
+        <p className="font-display text-xl font-semibold leading-6">{p.headline || "Peça seu orçamento de pintura"}</p>
         {p.about ? <p className="mt-2 whitespace-pre-wrap text-lg leading-6">{p.about}</p> : null}
       </section>
 
@@ -75,12 +75,12 @@ export default function PaginaDoPintor() {
 
       {done ? (
         <section role="status" className="rounded-2xl border-2 p-4 text-center" style={{ borderColor: brand }}>
-          <h2 className="font-display text-xl font-bold">Pedido enviado!</h2>
+          <h2 className="font-display text-xl font-semibold">Pedido enviado!</h2>
           <p className="mt-1 text-lg">{p.company} vai entrar em contato pelo WhatsApp que você informou.</p>
         </section>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-3 rounded-2xl border border-slate-200 p-4">
-          <h2 className="font-display text-xl font-bold">Peça um orçamento</h2>
+          <h2 className="font-display text-xl font-semibold">Peça um orçamento</h2>
           <label className="flex flex-col gap-1 text-lg font-semibold">Seu nome<input required minLength={2} maxLength={80} className={inputCls} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoComplete="name" /></label>
           <label className="flex flex-col gap-1 text-lg font-semibold">Seu WhatsApp (com DDD)<input required type="tel" inputMode="tel" maxLength={20} placeholder="(11) 99999-9999" className={inputCls} value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} autoComplete="tel" /></label>
           <label className="flex flex-col gap-1 text-lg font-semibold">Endereço ou bairro da obra<input maxLength={200} className={inputCls} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} autoComplete="street-address" /></label>
@@ -88,13 +88,13 @@ export default function PaginaDoPintor() {
           {/* Campo escondido: só robô preenche. */}
           <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden"><label>Não preencha<input tabIndex={-1} autoComplete="off" value={f.hp} onChange={(e) => setF({ ...f, hp: e.target.value })} /></label></div>
           {error ? <p role="alert" className="text-base text-red-700">{error}</p> : null}
-          <button type="submit" disabled={sending} className="min-h-16 rounded-2xl px-4 font-display text-xl font-bold text-white disabled:opacity-60" style={{ background: brand }}>{sending ? "Enviando…" : "Enviar pedido"}</button>
+          <button type="submit" disabled={sending} className="min-h-16 rounded-2xl px-4 font-display text-xl font-semibold text-white disabled:opacity-60" style={{ background: brand }}>{sending ? "Enviando…" : "Enviar pedido"}</button>
           <p className="text-base text-support">Seus dados (nome, WhatsApp, endereço e o que você escreveu) serão enviados a {p.company} só para ele retornar o contato. <a href="/privacidade" className="underline">Política de privacidade</a>.</p>
         </form>
       )}
 
       {wa ? (
-        <a href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent("Olá! Vi sua página e gostaria de um orçamento.")}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 font-display text-xl font-bold text-white"><MessageCircle size={24} aria-hidden />Prefiro chamar no WhatsApp</a>
+        <a href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent("Olá! Vi sua página e gostaria de um orçamento.")}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 font-display text-xl font-semibold text-white"><MessageCircle size={24} aria-hidden />Prefiro chamar no WhatsApp</a>
       ) : null}
 
       <footer className="pt-2 text-center text-base text-support">Página feita com <a href="https://medde.com.br" className="font-semibold underline">{APP_NAME}</a></footer>

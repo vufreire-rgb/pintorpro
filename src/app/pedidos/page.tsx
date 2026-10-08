@@ -42,14 +42,14 @@ export default function Pedidos() {
     >
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0"><div className="truncate font-display text-lg font-bold">{r.name}</div><div className="text-base text-support">{phoneLabel(r.phone)} · {agoLabel(r.created_at)}</div></div>
+        <div className="min-w-0"><div className="truncate font-display text-lg font-semibold">{r.name}</div><div className="text-base text-support">{phoneLabel(r.phone)} · {agoLabel(r.created_at)}</div></div>
         <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge>
       </div>
       {r.address ? <div className="text-base">📍 {r.address}</div> : null}
-      {r.message ? <p className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 text-base">{r.message}</p> : null}
+      {r.message ? <p className="whitespace-pre-wrap rounded-2xl bg-[#F3F6FA] p-3 text-base">{r.message}</p> : null}
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="ghost" icon={MessageCircle} onClick={() => { window.open(requestWhatsApp(r, company), "_blank"); if (r.status === "new") void act(() => markRequest(r.id, "contacted")); }}>WhatsApp</Button>
-        <Button variant="ghost" icon={UserPlus} onClick={() => makeVisit(r)}>Criar visita</Button>
+        <Button variant="ghost" size="sm" icon={MessageCircle} onClick={() => { window.open(requestWhatsApp(r, company), "_blank"); if (r.status === "new") void act(() => markRequest(r.id, "contacted")); }}>WhatsApp</Button>
+        <Button variant="ghost" size="sm" icon={UserPlus} onClick={() => makeVisit(r)}>Criar visita</Button>
       </div>
       <Button variant="danger" icon={Trash2} onClick={() => void act(() => removeRequest(r.id))}>Apagar</Button>
     </Card>
@@ -68,9 +68,9 @@ export default function Pedidos() {
           </Card>
         ) : null}
         {requests.length > 0 ? <p className="text-base text-support">Dica: deslize o pedido para a direita para criar a visita, ou para a esquerda para descartar.</p> : null}
-        {fresh.length ? <h2 className="font-display text-xl font-bold">Novos ({fresh.length})</h2> : null}
+        {fresh.length ? <h2 className="font-display text-xl font-semibold">Novos ({fresh.length})</h2> : null}
         {fresh.map(one)}
-        {older.length ? <h2 className="font-display text-xl font-bold">Anteriores</h2> : null}
+        {older.length ? <h2 className="font-display text-xl font-semibold">Anteriores</h2> : null}
         {older.map(one)}
         {cloudEnabled && requests.length === 0 ? <p className="text-lg text-support">Nenhum pedido ainda. Quando alguém pedir pelo seu link, aparece aqui.</p> : null}
         {undo ? <UndoBar message={undo.message} onUndo={() => { undo.back(); setUndo(null); }} onDone={() => setUndo(null)} /> : null}

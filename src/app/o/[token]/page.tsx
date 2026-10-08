@@ -49,7 +49,7 @@ export default function Orcamento() {
       <header className="flex items-center gap-3">
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-xl font-bold text-white" style={{ background: brand }} aria-hidden>{q.painter.initials}</div>
         <div className="min-w-0">
-          <div className="font-display text-xl font-bold leading-6">{q.painter.company}</div>
+          <div className="font-display text-xl font-semibold leading-6">{q.painter.company}</div>
           {q.painter.contact ? <div className="text-base text-support">{q.painter.contact}</div> : null}
         </div>
       </header>
@@ -62,7 +62,7 @@ export default function Orcamento() {
         {q.siteAddress ? <div className="text-base text-support">{q.siteAddress}</div> : null}
         {q.summary ? <p className="mt-3 text-lg leading-6">{q.summary}</p> : null}
         <div className="mt-3 text-base text-support">Valor total</div>
-        <div className="font-display text-[40px] font-extrabold leading-[44px]" style={{ color: brand }} data-testid="total">{q.total}</div>
+        <div className="font-display text-[40px] font-semibold leading-[44px]" style={{ color: brand }} data-testid="total">{q.total}</div>
       </section>
 
       <section className="grid grid-cols-3 gap-2 text-center">
@@ -91,17 +91,17 @@ export default function Orcamento() {
           <div className="text-base text-support">{q.pix.amount} · {q.pix.pct}</div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {qr ? <img src={qr} alt="QR Code do Pix" className="h-52 w-52" /> : null}
-          <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-bold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
+          <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-semibold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
           {q.pix.receiver ? <div className="text-base text-support">Recebedor: {q.pix.receiver}</div> : null}
         </section>
       ) : null}
       {q.deposit ? (
-        <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 font-display text-lg font-bold text-white" style={{ background: brand }}>Pagar a entrada ({q.deposit.amount})</a>
+        <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 font-display text-lg font-semibold text-white" style={{ background: brand }}>Pagar a entrada ({q.deposit.amount})</a>
       ) : null}
 
       {q.terms.exclusions.length || q.terms.before.length || q.terms.warranty ? (
         <details className="rounded-2xl border border-slate-200 p-4">
-          <summary className="cursor-pointer font-display text-lg font-bold">Combinados e garantia</summary>
+          <summary className="cursor-pointer font-display text-lg font-semibold">Combinados e garantia</summary>
           {q.terms.exclusions.length ? <><b className="mt-3 block">Não está incluso</b><ul className="list-disc pl-5 text-base">{q.terms.exclusions.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}
           {q.terms.before.length ? <><b className="mt-3 block">Antes de começar</b><ul className="list-disc pl-5 text-base">{q.terms.before.map((t, i) => <li key={i}>{t}</li>)}</ul></> : null}
           {q.terms.warranty ? <><b className="mt-3 block">Garantia</b><p className="text-base">{q.terms.warranty}</p></> : null}
@@ -109,7 +109,7 @@ export default function Orcamento() {
       ) : null}
 
       {wa ? (
-        <a href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent(`Olá! Vi o orçamento nº ${q.number}.`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 font-display text-xl font-bold text-white"><MessageCircle size={24} aria-hidden />Falar com {q.painter.company.split(" ")[0]}</a>
+        <a href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent(`Olá! Vi o orçamento nº ${q.number}.`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 font-display text-xl font-semibold text-white"><MessageCircle size={24} aria-hidden />Falar com {q.painter.company.split(" ")[0]}</a>
       ) : null}
 
       <footer className="pt-2 text-center text-base text-support">
@@ -122,7 +122,7 @@ export default function Orcamento() {
 function Notice({ title, text }: { title: string; text: string }) {
   return (
     <main className="mx-auto grid min-h-dvh max-w-md place-items-center p-6 text-center">
-      <div><h1 className="font-display text-2xl font-bold">{title}</h1><p className="mt-2 text-lg text-support">{text}</p></div>
+      <div><h1 className="font-display text-2xl font-semibold">{title}</h1><p className="mt-2 text-lg text-support">{text}</p></div>
     </main>
   );
 }
