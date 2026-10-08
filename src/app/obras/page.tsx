@@ -61,7 +61,7 @@ export default function Obras() {
               <span className="flex shrink-0 gap-2">{w.isExample ? <Badge tone="lost">Exemplo</Badge> : null}<Badge tone={TONE[w.status]}>{WORK_STATUS_LABEL[w.status]}</Badge></span>
             </div>
             <div className="line-clamp-2 text-base text-support">{db.quotes.find((q) => q.id === w.quoteId)?.siteAddress || "Sem endereço"}</div>
-            <div className="flex justify-between text-base"><span className="inline-flex items-center gap-1.5"><CalendarDays size={20} strokeWidth={2.2} aria-hidden />{dateLabel(w)}</span><span className="font-display font-bold">{formatBRL(w.plannedTotalCents)}</span></div>
+            <div className="flex justify-between text-base"><span className="inline-flex items-center gap-1.5"><CalendarDays size={20} strokeWidth={2.2} aria-hidden />{dateLabel(w)}</span><span className="font-display text-xl font-semibold">{formatBRL(w.plannedTotalCents)}</span></div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-accent" style={{ width: `${paidPct(w)}%` }} /></div>
             {remainingCents(w) > 0 ? <div className="text-base font-bold text-brand">Falta receber {formatBRL(remainingCents(w))}</div> : <div className="inline-flex items-center gap-1.5 text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden />Tudo recebido</div>}
             {lateCents(w) > 0 ? <div className="inline-flex items-center gap-1.5 text-base font-bold text-[#8A4B00]"><TriangleAlert size={20} strokeWidth={2.4} aria-hidden />{formatBRL(lateCents(w))} em atraso</div> : null}

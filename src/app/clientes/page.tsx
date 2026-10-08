@@ -40,7 +40,7 @@ export default function Clientes() {
           <Button variant="ghost" size="sm" icon={X} onClick={() => setEditing(null)}>Cancelar</Button>
         </Card>
       ) : <Button icon={UserPlus} onClick={() => open("new")}>Novo cliente</Button>}
-      {blocked ? <p className="rounded-xl bg-amber-50 p-3 text-[#8A4B00]">{blocked}</p> : null}
+      {blocked ? <p className="rounded-2xl bg-[#FFF3D6] p-3 text-[#8A4B00]">{blocked}</p> : null}
       {db.clients.length === 0 ? <p className="text-support">Nenhum cliente ainda.</p> : null}
       {db.clients.map((c) => (
         <Card key={c.id} className="flex flex-col gap-2">
@@ -51,7 +51,7 @@ export default function Clientes() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" size="sm" icon={Pencil} onClick={() => open(c.id)}>Editar</Button>
-            <Button variant="ghost" size="sm" icon={Trash2} className="text-err" onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
+            <Button variant="danger" icon={Trash2} onClick={() => { setBlocked(""); setAskDelete(c.id); }}>Apagar</Button>
           </div>
         </Card>
       ))}
