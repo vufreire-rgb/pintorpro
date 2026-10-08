@@ -10,7 +10,7 @@ import { cloudEnabled } from "@/modules/auth";
 import { enablePush, usePushState } from "@/modules/push";
 import { linkIsStale, linkUrl, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
 import { isSimpleMode } from "@/modules/settings";
-import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, reopenQuote, setQuoteStatus } from "@/modules/quotes";
+import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { downloadPdf, sharePdfOnWhatsApp } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { formatBRL } from "@/shared/money";
@@ -23,6 +23,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const [msg, setMsg] = useState("");
   const [askDelete, setAskDelete] = useState(false);
   const [fechou, setFechou] = useState(false);
+  const [askLose, setAskLose] = useState(false);
   const router = useRouter();
   const { links, reload } = useQuoteLinks();
   const [linkMsg, setLinkMsg] = useState("");
@@ -78,13 +79,15 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
           <>
             <CardTitle>O cliente respondeu?</CardTitle>
             <Button icon={PartyPopper} onClick={() => { setFechou(true); setQuoteStatus(q.id, "won"); }}>Fechou! Criar a obra</Button>
-            <Button variant="ghost" icon={X} onClick={() => setQuoteStatus(q.id, "lost")}>Perdeu</Button>
+            <Button variant="ghost" icon={X} onClick={() => setAskLose(true)}>Perdeu</Button>
           </>
         ) : q.status === "won" ? (
           <>
             <CardTitle>Fechado</CardTitle>
             <LinkButton href="/obras" variant="ghost">Ver obra criada →</LinkButton>
-            {!db.works.some((w) => w.quoteId === q.id && (w.payments?.length || w.expenses?.length || w.startDate || w.status !== "scheduled")) ? <Button variant="ghost" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Desfazer: reabrir orçamento</Button> : null}
+            <p className="text-base text-support">Fechou por engano? Volte para aberto ou marque como perdido.{quoteWorkHasData(db, q.id) ? " A obra já tem dados lançados e continua em Obras." : ""}</p>
+            <Button variant="ghost" icon={RotateCcw} onClick={() => reopenQuote(q.id)}>Voltar para aberto</Button>
+            <Button variant="ghost" icon={X} onClick={() => setAskLose(true)}>Perdeu</Button>
           </>
         ) : (
           <>
@@ -131,6 +134,14 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         <Button variant="ghost" icon={Copy} onClick={() => { const id = duplicateQuote(db, q.id); if (id) router.push(`/orcamentos/${id}`); }}>Duplicar orçamento</Button>
         <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar orçamento</Button>
       </Card>
+      <ConfirmDialog
+        open={askLose}
+        title="Marcar como perdido?"
+        text={`O orçamento de ${client?.name ?? "cliente"} vai para Perdido. Você pode reabrir depois.${quoteWorkHasData(db, q.id) ? " A obra continua em Obras, porque já tem pagamentos ou gastos." : ""}`}
+        confirmLabel="Sim, perdeu"
+        onConfirm={() => { loseQuote(q.id); setAskLose(false); }}
+        onCancel={() => setAskLose(false)}
+      />
       {fechou ? <FechouNotice owner={db.company?.ownerName} number={String(q.number).padStart(4, "0")} onClose={() => setFechou(false)} /> : null}
       <ConfirmDialog
         open={askDelete}

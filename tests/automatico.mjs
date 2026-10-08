@@ -72,8 +72,13 @@ n = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).w
 check(n === 3, "e remove a obra vazia criada");
 
 await swipe(page.locator("a", { hasText: "Nº 2 · Ana" }), -220);
+await page.getByText("Marcar como perdido?").waitFor();
+await page.getByRole("button", { name: "Cancelar" }).click();
+check((await tabCount(/Aberto/)) === 2, "perdeu: o app PERGUNTA primeiro; 'Cancelar' deixa como estava");
+await swipe(page.locator("a", { hasText: "Nº 2 · Ana" }), -220);
+await page.getByRole("button", { name: "Sim, perdeu" }).click();
 await page.getByText(/Perdido: Ana/).waitFor();
-check((await tabCount(/Aberto/)) === 1 && (await tabCount(/Perdido/)) === 2, "deslizar para a esquerda marca como Perdido");
+check((await tabCount(/Aberto/)) === 1 && (await tabCount(/Perdido/)) === 2, "confirmando, vai para Perdido");
 
 await page.getByRole("tab", { name: /Perdido/ }).click();
 await swipe(page.locator("a", { hasText: "Nº 2 · Ana" }), 220);
@@ -87,6 +92,8 @@ await page.waitForURL(/orcamentos\/a$/);
 check(await page.getByRole("button", { name: "Fechou! Criar a obra" }).isVisible(), "tocar abre o orçamento, com 'Fechou!' e 'Perdeu' (sem os 3 botões de situação)");
 check(!(await page.getByRole("button", { name: "Aberto", exact: true }).isVisible().catch(() => false)), "os botões Aberto/Fechado/Perdido não existem mais");
 await page.getByRole("button", { name: "Perdeu" }).click();
+await page.getByText("Marcar como perdido?").waitFor();
+await page.getByRole("button", { name: "Sim, perdeu" }).click();
 await page.getByRole("button", { name: /Reabrir/ }).waitFor();
 check(true, "Perdeu → aparece 'Reabrir'");
 

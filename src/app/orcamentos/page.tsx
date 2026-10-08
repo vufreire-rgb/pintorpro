@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
 import { Check, Eye, Inbox, Mic, Pencil, Plus, RotateCcw, X } from "lucide-react";
 import { SwipeRow } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
-import { isExpired, reopenQuote, setQuoteStatus } from "@/modules/quotes";
+import { isExpired, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { usePendingVoice } from "@/modules/voice";
 import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
@@ -27,6 +27,7 @@ export default function Orcamentos() {
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
+  const [askLose, setAskLose] = useState<{ id: string; name: string } | null>(null);
   const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
   if (!db) return <Loading />;
   const list = db.quotes.filter((q) => q.status === tab);
@@ -78,6 +79,7 @@ export default function Orcamentos() {
       {tab === "open" && list.length > 0 ? <div className="text-lg text-support">Total em aberto: <b>{formatBRL(list.reduce((s, q) => s + q.result.totals.totalCents, 0))}</b></div> : null}
       {list.length === 0 ? <p className="text-lg text-support">Nada por aqui.</p> : null}
       {tab === "open" && list.length > 0 ? <p className="text-base text-support">Dica: deslize o orçamento para a direita se fechou, ou para a esquerda se perdeu.</p> : null}
+      {tab === "won" && list.length > 0 ? <p className="text-base text-support">Fechou por engano? Deslize para a direita para voltar a aberto, ou para a esquerda se perdeu.</p> : null}
       {tab === "lost" && list.length > 0 ? <p className="text-base text-support">Dica: deslize para a direita para reabrir.</p> : null}
       {list.map((q) => {
         const name = db.clients.find((c) => c.id === q.clientId)?.name ?? "cliente";
@@ -96,7 +98,18 @@ export default function Orcamentos() {
               right={{ label: "Fechou", icon: <Check size={24} aria-hidden />, className: "bg-[#0A8545]" }}
               left={{ label: "Perdeu", icon: <X size={24} aria-hidden />, className: "bg-[#5B6B80]" }}
               onRight={() => { setQuoteStatus(q.id, "won"); setUndo({ message: `Fechou: ${name}. A obra foi criada.`, back: () => reopenQuote(q.id) }); }}
-              onLeft={() => { setQuoteStatus(q.id, "lost"); setUndo({ message: `Perdido: ${name}.`, back: () => reopenQuote(q.id) }); }}
+              onLeft={() => setAskLose({ id: q.id, name })}
+            >{card}</SwipeRow>
+          );
+        }
+        if (q.status === "won") {
+          return (
+            <SwipeRow
+              key={q.id}
+              right={{ label: "Voltar a aberto", icon: <RotateCcw size={24} aria-hidden />, className: "bg-brand" }}
+              left={{ label: "Perdeu", icon: <X size={24} aria-hidden />, className: "bg-[#5B6B80]" }}
+              onRight={() => { reopenQuote(q.id); setUndo({ message: `Voltou a aberto: ${name}.`, back: () => setQuoteStatus(q.id, "won") }); }}
+              onLeft={() => setAskLose({ id: q.id, name })}
             >{card}</SwipeRow>
           );
         }
@@ -111,6 +124,14 @@ export default function Orcamentos() {
         }
         return <div key={q.id}>{card}</div>;
       })}
+      <ConfirmDialog
+        open={!!askLose}
+        title="Marcar como perdido?"
+        text={askLose ? `O orçamento de ${askLose.name} vai para Perdido. Você pode reabrir depois.${quoteWorkHasData(db, askLose.id) ? " A obra dele continua em Obras, porque já tem pagamentos ou gastos." : ""}` : ""}
+        confirmLabel="Sim, perdeu"
+        onConfirm={() => { if (askLose) { loseQuote(askLose.id); setUndo({ message: `Perdido: ${askLose.name}.`, back: () => reopenQuote(askLose.id) }); } setAskLose(null); }}
+        onCancel={() => setAskLose(null)}
+      />
       {undo ? <UndoBar message={undo.message} onUndo={() => { undo.back(); setUndo(null); }} onDone={() => setUndo(null)} /> : null}
       </div>
     </Screen>

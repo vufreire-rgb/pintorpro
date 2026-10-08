@@ -112,6 +112,23 @@ const v = await page.evaluate(() => { const k = Object.keys(localStorage).find((
 check(v.clients.includes("Maria Souza") && v.notes.includes("Sala e dois quartos") && v.addr === "Rua das Flores, 10", "cliente e visita criados com o pedido: " + JSON.stringify(v));
 check(state.patched.some((p) => p.status === "converted"), "pedido marcado como 'virou visita'");
 
+// 3b) deslizar o pedido para a esquerda descarta (com desfazer)
+{
+  const cdp = await page.context().newCDPSession(page);
+  await page.goto(base + "/pedidos");
+  await page.getByText("Maria Souza").waitFor();
+  const b = await page.locator("a, div", { hasText: "(11) 98888-7777" }).last().boundingBox();
+  const y = b.y + 40, x0 = b.x + b.width / 2;
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: x0, y }] });
+  for (let i = 1; i <= 8; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x0 - (220 * i) / 8, y }] });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await page.getByText(/Descartado: Maria Souza/).waitFor();
+  check(state.patched.at(-1).status === "dismissed", "pedido: deslizar para a esquerda descarta");
+  await page.getByRole("button", { name: "Desfazer" }).click();
+  await page.waitForTimeout(300);
+  check(state.patched.at(-1).status === "converted", "pedido: 'Desfazer' volta ao estado anterior");
+}
+
 // 4) desativar: o link deixa de funcionar
 await page.goto(base + "/configuracoes");
 await page.getByText("Página para receber pedidos").first().click();

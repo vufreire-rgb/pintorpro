@@ -127,6 +127,22 @@ export function setQuoteStatus(quoteId: string, status: QuoteStatus): void {
   });
 }
 
+/** Obra recém-criada ao fechar, ainda sem nada lançado (pagamento, gasto ou data): pode sumir sem perder nada. */
+export const isEmptyWork = (w: Work): boolean => w.status === "scheduled" && !w.payments?.length && !w.expenses?.length && !w.startDate;
+
+/** A obra deste orçamento já tem dados lançados (por isso não some ao mudar a situação do orçamento). */
+export const quoteWorkHasData = (db: Db, quoteId: string): boolean => db.works.some((w) => w.quoteId === quoteId && !isEmptyWork(w));
+
+/** Marca como perdido. Se o orçamento estava fechado, a obra criada só some se ainda estiver vazia. */
+export function loseQuote(quoteId: string): void {
+  updateDb((db) => {
+    const now = new Date().toISOString();
+    const quotes = db.quotes.map((q) => (q.id === quoteId ? { ...q, status: "lost" as const, autoClosed: undefined, closedAt: now } : q));
+    const works = db.works.filter((w) => !(w.quoteId === quoteId && isEmptyWork(w)));
+    return { ...db, quotes, works };
+  });
+}
+
 /**
  * Reabre um orçamento fechado ou perdido (vale também para "desfazer" logo depois de fechar).
  * Se a validade já passou, renova por mais um período. A obra criada ao fechar só some se ainda estiver vazia
@@ -140,7 +156,7 @@ export function reopenQuote(quoteId: string): void {
         ? { ...q, status: "open" as const, closedAt: undefined, autoClosed: undefined, validUntil: Date.parse(q.validUntil) < now ? new Date(now + VALIDITY_DAYS * DAY).toISOString() : q.validUntil }
         : q,
     );
-    const works = db.works.filter((w) => !(w.quoteId === quoteId && w.status === "scheduled" && !w.payments?.length && !w.expenses?.length && !w.startDate));
+    const works = db.works.filter((w) => !(w.quoteId === quoteId && isEmptyWork(w)));
     return { ...db, quotes, works };
   });
 }

@@ -7,9 +7,10 @@ import { AutoTour, type TourStep } from "@/components/Tour";
 import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
 import { BrandHeader } from "@/components/BrandHeader";
-import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
-import { CalendarDays, ClipboardList } from "lucide-react";
-import { createExampleVisit } from "@/modules/visits";
+import { Badge, Card, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { SwipeRow } from "@/components/SwipeRow";
+import { CalendarDays, ClipboardList, FilePlus2, FileText, Play, Trash2 } from "lucide-react";
+import { createExampleVisit, deleteVisit, startVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
 import { countByFilter, filterVisits, firstFilledFilter, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
@@ -48,6 +49,7 @@ export default function Visitas() {
   const filter: VisitFilter = picked ?? (db ? firstFilledFilter(db.visits) : "scheduled");
   const router = useRouter();
   const touchX = useRef<number | null>(null);
+  const [askDelete, setAskDelete] = useState<{ id: string; name: string; scheduled: boolean } | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
   const steps: TourStep[] = [
     { target: "gravar", title: "Gravar ou agendar", text: "Gravar visita começa uma visita agora, com fotos, medidas e áudio. Agendar marca uma visita para outro dia. Dá para colocá-la na agenda do celular, que avisa na hora." },
@@ -90,14 +92,15 @@ export default function Visitas() {
         ))}
       </div>
       <div data-tour="lista" className="flex flex-col gap-4">
+      {list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
       {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque no botão verde para começar: ele já guarda fotos, áudio e medidas." : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
         const scheduled = visitState(v) !== "done";
         const bits = [!scheduled ? fmtDate(v.startedAt ?? v.createdAt) : null, n(v.photoIds.length, "foto", "fotos"), n((v.audios ?? []).length, "áudio", "áudios"), n((v.rooms ?? []).length, "ambiente", "ambientes")].filter(Boolean).join(" · ");
-        return (
-          <Link key={v.id} href={`/visitas/${v.id}`}>
+        const card = (
+          <Link href={`/visitas/${v.id}`}>
             <Card className="flex gap-3">
               <Thumb id={v.photoIds[0]} />
               <div className="min-w-0 flex-1">
@@ -113,9 +116,45 @@ export default function Visitas() {
             </Card>
           </Link>
         );
+        const name = client?.name ?? "Cliente a definir";
+        const GREEN = "bg-[#0A8545]", GREY = "bg-[#5B6B80]";
+        if (scheduled) {
+          return (
+            <SwipeRow key={v.id}
+              right={{ label: "Começar", icon: <Play size={24} aria-hidden />, className: GREEN }}
+              left={{ label: "Cancelar", icon: <Trash2 size={24} aria-hidden />, className: GREY }}
+              onRight={() => { startVisit(v.id); router.push(`/visitas/${v.id}`); }}
+              onLeft={() => setAskDelete({ id: v.id, name, scheduled: true })}
+            >{card}</SwipeRow>
+          );
+        }
+        if (!v.quoteId) {
+          return (
+            <SwipeRow key={v.id}
+              right={{ label: "Orçamento", icon: <FilePlus2 size={24} aria-hidden />, className: GREEN }}
+              left={{ label: "Apagar", icon: <Trash2 size={24} aria-hidden />, className: GREY }}
+              onRight={() => router.push(`/orcamentos/novo?visita=${v.id}`)}
+              onLeft={() => setAskDelete({ id: v.id, name, scheduled: false })}
+            >{card}</SwipeRow>
+          );
+        }
+        return (
+          <SwipeRow key={v.id}
+            right={{ label: "Ver orçamento", icon: <FileText size={24} aria-hidden />, className: "bg-brand" }}
+            onRight={() => router.push(`/orcamentos/${v.quoteId}`)}
+          >{card}</SwipeRow>
+        );
       })}
       </div>
       <InstallBanner />
+      <ConfirmDialog
+        open={!!askDelete}
+        title={askDelete?.scheduled ? "Cancelar esta visita?" : "Apagar esta visita?"}
+        text={askDelete ? (askDelete.scheduled ? `A visita agendada de ${askDelete.name} será apagada.` : `A visita de ${askDelete.name} será apagada, com as fotos, áudios e medidas dela. Isso não pode ser desfeito.`) : ""}
+        confirmLabel={askDelete?.scheduled ? "Sim, cancelar" : "Sim, apagar"}
+        onConfirm={() => { if (askDelete) void deleteVisit(askDelete.id, db.visits); setAskDelete(null); }}
+        onCancel={() => setAskDelete(null)}
+      />
       </div>
       <AutoTour id="visitas" steps={steps} onFinish={() => router.push(`/visitas/${db.visits.find((x) => x.isExample)?.id ?? createExampleVisit()}`)} />
     </Screen>
