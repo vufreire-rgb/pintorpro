@@ -13,7 +13,7 @@ export function PushCard() {
   if (!cloudEnabled) return null;
   const run = async (fn: () => Promise<void>) => { setBusy(true); setMsg(""); try { await fn(); } finally { setBusy(false); reload(); } };
   return (
-    <Section title="Notificações" hint={state === "on" ? "Ligadas neste celular" : "Avisos no celular"}>
+    <Section title="Notificações" hint={state === "on" ? "Ligadas neste celular" : "Avisos no celular"} icon={Bell} badge={state === "on" ? { text: "Ligadas", ok: true } : undefined}>
       <p className="text-base text-support">Receba um aviso no celular quando o cliente <b>abrir o seu orçamento</b> e quando chegar um <b>pedido novo</b> pela sua página.</p>
       {state === "loading" ? <p className="text-base text-support">Verificando…</p> : <p role="status" className="text-base">{PUSH_TEXT[state]}</p>}
       {state === "off" ? (

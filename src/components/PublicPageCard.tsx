@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Copy, Share2, Check, Inbox, Power } from "lucide-react";
+import { Copy, Share2, Check, Globe, Inbox, Power } from "lucide-react";
 import { Button, Chip, Field, LinkButton, Section, TextArea, TextInput } from "./ui";
 import { activatePage, deactivatePage, isValidSlug, pageErrorText, pageUrl, slugify, useMyPage } from "@/modules/publicPage";
 import type { Db } from "@/modules/types";
@@ -47,7 +47,7 @@ export function PublicPageCard({ db }: { db: Db }) {
   };
 
   return (
-    <Section title="Página para receber pedidos" hint={on ? "Ativa: seus clientes podem pedir orçamento pelo link" : "Seu cliente pede orçamento por um link seu"}>
+    <Section title="Página para receber pedidos" hint={on ? "Seu link para clientes pedirem" : "Link para clientes pedirem orçamento"} icon={Globe} badge={on ? { text: "Ativa", ok: true } : undefined}>
       <p className="text-base text-support">Você ganha um link (por exemplo no Instagram ou no WhatsApp). O cliente preenche nome, WhatsApp e o que precisa, e o pedido aparece aqui no app, em <b>Orçamentos → Pedidos de clientes</b>.</p>
       <Field label="Endereço da sua página" hint={validSlug ? url : "Use de 3 a 40 letras minúsculas, números e hífen."}>
         <TextInput aria-label="Endereço da sua página" value={slug} onChange={(e) => setSlugEdit(slugify(e.target.value))} disabled={!loaded} />

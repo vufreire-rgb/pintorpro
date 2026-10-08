@@ -86,7 +86,7 @@ await page.getByPlaceholder("(11) 99999-9999").fill("11988887777");
 await page.getByRole("button", { name: "Começar" }).click();
 await page.waitForURL(base + "/visitas");
 await page.goto(base + "/configuracoes");
-await page.getByText("Seu negócio").first().waitFor();
+await page.getByText("Seu negócio").first().click();            // as linhas de Ajustes começam fechadas
 failPush = true;                                    // a nuvem "cai"
 await page.getByLabel("Nome", { exact: true }).first().fill("Silva Pinturas Novo");
 await page.waitForTimeout(1800);

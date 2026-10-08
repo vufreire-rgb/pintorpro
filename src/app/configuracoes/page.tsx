@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { SubscriptionCard } from "@/components/SubscriptionCard";
 import { DeleteAccountCard } from "@/components/DeleteAccountCard";
 import { InstallBanner } from "@/components/InstallBanner";
-import { LinkButton, Button, Card, ConfirmDialog, Section, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
+import { Button, Card, ConfirmDialog, Section, SectionGroup, SectionLink, Chip, Field, Loading, NumberInput, Screen, TextArea, TextInput } from "@/components/ui";
 import { DEFAULT_PDF_TEXTS, PDF_COLORS } from "@/modules/catalog";
 import { cloudEnabled, useAuthState } from "@/modules/auth";
 import { downloadMyData, prepareLogout, signOutAndWipe } from "@/modules/account";
@@ -22,7 +22,7 @@ import { PushCard } from "@/components/PushCard";
 import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
-import { Check, QrCode, Users, ImagePlus, Download } from "lucide-react";
+import { AlarmClock, Calculator, Check, Download, FileText, ImagePlus, Package, PaintRoller, QrCode, Store, Users, Wrench } from "lucide-react";
 
 function LogoPreview({ id }: { id: string }) {
   const url = useFileUrl(id);
@@ -45,18 +45,15 @@ export default function Configuracoes() {
   return (
     <Screen title="Ajustes" nav>
       <BrandHeader />
-      <LinkButton href="/clientes" variant="ghost" icon={Users}>Meus clientes</LinkButton>
       <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meu negócio</h2>
-      <div>
-      <Section title="Seu negócio" hint="Nome, WhatsApp, cidade e pagamento" open>
+      <SectionGroup>
+      <Section title="Seu negócio" hint="Nome, WhatsApp e cidade" icon={Store}>
         <Field label="Nome"><TextInput value={c.name} onChange={(e) => set({ name: e.target.value })} /></Field>
         <Field label="WhatsApp"><TextInput value={c.whatsapp} onChange={(e) => set({ whatsapp: e.target.value })} /></Field>
         <Field label="Cidade"><TextInput value={c.city} onChange={(e) => set({ city: e.target.value })} /></Field>
         <Field label="Condição de pagamento padrão"><TextInput value={c.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value })} /></Field>
       </Section>
-      </div>
-      <div>
-      <Section title="Seu orçamento em PDF" hint="Logo, sua cor, entrada e textos do PDF">
+      <Section title="Seu orçamento em PDF" hint="Logo, cor e textos" icon={FileText}>
         <Field label="Seu nome (aparece no PDF)" hint="Opcional. Ex.: Carlos Silva"><TextInput value={c.ownerName ?? ""} onChange={(e) => set({ ownerName: e.target.value })} /></Field>
         <div className="flex flex-col gap-3">
           <p className="font-medium">Seu logo</p>
@@ -100,9 +97,7 @@ export default function Configuracoes() {
         <Field label="Garantia"><TextArea value={c.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText} onChange={(e) => set({ warrantyText: e.target.value })} /></Field>
         <p className="text-base text-support">Esses textos são sugestões. Troque pelo que você realmente combina com seus clientes.</p>
       </Section>
-      </div>
-      <div>
-      <Section title="Receber por Pix" hint="Gera o Pix copia e cola e o QR nos orçamentos e nas obras">
+      <Section title="Receber por Pix" hint={c.pix?.key ? "Chave cadastrada" : "Cadastre sua chave"} icon={QrCode} badge={c.pix?.key && normalizePixKey(c.pix.type, c.pix.key) ? { text: "Pronto", ok: true } : { text: "Falta" }}>
         <p className="text-base text-support">O dinheiro vai direto para a sua conta. O app só monta o código com a sua chave; ele não recebe nem guarda dinheiro.</p>
         <PixKeyInput
           initial={c.pix?.key ? { type: c.pix.type, key: c.pix.key } : undefined}
@@ -121,19 +116,23 @@ export default function Configuracoes() {
           <PixModal code={pixPayload(c.pix, { name: c.name, city: c.city }, 100)} title="QR de teste" amount="R$ 1,00" onClose={() => setPixTest(false)} />
         ) : null}
       </Section>
-      </div>
+      </SectionGroup>
+      <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Clientes e avisos</h2>
+      <SectionGroup>
+      <SectionLink href="/clientes" title="Meus clientes" hint="Lista, telefone e endereço" icon={Users} />
       {cloudEnabled && auth.status === "ready" ? <PublicPageCard db={db} /> : null}
       {cloudEnabled && auth.status === "ready" ? <PushCard /> : null}
-      <Section title="Lembrete de revisão" hint={c.reviewReminder ? `Ativo: ${reminderLabel(c.reviewReminder)}` : "Um aviso diário para ver quem não respondeu"}>
+      <Section title="Lembrete de revisão" hint={c.reviewReminder ? reminderLabel(c.reviewReminder) : "Aviso diário"} icon={AlarmClock} badge={c.reviewReminder ? { text: "Ativo", ok: true } : undefined}>
         <ReviewReminderForm saved={c.reviewReminder} onSave={(rr) => saveCompany({ ...c, reviewReminder: rr })} />
       </Section>
+      </SectionGroup>
       <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Meus orçamentos</h2>
-      <Section title="Como você faz orçamento?" hint={simple ? "Agora: só voz e preço fechado" : "Agora: com cálculo (medidas, preços e lucro)"}>
+      <SectionGroup>
+      <Section title="Como você faz orçamento?" hint={simple ? "Só voz e preço fechado" : "Com cálculo: medidas e lucro"} icon={Calculator}>
         <QuoteModeChoice value={c.quoteMode ?? "calc"} onChange={(m) => set({ quoteMode: m })} hideTitle />
       </Section>
       {simple ? null : <>
-      <div>
-      <Section title="Serviços e preços" hint="Quanto você cobra por serviço">
+      <Section title="Serviços e preços" hint="Quanto você cobra" icon={PaintRoller}>
         {db.services.map((s) => {
           const on = db.enabledServiceIds.includes(s.id);
           return (
@@ -150,8 +149,7 @@ export default function Configuracoes() {
           );
         })}
       </Section>
-      </div>
-      <Section title="Materiais" hint="Preço, rendimento e perda">
+      <Section title="Materiais" hint="Preço e rendimento" icon={Package}>
         {db.materials.map((m) => (
           <div key={m.id} className="flex flex-col gap-2 border-b border-slate-100 pb-3">
             <div className="font-medium">{m.name} ({m.unit}){m.isDemo ? <span className="ml-2 text-base text-[#8A4B00]">exemplo</span> : null}</div>
@@ -164,7 +162,7 @@ export default function Configuracoes() {
         ))}
         <p className="text-base text-support">&quot;Rende&quot; = quantos m² (ou metros/unidades) 1 unidade do material cobre.</p>
       </Section>
-      <Section title="Avançado: custos e lucro" hint="Diária, margem e jeito de calcular o preço">
+      <Section title="Avançado: custos e lucro" hint="Diária e margem" icon={Wrench}>
         <Field label="Diária que você quer ganhar (R$)"><NumberInput value={c.dailyRateCents / 100} onChange={(n) => set({ dailyRateCents: toCents(n) })} /></Field>
         <Field label="Horas de trabalho por dia"><NumberInput value={c.hoursPerDay} onChange={(n) => set({ hoursPerDay: n || 8 })} /></Field>
         <Field label="Dias de segurança no prazo"><NumberInput value={c.safetyDays} onChange={(n) => set({ safetyDays: n })} /></Field>
@@ -184,6 +182,7 @@ export default function Configuracoes() {
         ) : null}
       </Section>
       </>}
+      </SectionGroup>
       <h2 className="mt-2 px-1 text-base font-bold uppercase tracking-wide text-support">Conta e ajuda</h2>
       <InstallBanner always />
       {cloudEnabled && auth.status === "ready" ? <SubscriptionCard /> : null}

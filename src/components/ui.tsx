@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, FileText, MapPin, Minus, PaintRoller, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, FileText, MapPin, Minus, PaintRoller, Plus, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
 
 export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
@@ -128,18 +128,51 @@ export function CardTitle({ icon: Icon, children }: { icon?: LucideIcon; childre
 export const ACTION_CLS = "inline-flex min-h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl border-2 border-brand bg-white px-2 font-display text-base font-bold text-brand active:bg-brand-soft disabled:opacity-50";
 
 /** Bloco que abre e fecha (para telas longas, como Ajustes). */
-export function Section({ title, hint, open = false, children }: { title: string; hint?: string; open?: boolean; children: React.ReactNode }) {
+const ROW = "flex min-h-[68px] items-center gap-3 px-4 py-2";
+
+function RowIcon({ icon: Icon }: { icon?: LucideIcon }) {
+  return Icon ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null;
+}
+
+/** Etiqueta pequena à direita da linha: mostra de relance se o recurso está ligado. */
+function RowBadge({ badge }: { badge?: { text: string; ok?: boolean } }) {
+  return badge ? <span className={`shrink-0 rounded-full px-2.5 py-1 text-sm font-bold ${badge.ok ? "bg-[#E3F4EA] text-[#07602F]" : "bg-slate-100 text-support"}`}>{badge.text}</span> : null;
+}
+
+/** Lista de ajustes: várias linhas num cartão só, separadas por um fio (mais limpo que um cartão por linha). */
+export function SectionGroup({ children }: { children: React.ReactNode }) {
+  return <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white [&>*+*]:border-t [&>*+*]:border-slate-200">{children}</div>;
+}
+
+/** Linha de ajuste que abre e fecha: ícone, título curto, uma linha de resumo, etiqueta de estado e seta. */
+export function Section({ title, hint, icon, badge, open = false, children }: { title: string; hint?: string; icon?: LucideIcon; badge?: { text: string; ok?: boolean }; open?: boolean; children: React.ReactNode }) {
   return (
-    <details open={open} className="group rounded-2xl border border-slate-200 bg-white">
-      <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-2">
-        <span>
-          <span className="block font-display text-[22px] font-bold leading-7">{title}</span>
-          {hint ? <span className="block text-base text-support">{hint}</span> : null}
+    <details open={open} className="group">
+      <summary className={`${ROW} cursor-pointer list-none`}>
+        <RowIcon icon={icon} />
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-lg font-bold leading-6">{title}</span>
+          {hint ? <span className="block truncate text-base text-support">{hint}</span> : null}
         </span>
-        <ChevronDown size={24} strokeWidth={2.2} aria-hidden className="shrink-0 text-support transition-transform group-open:rotate-180" />
+        <RowBadge badge={badge} />
+        <ChevronDown size={22} strokeWidth={2.2} aria-hidden className="shrink-0 text-support transition-transform group-open:rotate-180" />
       </summary>
-      <div className="flex flex-col gap-4 p-4 pt-0">{children}</div>
+      <div className="flex flex-col gap-4 p-4 pt-1">{children}</div>
     </details>
+  );
+}
+
+/** Linha de ajuste que leva a outra tela. */
+export function SectionLink({ href, title, hint, icon }: { href: string; title: string; hint?: string; icon?: LucideIcon }) {
+  return (
+    <Link href={href} className={ROW}>
+      <RowIcon icon={icon} />
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-lg font-bold leading-6">{title}</span>
+        {hint ? <span className="block truncate text-base text-support">{hint}</span> : null}
+      </span>
+      <ChevronRight size={22} strokeWidth={2.2} aria-hidden className="shrink-0 text-support" />
+    </Link>
   );
 }
 
