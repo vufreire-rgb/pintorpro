@@ -6,12 +6,16 @@ export interface PushMessage { title: string; body: string; url: string }
 const s = (v: unknown, max: number): string => (typeof v === "string" ? v.trim().slice(0, max) : "");
 const b64url = (v: unknown, max: number): string => { const t = s(v, max); return /^[A-Za-z0-9_-]+={0,2}$/.test(t) ? t : ""; };
 
+/** Serviços de push dos navegadores. Qualquer outro endereço é recusado: o servidor não pode ser levado a chamar sites escolhidos por quem se cadastra. */
+const PUSH_HOSTS = [/^fcm\.googleapis\.com$/, /^android\.googleapis\.com$/, /(^|\.)push\.services\.mozilla\.com$/, /(^|\.)push\.apple\.com$/, /(^|\.)notify\.windows\.com$/];
+export const isPushHost = (host: string): boolean => PUSH_HOSTS.some((r) => r.test(host.toLowerCase()));
+
 /** Inscrição que o navegador gera (PushSubscription.toJSON). Só aceita endereços https e chaves no formato certo. */
 export function sanitizeSubscription(raw: unknown): PushSub | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as { endpoint?: unknown; keys?: { p256dh?: unknown; auth?: unknown } };
   const endpoint = s(o.endpoint, 1000);
-  try { if (new URL(endpoint).protocol !== "https:") return null; } catch { return null; }
+  try { const u = new URL(endpoint); if (u.protocol !== "https:" || u.username || u.password || u.port || !isPushHost(u.hostname)) return null; } catch { return null; }
   const p256dh = b64url(o.keys?.p256dh, 200);
   const auth = b64url(o.keys?.auth, 100);
   return p256dh && auth ? { endpoint, p256dh, auth } : null;

@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
         temperature: 0,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: [{ type: "text", text: "Leia este recibo." }, { type: "image_url", image_url: { url: `data:${image.type || "image/jpeg"};base64,${b64}`, detail: "high" } }] },
+          { role: "user", content: [{ type: "text", text: "Leia este recibo." }, { type: "image_url", image_url: { url: `data:${/^image\/(jpeg|png|webp|heic|heif)$/.test(image.type) ? image.type : "image/jpeg"};base64,${b64}`, detail: "high" } }] },
         ],
         response_format: { type: "json_schema", json_schema: { name: "recibo", strict: true, schema: RECEIPT_SCHEMA } },
       }),

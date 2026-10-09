@@ -3,6 +3,25 @@ import { safeEqual, sanitizeMessage, sanitizeSubscription, shouldNotifyView, SIX
 
 const good = { endpoint: "https://fcm.googleapis.com/fcm/send/abc", keys: { p256dh: "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM", auth: "tBHItJI5svbpez7KI4CCXg" } };
 
+describe("serviços de push permitidos", () => {
+  const keys = { p256dh: "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM", auth: "tBHItJI5svbpez7KI4CCXg" };
+  const ok = (endpoint: string) => sanitizeSubscription({ endpoint, keys }) !== null;
+  it("aceita Google, Mozilla, Apple e Windows", () => {
+    expect(ok("https://fcm.googleapis.com/fcm/send/abc")).toBe(true);
+    expect(ok("https://updates.push.services.mozilla.com/wpush/v2/abc")).toBe(true);
+    expect(ok("https://web.push.apple.com/abc")).toBe(true);
+    expect(ok("https://wns2-par02p.notify.windows.com/w/?token=abc")).toBe(true);
+  });
+  it("recusa qualquer outro endereço, mesmo https", () => {
+    expect(ok("https://exemplo.com/x")).toBe(false);
+    expect(ok("https://169.254.169.254/latest/meta-data")).toBe(false);
+    expect(ok("https://fcm.googleapis.com.evil.com/x")).toBe(false);
+    expect(ok("https://evilpush.apple.com.exemplo.com/x")).toBe(false);
+    expect(ok("https://user:senha@fcm.googleapis.com/x")).toBe(false);
+    expect(ok("https://fcm.googleapis.com:8443/x")).toBe(false);
+  });
+});
+
 describe("sanitizeSubscription", () => {
   it("aceita a inscrição do navegador", () => {
     expect(sanitizeSubscription(good)).toEqual({ endpoint: good.endpoint, p256dh: good.keys.p256dh, auth: good.keys.auth });
