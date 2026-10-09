@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, Check, ChevronDown, CircleCheck, CircleHelp, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, Play, Plus, QrCode, Receipt, RefreshCw, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, Check, ChevronDown, CircleCheck, CircleHelp, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, Play, Plus, QrCode, Receipt, RefreshCw, RotateCcw, Send, ShoppingBag, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { WorkCostsCard } from "@/components/WorkCostsCard";
@@ -127,6 +127,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
             </div>
           </details>
         ) : null}
+        {w.status !== "done" ? <LinkButton href="/loja" variant="ghost" size="sm" icon={ShoppingBag}>Comprar material</LinkButton> : null}
       </Card>
 
       <BlocoRecolhivel title="Datas" icon={CalendarDays} summary={w.startDate || w.endDate ? `${w.startDate ? dateBR(w.startDate) : "—"} a ${w.endDate ? dateBR(w.endDate) : "—"}` : undefined}>

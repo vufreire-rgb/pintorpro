@@ -8,12 +8,12 @@ import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid, PhotoStrip } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
 import { BlocoRecolhivel, bareTextCls, Button, buttonCls, CartaoDeObservacao, Card, CardTitle, Chip, ConfirmDialog, Field, LinhaDeDado, LinkButton, Loading, Screen, TextArea2, TextInput } from "@/components/ui";
-import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, X } from "lucide-react";
+import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, Copy, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
 import { photosFailedMessage } from "@/modules/photos";
-import { blankRoom, legacyToSurfaces, measuresSummary, surfacesSummary, type RoomDraft } from "@/modules/rooms";
+import { blankRoom, cloneSurfaces, legacyToSurfaces, measuresSummary, surfacesSummary, type RoomDraft } from "@/modules/rooms";
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
@@ -192,6 +192,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
               <b>{r.name}</b>
               <div className="text-base text-support">{r.surfaces?.length ? `${plural(r.surfaces.filter((s) => s.kind === "wall").length, "parede", "paredes")} · ${surfacesSummary(r.surfaces, r.doors, r.windows)}` : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m · altura ${fmtNum(r.heightM)} m`} · {plural(r.doors, "porta", "portas")} · {plural(r.windows, "janela", "janelas")}</div>
             </button>
+            <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white" aria-label={`Duplicar ${r.name}`} onClick={() => saveVisitRoom(v.id, { name: `${r.name} (cópia)`, surfaces: cloneSurfaces(r.surfaces?.length ? r.surfaces : legacyToSurfaces(r.lengthM, r.widthM, r.heightM)), doors: r.doors, windows: r.windows })}><Copy size={20} strokeWidth={2.2} aria-hidden /></button>
             <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-white" aria-label={`Remover ${r.name}`} onClick={() => removeVisitRoom(v.id, r.id)}><X size={20} strokeWidth={2.4} aria-hidden /></button>
           </div>
         ))}

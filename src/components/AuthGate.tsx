@@ -2,7 +2,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { takeAccountDeletedNotice } from "@/modules/account";
-import { forgotPassword, initAuth, login, register, resendConfirmationEmail, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
+import { forgotPassword, googleLoginEnabled, initAuth, login, loginWithGoogle, register, resendConfirmationEmail, retryLoad, useAuthState, useSyncStatus } from "@/modules/auth";
 import { APP_NAME, APP_TAGLINE } from "@/shared/brand";
 import { BillingBanner } from "./BillingBanner";
 import { BlockedScreen } from "./BlockedScreen";
@@ -64,6 +64,12 @@ function LoginScreen() {
         <h2 className="text-2xl font-semibold">{title}</h2>
         {mode === "up" ? <p className="-mt-2 text-support">Beta gratuito.</p> : null}
         {mode === "reset" ? <p className="-mt-2 text-support">Digite o e-mail da sua conta. Vamos enviar um link para você criar uma nova senha.</p> : null}
+        {googleLoginEnabled && mode !== "reset" ? (
+          <>
+            <Button variant="ghost" disabled={busy} onClick={async () => { setBusy(true); const e = await loginWithGoogle(); if (e) { setMsg(e); setBusy(false); } }}>Entrar com o Google</Button>
+            <p className="-my-1 text-center text-base text-support">ou use e-mail e senha</p>
+          </>
+        ) : null}
         <Field label="E-mail"><TextInput type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         {mode !== "reset" ? (
           <Field label="Senha" hint={mode === "up" ? "Mínimo 6 caracteres." : undefined}>

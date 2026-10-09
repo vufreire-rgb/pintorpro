@@ -1,6 +1,6 @@
 "use client";
 import { useSyncExternalStore } from "react";
-import { cloudConfigured, getSession, onAuthChange, recoveryLink, requestPasswordReset, resendConfirmation, signIn, signOut, signUp, updatePassword } from "@/repositories/cloudStore";
+import { cloudConfigured, getSession, signInWithGoogle, onAuthChange, recoveryLink, requestPasswordReset, resendConfirmation, signIn, signOut, signUp, updatePassword } from "@/repositories/cloudStore";
 import { flushPendingUploads } from "./photos";
 import { getSyncStatus, startSync, stopSync, subscribeSync } from "./sync";
 import { startSubscription, stopSubscription } from "./subscription";
@@ -95,6 +95,15 @@ export async function register(email: string, password: string): Promise<string 
   const { data, error } = await signUp(email.trim(), password, location.origin);
   if (error) return translate(error.message);
   return data.session ? null : "CONFIRM";
+}
+
+/** O botão "Entrar com o Google" só aparece quando NEXT_PUBLIC_GOOGLE_LOGIN=1 (depois de ligar no Supabase). */
+export const googleLoginEnabled = process.env.NEXT_PUBLIC_GOOGLE_LOGIN === "1";
+
+/** Abre a tela de login do Google. Em caso de sucesso a página recarrega sozinha já com a conta. */
+export async function loginWithGoogle(): Promise<string | null> {
+  const { error } = await signInWithGoogle(location.origin);
+  return error ? "Não consegui abrir o login do Google agora. Use e-mail e senha ou tente de novo." : null;
 }
 
 export const logout = () => signOut();

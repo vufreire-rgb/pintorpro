@@ -33,6 +33,8 @@ export const onAuthChange = (cb: (s: Session | null) => void): (() => void) => {
 
 export const signIn = (email: string, password: string) => c().auth.signInWithPassword({ email, password });
 /** `redirectTo`: para onde o link do e-mail de confirmação leva (precisa estar na lista de Redirect URLs do Supabase). */
+/** Entrar com a conta Google (precisa estar ligado no Supabase: docs/LOGIN_COM_GOOGLE.md). */
+export const signInWithGoogle = (redirectTo: string) => c().auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
 export const signUp = (email: string, password: string, redirectTo?: string) =>
   c().auth.signUp({ email, password, options: redirectTo ? { emailRedirectTo: redirectTo } : undefined });
 export const resendConfirmation = (email: string, redirectTo?: string) =>

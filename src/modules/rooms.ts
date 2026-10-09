@@ -72,6 +72,9 @@ export function blankRoom(index: number): VisitRoom {
   return { id: crypto.randomUUID(), name: `Ambiente ${index}`, lengthM: 0, widthM: 0, heightM: 2.7, condition: "pintada", doors: 1, windows: 1, surfaces: addSurface([], "wall") };
 }
 
+/** Cópia das superfícies com ids novos (para duplicar um ambiente sem misturar os dois). */
+export const cloneSurfaces = (surfaces: Surface[]): Surface[] => surfaces.map((s) => ({ ...s, id: crypto.randomUUID() }));
+
 /** Ambiente de visita antiga (comprimento × largura × altura) em paredes: 2 de cada lado e o teto. */
 export function legacyToSurfaces(l: number, w: number, h: number, paint: PaintType = "acrilica"): Surface[] {
   const wall = (width: number): Surface => ({ id: crypto.randomUUID(), kind: "wall", label: "", widthM: width, heightM: h, paint });

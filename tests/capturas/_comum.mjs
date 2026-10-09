@@ -46,7 +46,7 @@ export function criarCaptura(out, startIndex = 0) {
     const aud = await page.evaluate(() => {
       const out = { toque: [], texto: [] };
       for (const el of document.querySelectorAll("button, a[href], input, select, textarea, summary")) {
-        if (el.closest("nav") || el.closest("[hidden]")) continue;
+        if (el.closest("nav") || el.closest("[hidden]") || el.getAttribute("aria-hidden") === "true") continue;
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0 || getComputedStyle(el).visibility === "hidden") continue;
         if (el.tagName === "INPUT" && (el.type === "file" || el.type === "hidden")) continue;

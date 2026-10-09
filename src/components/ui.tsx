@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, FileText, MapPin, Minus, PaintRoller, Plus, ShoppingBag, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
+import { useRequests } from "@/modules/publicPage";
 
 export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
   return (
@@ -34,14 +35,17 @@ const NAV = [
 /** Barra de baixo no estilo dos apps de celular: só ícones (o nome fica no aria-label), 56 px de altura; a aba atual ganha a pílula azul-névoa. */
 export function BottomNav() {
   const path = usePathname();
+  /** Pedidos novos de clientes (página pública): aparece um ponto no ícone de Orçamentos. */
+  const novos = useRequests().requests.filter((r) => r.status === "new").length;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-5 items-center border-t border-line bg-white px-1 pb-[env(safe-area-inset-bottom)]" style={{ minHeight: 56 }}>
       {NAV.map(([href, label, Icon]) => {
         const here = path === href || path.startsWith(href + "/");
         return (
-          <Link key={href} href={href} aria-label={label} aria-current={here ? "page" : undefined} className="flex h-14 items-center justify-center">
-            <span className={`flex h-10 w-14 items-center justify-center rounded-full ${here ? "bg-brand-soft text-brand" : "text-support"}`}>
+          <Link key={href} href={href} aria-label={href === "/orcamentos" && novos > 0 ? `${label}, ${novos} ${novos === 1 ? "pedido novo" : "pedidos novos"}` : label} aria-current={here ? "page" : undefined} className="flex h-14 items-center justify-center">
+            <span className={`relative flex h-10 w-14 items-center justify-center rounded-full ${here ? "bg-brand-soft text-brand" : "text-support"}`}>
               <Icon size={22} strokeWidth={here ? 2.4 : 2} aria-hidden />
+              {href === "/orcamentos" && novos > 0 ? <span aria-hidden className="absolute right-3 top-1.5 h-3 w-3 rounded-full border-2 border-white bg-err" /> : null}
             </span>
           </Link>
         );

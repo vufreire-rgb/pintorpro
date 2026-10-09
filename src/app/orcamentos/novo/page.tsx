@@ -4,12 +4,12 @@ import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
 import { BlocoRecolhivel, Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
-import { Eye, EyeOff, Home, Settings, X, Plus, Check } from "lucide-react";
+import { Copy, Eye, EyeOff, Home, Settings, X, Plus, Check } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { PriceCheck } from "@/components/PriceCheck";
 import { ServicePicker } from "@/components/ServicePicker";
 import { RoomEditor } from "@/components/RoomEditor";
-import { applyDraft, blankRoom, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
+import { applyDraft, blankRoom, cloneSurfaces, draftOf, legacyToSurfaces, openingCount, surfacesSummary, visitRoomToRoom, type RoomDraft } from "@/modules/rooms";
 import { isPriceOnly, previewQuote, saveQuote, updateQuote } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
@@ -172,6 +172,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
                 <div className="text-base text-support">{r.surfaces?.length ? surfacesSummary(r.surfaces, openingCount(r, "door"), openingCount(r, "window")) : `${fmtNum(r.lengthM)} × ${fmtNum(r.widthM)} m, altura ${fmtNum(r.heightM)} m${m ? ` · paredes ${fmtNum(m.wallsNetM2)} m² · teto ${fmtNum(m.ceilingM2)} m²` : ""}`}</div>
                 <button className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#F3F6FA]" onClick={() => setRooms(rooms.filter((x) => x.id !== r.id))} aria-label={`Remover ${r.name}`}><X size={20} strokeWidth={2.4} aria-hidden /></button>
               </div>
+              {editingId === r.id ? null : <Button variant="ghost" size="sm" icon={Copy} onClick={() => setRooms([...rooms, { ...r, id: crypto.randomUUID(), name: `${r.name} (cópia)`, surfaces: r.surfaces ? cloneSurfaces(r.surfaces) : r.surfaces, services: r.services.map((x) => ({ ...x })) }])}>Duplicar ambiente</Button>}
               {editingId === r.id ? (
                 <RoomEditor title="Medidas do ambiente" draft={draft} onChange={setDraft} onSave={saveEdit} onCancel={() => setEditingId(null)} saveLabel="Salvar medidas" />
               ) : null}

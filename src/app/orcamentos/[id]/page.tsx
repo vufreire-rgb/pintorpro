@@ -41,7 +41,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     setMsg("");
-    try { await fn(); } catch { setMsg("Não foi possível gerar o PDF. Tente de novo."); } finally { setBusy(false); }
+    try { await fn(); } catch { setMsg("Não consegui gerar o PDF agora. O orçamento está salvo: tente de novo em instantes."); } finally { setBusy(false); }
   };
   const sendLink = () => run(async () => {
     setLinkMsg("");
