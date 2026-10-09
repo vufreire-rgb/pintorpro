@@ -1,10 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Badge, Card, LinkButton, Loading, Screen } from "@/components/ui";
+import { Badge, Button, Card, LinkButton, Loading, Screen } from "@/components/ui";
 import { SwipeRow, type SwipeAction } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
-import { CalendarDays, Check, ChartColumn, CircleCheck, Play, RotateCcw, TriangleAlert } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChartColumn, CircleCheck, Play, RotateCcw, TriangleAlert } from "lucide-react";
 import { setWorkStatus, WORK_STATUS_LABEL } from "@/modules/works";
 import type { Work, WorkStatus } from "@/modules/types";
 import { lateCents } from "@/modules/finance";
@@ -35,6 +35,7 @@ function swipeFor(status: WorkStatus): [{ act: SwipeAction; to: WorkStatus } | n
 export default function Obras() {
   const db = useAppDb();
   const hint = useHint("obras", (db?.works.length ?? 0) > 0);
+  const [showDone, setShowDone] = useState(false);
   const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
   const move = (w: Work, to: WorkStatus, name: string) => {
     const prev = w.status;
@@ -42,15 +43,24 @@ export default function Obras() {
     setUndo({ message: `${name}: ${WORK_STATUS_LABEL[to].toLowerCase()}.`, back: () => setWorkStatus(w.id, prev) });
   };
   if (!db) return <Loading />;
-  const works = [...db.works].sort((a, b) => Number(a.status === "done") - Number(b.status === "done"));
+  const doneCount = db.works.filter((w) => w.status === "done").length;
+  const works = db.works.filter((w) => (w.status === "done") === (showDone && doneCount > 0));
+  const viewingDone = showDone && doneCount > 0;
   return (
     <Screen title="Obras" nav>
       <div>
         <LinkButton href="/obras/resultado" variant="ghost" icon={ChartColumn}>Resultado do mês (valores)</LinkButton>
       </div>
       <div className="flex flex-col gap-4">
+      {viewingDone ? (
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-medium">Obras concluídas</h2>
+          <Button variant="ghost" size="sm" icon={ArrowLeft} className="!w-auto" onClick={() => setShowDone(false)}>Voltar</Button>
+        </div>
+      ) : null}
       {db.works.length === 0 ? <p className="text-lg text-support">Quando você fechar um orçamento, a obra aparece aqui.</p> : null}
-      {hint && works.length > 0 ? <p className="text-base text-support">Dica: deslize a obra para o lado para começar, concluir ou marcar pendência.</p> : null}
+      {!viewingDone && db.works.length > 0 && works.length === 0 ? <p className="text-lg text-support">Nenhuma obra em andamento. As concluídas estão guardadas abaixo.</p> : null}
+      {hint && !viewingDone && works.length > 0 ? <p className="text-base text-support">Dica: deslize a obra para o lado para começar, concluir ou marcar pendência.</p> : null}
       {works.map((w) => {
         const name = db.clients.find((c) => c.id === w.clientId)?.name ?? w.title;
         const [r, l] = swipeFor(w.status);
@@ -72,6 +82,9 @@ export default function Obras() {
         </SwipeRow>
         );
       })}
+      {!viewingDone && doneCount > 0 ? (
+        <Button variant="ghost" size="sm" icon={CircleCheck} onClick={() => setShowDone(true)}>Obras concluídas ({doneCount})</Button>
+      ) : null}
       {undo ? <UndoBar message={undo.message} onUndo={() => { undo.back(); setUndo(null); }} onDone={() => setUndo(null)} /> : null}
       </div>
     </Screen>

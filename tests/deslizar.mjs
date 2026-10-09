@@ -95,7 +95,10 @@ await page.getByText(/Obra Dados: pendências/).waitFor();
 check(/Pendências/.test(await card("Obra Dados")), "esquerda em Em andamento: Pendências");
 await swipe(page.locator("a", { hasText: "Obra Dados" }), 220);
 await page.getByText(/Obra Dados: concluída/).waitFor();
-check(/Concluída/.test(await card("Obra Dados")), "direita: Concluída");
+check((await page.locator("a", { hasText: "Obra Dados" }).count()) === 0, "concluída sai da lista principal");
+await page.getByRole("button", { name: /Obras concluídas \(1\)/ }).click();
+check(/Concluída/.test(await card("Obra Dados")), "e aparece na aba Obras concluídas");
+await page.getByRole("button", { name: "Voltar" }).click();
 
 // ---- Orçamento fechado por engano
 await page.goto(base + "/orcamentos");
