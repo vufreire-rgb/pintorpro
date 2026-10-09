@@ -35,6 +35,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   const t = q.result.totals;
   const client = db.clients.find((c) => c.id === q.clientId);
   const priceOnly = isPriceOnly(q);
+  const usesDemoPrices = q.result.serviceLines.some((l) => db.services.find((sv) => sv.id === l.serviceId)?.isDemo);
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     setMsg("");
@@ -59,7 +60,6 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
   });
   return (
     <Screen title={`Orçamento nº ${q.number}${q.revision ? ` · rev. ${q.revision + 1}` : ""}`} back="/orcamentos">
-      {db.company && !db.company.pix?.key && !db.company.pixAsked ? <PixSetupCard company={db.company} /> : null}
       <Card>
         <div className="flex items-start justify-between gap-2"><div className="text-lg font-bold">{client?.name}</div><Badge tone={q.status === "won" ? "ok" : q.status === "lost" ? "lost" : "open"}>{q.status === "won" ? "Fechado" : q.status === "lost" ? "Perdido" : "Aberto"}</Badge></div>
         <div className="text-lg text-support">{q.siteAddress}</div>
@@ -70,6 +70,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
       </Card>
 
       <div className="flex flex-col gap-3">
+        {usesDemoPrices ? <p data-testid="aviso-preco-exemplo" className="rounded-2xl bg-[#FFF3D6] p-3 text-base text-[#8A4B00]"><b>Preços de exemplo.</b> Este orçamento usa valores que vieram prontos no app. Confira em Ajustes → Serviços e preços antes de enviar.</p> : null}
         {cloudEnabled ? (
           <>
             <div className="grid grid-cols-[1fr_auto] gap-2">
@@ -99,6 +100,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
         )}
         {msg ? <p className="text-base text-err">{msg}</p> : null}
       </div>
+      {db.company && !db.company.pix?.key && !db.company.pixAsked ? <PixSetupCard company={db.company} /> : null}
 
       <Card className="flex flex-col gap-3">
         {q.status === "open" ? (

@@ -21,7 +21,6 @@ const marks = () => page.evaluate(() => { const v = JSON.parse(localStorage.getI
 
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /nova visita/i }).click();
-await page.getByRole("button", { name: "Começar agora" }).click();
 await page.getByText("Nenhuma foto", { exact: true }).waitFor();
 await page.getByTestId("photo-input").setInputFiles("tests/foto-teste.png");
 await page.getByText("1 foto", { exact: true }).waitFor();

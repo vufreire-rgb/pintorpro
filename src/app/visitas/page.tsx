@@ -3,15 +3,16 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { InstallBanner } from "@/components/InstallBanner";
-import { QuickVisitButton } from "@/components/QuickVisitButton";
 import { FirstSteps } from "@/components/FirstSteps";
 import { BrandMark } from "@/components/BrandHeader";
 import { Badge, Button, Card, ConfirmDialog, LinkButton, Loading, Screen, TAB_LIST_CLS, tabCls } from "@/components/ui";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ArrowLeft, CalendarDays, ClipboardList, FilePlus2, FileText, Play, Plus, Trash2 } from "lucide-react";
+import { startQuickVisit } from "@/modules/quickVisit";
 import { deleteVisit, startVisit } from "@/modules/visits";
 import { usePhotoUrl } from "@/modules/photos";
 import { useAppDb } from "@/modules/useApp";
+import { useHint } from "@/modules/hints";
 import { countByFilter, filterVisits, firstFilledFilter, visitState, whenLabel, type VisitFilter } from "@/modules/visitList";
 import type { Visit } from "@/modules/types";
 import { fmtDate } from "@/shared/format";
@@ -47,10 +48,10 @@ export default function Visitas() {
   const [picked, setPicked] = useState<VisitFilter | null>(null);
   const filter: VisitFilter = picked ?? (db ? firstFilledFilter(db.visits) : "scheduled");
   const router = useRouter();
-  const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
   const [askDelete, setAskDelete] = useState<{ id: string; name: string; scheduled: boolean } | null>(null);
   const list = useMemo(() => (db ? filterVisits(db.visits, db.clients, { filter }) : []), [db, filter]);
+  const hint = useHint("visitas", list.length > 0);
   if (!db) return <Loading />;
   const counts = countByFilter(db.visits);
   return (
@@ -68,14 +69,9 @@ export default function Visitas() {
           if (dx > 60 && i > 0) setPicked(TABS[i - 1]!.id);
         }}
       >
-      <div className="flex flex-col gap-3">
-        <Button icon={Plus} aria-expanded={choosing} onClick={() => setChoosing((o) => !o)}>Nova visita</Button>
-        {choosing ? (
-          <div className="grid grid-cols-2 gap-3">
-            <QuickVisitButton label="Começar agora" variant="ghost" className="!px-3 !text-lg" />
-            <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!px-3 !text-lg">Agendar</LinkButton>
-          </div>
-        ) : null}
+      <div className="grid grid-cols-[1fr_auto] gap-3">
+        <Button icon={Plus} onClick={() => router.push(startQuickVisit())}>Nova visita</Button>
+        <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!w-auto !px-4">Agendar</LinkButton>
       </div>
       <FirstSteps db={db} />
       {filter === "quoted" ? (
@@ -83,7 +79,7 @@ export default function Visitas() {
           <h2 className="font-display text-xl font-medium">Visitas com orçamento feito</h2>
           <Button variant="ghost" size="sm" icon={ArrowLeft} className="!w-auto" onClick={() => setPicked(counts.scheduled > 0 ? "scheduled" : "todo")}>Voltar</Button>
         </div>
-      ) : (
+      ) : db.visits.length === 0 ? null : (
         <div role="tablist" className={`${TAB_LIST_CLS} grid-cols-2`}>
           {TABS.map((t) => (
             <button
@@ -100,8 +96,14 @@ export default function Visitas() {
         </div>
       )}
       <div className="flex flex-col gap-4">
-      {list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
-      {list.length === 0 ? <p className="text-lg text-support">{db.visits.length === 0 ? "Nenhuma visita ainda. Toque em Nova visita para começar: ela já guarda fotos, áudio e medidas." : (filter === "quoted" ? QUOTED_EMPTY : TABS.find((t) => t.id === filter)!.empty)}</p> : null}
+      {hint && list.length > 0 ? <p className="text-base text-support">{filter === "scheduled" ? "Dica: deslize a visita para a direita para começar, ou para a esquerda para cancelar." : filter === "todo" ? "Dica: deslize para a direita para montar o orçamento, ou para a esquerda para apagar a visita." : "Dica: deslize para a direita para ver o orçamento."}</p> : null}
+      {list.length === 0 && db.visits.length === 0 ? (
+        <Card className="flex flex-col items-center gap-2 py-8 text-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-brand-soft text-brand"><ClipboardList size={28} strokeWidth={2.2} aria-hidden /></span>
+          <h2 className="font-display text-xl font-medium">Registre sua primeira visita</h2>
+          <p className="text-lg text-support">Nenhuma visita ainda. Toque em <b>Nova visita</b> para começar: ela já guarda fotos, áudio e medidas.</p>
+        </Card>
+      ) : list.length === 0 ? <p className="text-lg text-support">{filter === "quoted" ? QUOTED_EMPTY : TABS.find((t) => t.id === filter)!.empty}</p> : null}
       {list.map((v) => {
         const client = v.clientId ? db.clients.find((c) => c.id === v.clientId) : undefined;
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
@@ -157,7 +159,7 @@ export default function Visitas() {
       {filter !== "quoted" && counts.quoted > 0 ? (
         <Button variant="ghost" size="sm" icon={FileText} onClick={() => setPicked("quoted")}>Visitas com orçamento feito ({counts.quoted})</Button>
       ) : null}
-      <InstallBanner />
+      {db.visits.length > 0 ? <InstallBanner /> : null}
       <ConfirmDialog
         open={!!askDelete}
         title={askDelete?.scheduled ? "Cancelar esta visita?" : "Apagar esta visita?"}

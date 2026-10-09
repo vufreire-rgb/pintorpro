@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
@@ -39,6 +38,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
+  /** Depois de salvar: pergunta se quer montar o orçamento agora (o passo mais importante do app). */
+  const [savedAsk, setSavedAsk] = useState(false);
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
   const [draft, setDraft] = useState<RoomDraft>({ name: "", surfaces: [], doors: 1, windows: 1 });
   const [when, setWhen] = useState("");
@@ -62,6 +63,9 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
     } finally { setBusy(false); }
     if (input.current) input.current.value = "";
   };
+
+  /** Visita já tem orçamento? Volta à lista. Senão, oferece montar o orçamento agora. */
+  const finish = () => { if (v.quoteId) router.push("/visitas"); else { setSaving(false); setSavedAsk(true); } };
 
   const fillFromLocation = async () => {
     setLocating(true);
@@ -210,14 +214,14 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         <textarea className={bareTextCls} value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </CartaoDeObservacao>
 
-      <div className="flex flex-col items-center gap-1">
-        <Link href={`/orcamentos/novo?visita=${v.id}`} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"} className="inline-flex min-h-12 items-center gap-2 font-display text-lg font-semibold text-live"><FilePlus2 size={22} strokeWidth={2.2} aria-hidden />{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</Link>
-        {v.quoteId ? <Link href={`/orcamentos/${v.quoteId}`} className="inline-flex min-h-12 items-center gap-2 font-display text-lg font-semibold text-live"><FileText size={22} strokeWidth={2.2} aria-hidden />Ver orçamento feito</Link> : null}
+      <div className="flex flex-col gap-2">
+        <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" icon={FilePlus2} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
+        {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento feito</LinkButton> : null}
       </div>
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>
       <div className="h-24" aria-hidden />
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md bg-[#F3F6FA] px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2.5">
-        <Button icon={Check} onClick={() => (client ? router.push("/visitas") : setSaving(true))}>Salvar visita</Button>
+        <Button icon={Check} onClick={() => (client ? finish() : setSaving(true))}>Salvar visita</Button>
       </div>
       <ConfirmDialog
         open={askDelete}
@@ -232,13 +236,23 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <h2 className="text-xl font-bold">Quem é o cliente?</h2>
             {db.clients.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => { setVisitClient(v.id, c.id); router.push("/visitas"); }}>{c.name}</Chip>)}
+                {db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => { setVisitClient(v.id, c.id); finish(); }}>{c.name}</Chip>)}
               </div>
             ) : null}
             <Field label={db.clients.length > 0 ? "Ou cadastre um novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
             <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Button icon={Check} disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); router.push("/visitas"); }}>Salvar visita</Button>
+            <Button icon={Check} disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); setSaving(false); finish(); }}>Salvar visita</Button>
             <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => setSaving(false)}>Voltar</Button>
+          </div>
+        </div>
+      ) : null}
+      {savedAsk ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-4 sm:items-center sm:justify-center" role="dialog" aria-modal="true" aria-label="Visita salva">
+          <div className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-3xl bg-white p-5">
+            <h2 className="font-display text-xl font-semibold">Visita salva!</h2>
+            <p className="text-lg text-support">Quer montar o orçamento agora? As medidas e anotações já vão junto.</p>
+            <LinkButton href={`/orcamentos/novo?visita=${v.id}`} icon={FilePlus2}>Montar orçamento agora</LinkButton>
+            <Button variant="ghost" onClick={() => router.push("/visitas")}>Depois</Button>
           </div>
         </div>
       ) : null}

@@ -9,6 +9,7 @@ import { cloudEnabled } from "@/modules/auth";
 import { markRequest, phoneLabel, removeRequest, requestWhatsApp, useMyPage, useRequests, visitFromRequest, type RequestRow } from "@/modules/publicPage";
 import { agoLabel } from "@/modules/quoteLinks";
 import { useAppDb } from "@/modules/useApp";
+import { useHint } from "@/modules/hints";
 
 const STATUS: Record<RequestRow["status"], { label: string; tone: "open" | "ok" | "lost" | "warn" }> = {
   new: { label: "Novo", tone: "warn" },
@@ -22,6 +23,7 @@ export default function Pedidos() {
   const db = useAppDb();
   const router = useRouter();
   const { requests, reload } = useRequests();
+  const hint = useHint("pedidos", requests.length > 0);
   const { page } = useMyPage();
   const [err, setErr] = useState("");
   const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
@@ -67,7 +69,7 @@ export default function Pedidos() {
             <LinkButton href="/configuracoes" variant="ghost" icon={Settings}>Ir para Ajustes</LinkButton>
           </Card>
         ) : null}
-        {requests.length > 0 ? <p className="text-base text-support">Dica: deslize o pedido para a direita para criar a visita, ou para a esquerda para descartar.</p> : null}
+        {hint && requests.length > 0 ? <p className="text-base text-support">Dica: deslize o pedido para a direita para criar a visita, ou para a esquerda para descartar.</p> : null}
         {fresh.length ? <h2 className="font-display text-xl font-semibold">Novos ({fresh.length})</h2> : null}
         {fresh.map(one)}
         {older.length ? <h2 className="font-display text-xl font-semibold">Anteriores</h2> : null}

@@ -10,6 +10,7 @@ import type { Work, WorkStatus } from "@/modules/types";
 import { lateCents } from "@/modules/finance";
 import { dateLabel, paidPct, remainingCents } from "@/modules/workInfo";
 import { useAppDb } from "@/modules/useApp";
+import { useHint } from "@/modules/hints";
 import { formatBRL } from "@/shared/money";
 
 const TONE = { scheduled: "open", in_progress: "open", issues: "warn", done: "ok" } as const;
@@ -33,6 +34,7 @@ function swipeFor(status: WorkStatus): [{ act: SwipeAction; to: WorkStatus } | n
 
 export default function Obras() {
   const db = useAppDb();
+  const hint = useHint("obras", (db?.works.length ?? 0) > 0);
   const [undo, setUndo] = useState<{ message: string; back: () => void } | null>(null);
   const move = (w: Work, to: WorkStatus, name: string) => {
     const prev = w.status;
@@ -48,7 +50,7 @@ export default function Obras() {
       </div>
       <div className="flex flex-col gap-4">
       {db.works.length === 0 ? <p className="text-lg text-support">Quando você fechar um orçamento, a obra aparece aqui.</p> : null}
-      {works.length > 0 ? <p className="text-base text-support">Dica: deslize a obra para o lado para começar, concluir ou marcar pendência.</p> : null}
+      {hint && works.length > 0 ? <p className="text-base text-support">Dica: deslize a obra para o lado para começar, concluir ou marcar pendência.</p> : null}
       {works.map((w) => {
         const name = db.clients.find((c) => c.id === w.clientId)?.name ?? w.title;
         const [r, l] = swipeFor(w.status);

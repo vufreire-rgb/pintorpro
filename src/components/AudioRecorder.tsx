@@ -85,7 +85,8 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
         {audios.map((a, i) => <Player key={a.id} note={a} index={i} onRemove={() => removeVisitAudio(visitId, a.id)} />)}
         {state === "recording" ? (
           <>
-            <Button icon={Square} onClick={finish} disabled={saving}>Parar e guardar · {fmtClock(seconds)}</Button>
+            <p role="status" className="flex items-center gap-2 font-display text-xl font-semibold text-err"><span aria-hidden className="h-3.5 w-3.5 animate-pulse rounded-full bg-err motion-reduce:animate-none" />Gravando {fmtClock(seconds)}</p>
+            <Button variant="danger-solid" icon={Square} onClick={finish} disabled={saving}>Parar e guardar · {fmtClock(seconds)}</Button>
             <div className="grid grid-cols-2 gap-2" aria-label="Marcar momento">
               {MARKERS.map((label) => {
                 const Icon = MARKER_ICON[label]!;

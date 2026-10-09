@@ -274,8 +274,9 @@ export function ConfirmDialog({ open, title, text, confirmLabel = "Sim, apagar",
  * Começa fechado. O conteúdo fica sempre montado (só escondido), então nada que esteja dentro perde o estado.
  * Abre sozinho e não fecha enquanto `openWhen` for verdadeiro (gravando, erro de validação, item novo) ou quando algo dentro recebe foco.
  */
-export function BlocoRecolhivel({ title, icon: Icon, summary, badge, bare = false, action, openWhen = false, openSignal = 0, defaultOpen = false, children }: {
+export function BlocoRecolhivel({ title, icon: Icon, summary, preview, badge, bare = false, action, openWhen = false, openSignal = 0, defaultOpen = false, children }: {
   title: string; icon?: LucideIcon; summary?: string;
+  /** Miniaturas ou algo curto para ver sem abrir o bloco (só com pílula de ação). */ preview?: React.ReactNode;
   /** Etiqueta de estado à direita do resumo (Ajustes). */ badge?: { text: string; ok?: boolean };
   /** Sem cartão próprio: para dentro de um SectionGroup. */ bare?: boolean;
   action?: { label: string; ariaLabel?: string; icon?: LucideIcon; onClick?: () => void; opens?: boolean; disabled?: boolean };
@@ -292,14 +293,16 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, badge, bare = fals
     if (openSignal) setOpen(true);
   }, [openSignal]);
   const shown = open || openWhen;
+  /** Com pílula, o resumo desce para uma linha própria: assim não é cortado pela largura da pílula. */
+  const below = !!action;
   return (
     <section className={bare ? "" : "overflow-hidden rounded-[20px] border border-line bg-white shadow-[0_1px_2px_rgba(15,59,122,.05)]"}>
-      <div className="flex min-h-[88px] items-center gap-2 px-4">
-        <button type="button" aria-expanded={shown} aria-controls={bodyId} onClick={() => setOpen(!shown)} className="flex min-h-[88px] min-w-0 flex-1 items-center gap-3 text-left">
+      <div className={`flex items-center gap-2 px-4 ${below && (summary || preview) ? "pt-2" : ""}`}>
+        <button type="button" aria-expanded={shown} aria-controls={bodyId} aria-label={below ? `${title}${summary ?? ""}` : undefined} onClick={() => setOpen(!shown)} className={`flex min-w-0 flex-1 items-center gap-3 text-left ${below && (summary || preview) ? "min-h-[64px]" : "min-h-[88px]"}`}>
           {Icon ? <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-soft text-brand"><Icon size={24} strokeWidth={2.2} aria-hidden /></span> : null}
           <span className="min-w-0 flex-1">
             <span className="block font-display text-xl font-medium leading-[26px]">{title}</span>
-            {summary ? <span className="line-clamp-2 text-base leading-[22px] text-support">{summary}</span> : null}
+            {summary && !below ? <span className="line-clamp-2 text-base leading-[22px] text-support">{summary}</span> : null}
           </span>
         </button>
         <RowBadge badge={badge} />
@@ -310,6 +313,12 @@ export function BlocoRecolhivel({ title, icon: Icon, summary, badge, bare = fals
         ) : null}
         <ChevronDown size={20} strokeWidth={2.2} aria-hidden onClick={() => setOpen(!shown)} className={`shrink-0 text-support transition-transform duration-150 motion-reduce:transition-none ${shown ? "rotate-180" : ""}`} />
       </div>
+      {below && (summary || preview) ? (
+        <button type="button" aria-hidden tabIndex={-1} onClick={() => setOpen(!shown)} className="flex w-full flex-col gap-2 px-4 pb-3 pl-[76px] text-left">
+          {summary ? <span className="text-base leading-[22px] text-support">{summary}</span> : null}
+          {preview}
+        </button>
+      ) : null}
       <div id={bodyId} className={`grid transition-[grid-template-rows,visibility] duration-150 motion-reduce:transition-none ${shown ? "visible grid-rows-[1fr]" : "invisible grid-rows-[0fr]"}`} onFocusCapture={() => setOpen(true)}>
         <div className="overflow-hidden">
           <div className="flex flex-col gap-3 border-t border-line p-4">{children}</div>

@@ -29,8 +29,6 @@ await page.getByAltText("Seu logo").waitFor();
 
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /nova visita/i }).click();
-await snap(page, "visitas-nova-visita-opcoes");
-await page.getByRole("button", { name: "Começar agora" }).click();
 await page.waitForURL(/\/visitas\/[0-9a-f-]{36}$/);
 await snap(page, "visita-aberta-vazia");
 await page.getByTestId("photo-input").setInputFiles([path.join(here, "../foto-teste.png"), path.join(here, "../foto-teste.png"), path.join(here, "../foto-teste.png")]);
@@ -62,6 +60,7 @@ await snap(page, "visita-quem-e-o-cliente");
 await page.getByText("Nome do cliente").locator("..").locator("input").fill("Ana Souza");
 await page.getByText("Telefone (WhatsApp)").last().locator("..").locator("input").fill("11977776666");
 await page.getByRole("button", { name: "Salvar visita" }).last().click();
+await page.getByRole("button", { name: "Depois" }).click();
 await page.waitForURL(/\/visitas$/);
 
 await page.evaluate(() => {

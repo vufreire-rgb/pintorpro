@@ -21,6 +21,7 @@ check((await page.request.get(base + "/apple-icon.png")).ok(), "ícone do iPhone
 const db = {
   version: 1,
   company: { name: "Teste", whatsapp: "1", city: "c", paymentTerms: "x", hoursPerDay: 8, marginPct: 30, dailyRateCents: 25000, safetyDays: 1, pricingMode: "base_price", marginMode: "on_price" },
+  visits: [{ id: "v1", siteAddress: "Rua A", notes: "", photoIds: [], createdAt: "2026-10-01T10:00:00.000Z", startedAt: "2026-10-01T10:00:00.000Z" }],
 };
 await page.addInitScript((d) => { if (!localStorage.getItem("pintorpro:v1")) localStorage.setItem("pintorpro:v1", JSON.stringify(d)); }, db);
 await page.goto(base + "/visitas");

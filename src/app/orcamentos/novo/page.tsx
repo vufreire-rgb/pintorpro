@@ -280,6 +280,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
         <div className="min-w-0 flex-1">
           <div className="text-base text-support">Preço para o cliente</div>
           <div className="font-display text-[40px] font-semibold leading-[44px] text-brand" data-testid="total">{t ? formatBRL(t.totalCents) : "—"}</div>
+          {demoServices.length > 0 ? <div data-testid="preco-exemplo" className="my-0.5 w-fit rounded-full bg-[#FFF3D6] px-2.5 py-0.5 text-base font-semibold text-[#8A4B00]">Preços de exemplo: confirme</div> : null}
           <div className="text-base text-support">{canSave && result ? `Prazo: ${plural(result.schedule.workDays, "dia", "dias")} + ${result.schedule.safetyDays} de segurança` : missing ? `Falta ${missing}` : ""}</div>
         </div>
         <Button className="!w-auto shrink-0 !px-5" aria-label={quote ? undefined : "Salvar orçamento"} icon={Check} disabled={!canSave} onClick={save}>Salvar</Button>

@@ -7,6 +7,7 @@ import { SwipeRow } from "@/components/SwipeRow";
 import { UndoBar } from "@/components/UndoBar";
 import { isExpired, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
+import { useHint } from "@/modules/hints";
 import { usePendingVoice } from "@/modules/voice";
 import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
 import { useRequests } from "@/modules/publicPage";
@@ -21,6 +22,7 @@ const TABS: QuoteStatus[] = ["open", "won", "lost"];
 
 export default function Orcamentos() {
   const db = useAppDb();
+  const hint = useHint("orcamentos", (db?.quotes.length ?? 0) > 0);
   const voicePending = usePendingVoice().length;
   const { links } = useQuoteLinks();
   const newRequests = useRequests().requests.filter((r) => r.status === "new").length;
@@ -78,9 +80,9 @@ export default function Orcamentos() {
       </div>
       {tab === "open" && list.length > 0 ? <div className="text-lg text-support">Total em aberto: <b>{formatBRL(list.reduce((s, q) => s + q.result.totals.totalCents, 0))}</b></div> : null}
       {list.length === 0 ? <p className="text-lg text-support">Nada por aqui.</p> : null}
-      {tab === "open" && list.length > 0 ? <p className="text-base text-support">Dica: deslize o orçamento para a direita se fechou, ou para a esquerda se perdeu.</p> : null}
-      {tab === "won" && list.length > 0 ? <p className="text-base text-support">Fechou por engano? Deslize para a direita para voltar a aberto, ou para a esquerda se perdeu.</p> : null}
-      {tab === "lost" && list.length > 0 ? <p className="text-base text-support">Dica: deslize para a direita para reabrir.</p> : null}
+      {hint && tab === "open" && list.length > 0 ? <p className="text-base text-support">Dica: deslize o orçamento para a direita se fechou, ou para a esquerda se perdeu.</p> : null}
+      {hint && tab === "won" && list.length > 0 ? <p className="text-base text-support">Fechou por engano? Deslize para a direita para voltar a aberto, ou para a esquerda se perdeu.</p> : null}
+      {hint && tab === "lost" && list.length > 0 ? <p className="text-base text-support">Dica: deslize para a direita para reabrir.</p> : null}
       {list.map((q) => {
         const name = db.clients.find((c) => c.id === q.clientId)?.name ?? "cliente";
         const card = (

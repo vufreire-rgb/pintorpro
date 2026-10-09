@@ -28,7 +28,6 @@ await page.waitForURL(base + "/visitas");
 check(await page.getByText("João Pereira").isVisible(), "o app abre direto em Visitas, na aba Agendadas, com a atrasada");
 
 // agendar
-await page.getByRole("button", { name: /nova visita/i }).click();
 await page.getByRole("link", { name: /Agendar/ }).click();
 await page.getByText("Dia e hora").waitFor();
 const dflt = await page.locator('input[type="datetime-local"]').inputValue();
@@ -70,9 +69,8 @@ await page.screenshot({ path: `${OUT}/visitas-lista.png` });
 // visita rápida pelo painel
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /nova visita/i }).click();
-await page.getByRole("button", { name: "Começar agora" }).click();
 await page.getByText("Salvar visita").first().waitFor();
-check(/\/visitas\/[0-9a-f-]{36}$/.test(page.url()), "Nova visita → Começar agora abre a visita na hora, sem pedir cliente");
+check(/\/visitas\/[0-9a-f-]{36}$/.test(page.url()), "Nova visita abre a visita na hora, sem pedir cliente");
 
 // salvar visita: pede nome/telefone só agora
 await page.getByRole("button", { name: "Salvar visita" }).click();
@@ -81,6 +79,7 @@ check(await page.getByRole("button", { name: "Salvar visita" }).last().isDisable
 await page.getByLabel(/Nome do cliente|nome/).last().fill("Marta Souza");
 await page.getByLabel("Telefone (WhatsApp)").fill("11988887777");
 await page.getByRole("button", { name: "Salvar visita" }).last().click();
+await page.getByRole("button", { name: "Depois" }).click();
 await page.waitForURL(/\/visitas$/);
 await page.getByRole("tab", { name: /A orçar/ }).click();
 check(await page.getByText("Marta Souza").first().isVisible(), "visita salva aparece na lista com o cliente");

@@ -26,7 +26,6 @@ await page.getByRole("button", { name: /nova visita/i }).waitFor();
 await shot("02-painel");
 
 await page.getByRole("button", { name: /nova visita/i }).click();
-await page.getByRole("button", { name: "Começar agora" }).click();                       // um toque: a visita já existe, sem cliente
 await page.getByText("Nenhuma foto", { exact: true }).waitFor();
 await page.getByLabel("Endereço da obra").fill("Rua das Flores, 100");
 // medidas na visita (viram ambientes do orçamento)
@@ -75,6 +74,7 @@ await page.getByRole("heading", { name: "Quem é o cliente?" }).waitFor();
 await page.getByText("Nome do cliente").locator("..").locator("input").fill("Maria Souza");
 await page.getByText("Telefone (WhatsApp)").last().locator("..").locator("input").fill("11977776666");
 await page.getByRole("button", { name: "Salvar visita" }).last().click();
+await page.getByRole("button", { name: "Depois" }).click();
 await page.waitForURL(/\/visitas$/);
 await page.getByRole("tab", { name: /A orçar/ }).click();
 await page.getByText("Maria Souza").first().click();
