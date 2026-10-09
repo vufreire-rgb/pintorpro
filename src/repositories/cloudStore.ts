@@ -129,7 +129,7 @@ export async function fetchSharedQuote(token: string): Promise<unknown> {
 }
 
 // ---- Página pública do pintor e pedidos de orçamento dos clientes (função public-page) ----
-export interface PageRow { slug: string; enabled: boolean; updated_at: string }
+export interface PageRow { slug: string; enabled: boolean; updated_at: string; snapshot?: Record<string, unknown> }
 export interface RequestRow { id: string; name: string; phone: string; address: string; message: string; status: "new" | "contacted" | "converted" | "dismissed"; created_at: string }
 
 /** Código do erro que a função devolveu ("slug_taken", "bad_slug"…), ou "network" se nem chegou lá. */
@@ -150,7 +150,7 @@ export const publishPublicPage = (slug: string, snapshot: unknown): Promise<void
 export const disablePublicPage = (): Promise<void> => invokePage({ action: "disable" });
 
 export async function getMyPage(): Promise<PageRow | null> {
-  const { data, error } = await c().from("public_pages").select("slug, enabled, updated_at").maybeSingle();
+  const { data, error } = await c().from("public_pages").select("slug, enabled, updated_at, snapshot").maybeSingle();
   if (error) throw error;
   return data as PageRow | null;
 }

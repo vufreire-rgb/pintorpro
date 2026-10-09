@@ -19,6 +19,8 @@ export interface PageSnapshot {
   headline: string;
   about: string;
   services: string[];
+  avatar?: string;
+  photos?: string[];
 }
 
 /** "Silva Pinturas & Cia!" -> "silva-pinturas-cia" (mesma regra do servidor). */
@@ -28,7 +30,7 @@ export function slugify(text: string): string {
 export const RESERVED_SLUGS = ["o", "p", "api", "admin", "app", "login", "medde", "pedidos", "orcamentos", "obras", "visitas", "clientes", "configuracoes", "onboarding", "privacidade", "termos", "excluir-conta", "redefinir-senha", "suporte", "ajuda", "www"];
 export const isValidSlug = (v: string): boolean => /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(v) && !v.includes("--") && !RESERVED_SLUGS.includes(v);
 
-export interface PageForm { slug: string; headline: string; about: string; showServices: boolean }
+export interface PageForm { slug: string; headline: string; about: string; avatar?: string; photos: string[] }
 
 export function buildPageSnapshot(db: Db, f: PageForm): PageSnapshot {
   const c = db.company!;
@@ -41,17 +43,25 @@ export function buildPageSnapshot(db: Db, f: PageForm): PageSnapshot {
     whatsapp: c.whatsapp,
     headline: f.headline.trim(),
     about: f.about.trim(),
-    services: f.showServices ? db.services.filter((s) => db.enabledServiceIds.includes(s.id)).slice(0, 12).map((s) => s.name) : [],
+    services: [],
+    ...(f.avatar ? { avatar: f.avatar } : {}),
+    ...(f.photos.length ? { photos: f.photos.slice(0, 6) } : {}),
   };
 }
 
-export const pageUrl = (slug: string): string => `${typeof window === "undefined" ? "https://medde.com.br" : window.location.origin}/p/${slug}`;
+/** Endereço público oficial. Em testes locais usa o endereço aberto; em produção sempre o domínio do Medde (curto e bonito para compartilhar). */
+export const PUBLIC_ORIGIN = "https://medde.com.br";
+export const pageUrl = (slug: string): string => {
+  const local = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  return `${local ? window.location.origin : PUBLIC_ORIGIN}/p/${slug}`;
+};
 
 const PAGE_ERRORS: Record<string, string> = {
   slug_taken: "Este endereço já está em uso. Escolha outro (por exemplo, com o nome da cidade).",
   bad_slug: "Endereço inválido. Use de 3 a 40 letras minúsculas, números e hífen.",
   bad_snapshot: "Preencha o nome do negócio em Ajustes antes de ativar a página.",
   network: "Sem internet. Tente de novo quando estiver online.",
+  failed: "Não consegui salvar agora. Se você colocou muitas fotos, tire uma e tente de novo.",
 };
 export const pageErrorText = (code: string): string => PAGE_ERRORS[code] ?? "Não consegui salvar agora. Tente de novo.";
 

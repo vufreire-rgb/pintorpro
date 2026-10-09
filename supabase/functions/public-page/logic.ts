@@ -10,6 +10,10 @@ export interface PageSnapshot {
   headline: string;
   about: string;
   services: string[];
+  /** Foto de perfil (JPEG em data URL, já reduzida pelo app). */
+  avatar?: string;
+  /** Fotos de trabalhos feitos (JPEG em data URL, já reduzidas pelo app). */
+  photos?: string[];
 }
 export interface RequestInput { name: string; phone: string; address: string; message: string }
 
@@ -17,8 +21,15 @@ export interface RequestInput { name: string; phone: string; address: string; me
 export const RESERVED = ["o", "p", "api", "admin", "app", "login", "medde", "pedidos", "orcamentos", "obras", "visitas", "clientes", "configuracoes", "onboarding", "privacidade", "termos", "excluir-conta", "redefinir-senha", "suporte", "ajuda", "www"];
 export const MAX_REQUESTS_PER_PAGE_PER_DAY = 40;
 export const MAX_OPEN_REQUESTS = 300;
+export const MAX_PHOTOS = 6;
+/** Tamanho máximo (em caracteres do data URL) da foto de perfil e de cada foto de trabalho. */
+export const MAX_AVATAR_CHARS = 80_000;
+export const MAX_PHOTO_CHARS = 260_000;
 
 const s = (v: unknown, max: number): string => (typeof v === "string" ? v.trim().slice(0, max) : "");
+/** Só aceita JPEG em data URL, base64 puro e dentro do limite. O resto é descartado. */
+export const jpegDataUrl = (v: unknown, max: number): string | undefined =>
+  typeof v === "string" && v.length <= max && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(v) ? v : undefined;
 const color = (v: unknown): string => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v : "#0F3B7A");
 
 /** "Silva Pinturas & Cia" -> "silva-pinturas-cia" */
@@ -41,6 +52,10 @@ export function sanitizePage(raw: unknown): PageSnapshot | null {
     about: s(o.about, 600),
     services: (Array.isArray(o.services) ? o.services : []).slice(0, 12).map((x) => s(x, 60)).filter(Boolean),
   };
+  const avatar = jpegDataUrl(o.avatar, MAX_AVATAR_CHARS);
+  if (avatar) out.avatar = avatar;
+  const photos = (Array.isArray(o.photos) ? o.photos : []).map((x) => jpegDataUrl(x, MAX_PHOTO_CHARS)).filter((x): x is string => !!x).slice(0, MAX_PHOTOS);
+  if (photos.length) out.photos = photos;
   return out.company ? out : null;
 }
 

@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
   if (url.startsWith("/auth/v1/logout")) return send(204);
   if (url.startsWith("/auth/v1/user")) return send(200, user);
   if (url.startsWith("/rest/v1/user_data")) return req.method === "GET" ? send(200, []) : send(201);
-  if (url.startsWith("/rest/v1/public_pages")) return send(200, state.page ? { slug: state.page.slug, enabled: state.page.enabled, updated_at: new Date().toISOString() } : null);
+  if (url.startsWith("/rest/v1/public_pages")) return send(200, state.page ? { slug: state.page.slug, enabled: state.page.enabled, updated_at: new Date().toISOString(), snapshot: state.page.snapshot } : null);
   if (url.startsWith("/rest/v1/quote_requests")) {
     if (req.method === "GET") return send(200, state.requests);
     const id = new URL(url, "http://x").searchParams.get("id")?.replace("eq.", "");
@@ -73,8 +73,26 @@ await page.goto(base + "/configuracoes");
 await page.getByText("Página para receber pedidos").first().click();
 check((await page.getByLabel("Endereço da sua página").inputValue()) === "silva-pinturas-cia", "endereço sugerido pelo nome do negócio");
 await page.getByPlaceholder("Ex.: Pintura residencial com capricho").fill("Pintura residencial com capricho");
+await page.getByLabel("Escolher foto de perfil").setInputFiles("tests/foto-teste.png");
+await page.getByAltText("Sua foto de perfil").waitFor();
+await page.getByLabel("Adicionar fotos dos trabalhos").setInputFiles(["tests/foto-teste.png", "tests/foto-teste.png"]);
+await page.getByAltText("Trabalho 2").waitFor();
+check(await page.getByText("2 de 6").isVisible(), "duas fotos de trabalho adicionadas (2 de 6)");
+await page.getByRole("button", { name: "Remover foto 2" }).click();
+check(await page.getByText("1 de 6").isVisible(), "remover foto funciona");
 await page.getByRole("button", { name: "Ativar página" }).click();
 await page.getByText("Página ativada").waitFor();
+const snap0 = state.page.snapshot;
+check(/^data:image\/jpeg;base64,/.test(snap0.avatar ?? "") && snap0.photos?.length === 1 && /^data:image\/jpeg;base64,/.test(snap0.photos[0]), "foto de perfil e 1 foto de trabalho vão como JPEG na página");
+check((snap0.avatar ?? "").length < 80000 && snap0.photos[0].length < 260000, "fotos reduzidas dentro do limite do servidor");
+await page.getByAltText(/QR code que abre/).waitFor();
+check(true, "QR code aparece depois de ativar");
+const dl = page.waitForEvent("download");
+await page.getByRole("button", { name: "Baixar para imprimir" }).click();
+const file = await dl;
+check(/^qr-silva-pinturas-cia\.png$/.test(file.suggestedFilename()), "imagem do QR baixada: " + file.suggestedFilename());
+const png = await (async () => { const s = await file.createReadStream(); const chunks = []; for await (const c of s) chunks.push(c); return Buffer.concat(chunks); })();
+check(png.length > 5000 && png.readUInt32BE(16) === 1080 && png.readUInt32BE(20) === 1350, "cartaz do QR é um PNG 1080×1350");
 check(state.published.length === 1 && state.published[0].auth.startsWith("Bearer ") && state.published[0].slug === "silva-pinturas-cia", "página publicada com o login do pintor");
 check(!/pix|dailyRate|margin|custo/i.test(JSON.stringify(state.page.snapshot)), "o que vai para a página não tem dados internos: " + Object.keys(state.page.snapshot).join(","));
 
@@ -85,6 +103,12 @@ client.on("pageerror", (e) => cerrors.push(e.message));
 await client.goto(`${base}/p/silva-pinturas-cia`);
 await client.getByRole("heading", { name: "Silva Pinturas & Cia" }).waitFor();
 check(await client.getByText("Pintura residencial com capricho").isVisible(), "cliente vê a apresentação do pintor");
+await client.getByAltText("Foto de Silva Pinturas & Cia").waitFor();
+check(true, "cliente vê a foto de perfil");
+await client.getByRole("button", { name: /Ampliar foto 1 de 1/ }).click();
+await client.getByRole("dialog", { name: "Foto ampliada" }).waitFor();
+await client.getByRole("button", { name: "Fechar foto" }).click();
+check((await client.getByRole("dialog").count()) === 0, "cliente amplia e fecha a foto do trabalho");
 check((await client.getByLabel("E-mail").count()) === 0, "não pede login");
 check((await client.locator('meta[name="robots"]').getAttribute("content"))?.includes("noindex"), "noindex");
 await client.getByLabel("Seu nome").fill("Maria Souza");
@@ -132,6 +156,8 @@ check(state.patched.some((p) => p.status === "converted"), "pedido marcado como 
 // 4) desativar: o link deixa de funcionar
 await page.goto(base + "/configuracoes");
 await page.getByText("Página para receber pedidos").first().click();
+await page.getByRole("heading", { name: "Pintura" }).count();
+check((await page.getByPlaceholder("Ex.: Pintura residencial com capricho").inputValue()) === "Pintura residencial com capricho", "ao reabrir, a frase publicada continua preenchida");
 await page.getByRole("button", { name: "Desativar página" }).click();
 await page.getByText("Página desativada").waitFor();
 await client.reload();

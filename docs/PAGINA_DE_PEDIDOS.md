@@ -26,3 +26,11 @@
 ## Ideias para depois
 - Notificação no celular quando chega um pedido (junto com as notificações push).
 - Fotos no pedido; liberar a página para buscadores; mais de um "modelo" de página.
+
+## Atualização (2026-10-09): link, QR code, fotos
+- **Link curto:** o app mostra e compartilha sempre `medde.com.br/p/<endereço>` (e não o endereço da Vercel).
+- **QR code:** em Ajustes → Página para receber pedidos, depois de ativar, aparece o QR com **Enviar QR** (compartilhar) e **Baixar para imprimir** (PNG 1080×1350 com o nome do negócio, o QR e o link).
+- **Fotos:** foto de perfil (quadrada, 320 px) e até 6 fotos de trabalhos feitos (lado maior 1000 px). Substituem a lista de serviços em texto. São reduzidas no aparelho (JPEG novo, sem EXIF/GPS) e vão **dentro da própria página publicada** (campos `avatar` e `photos` do `snapshot`): não precisa de migração nova, só da função `public-page` atualizada (deploy automático ao publicar na `main`). O servidor só aceita JPEG em data URL, com limite de tamanho (80 mil caracteres no perfil e 260 mil em cada foto).
+- **Prévia do link** (WhatsApp, Instagram): título com o nome do negócio, a frase de apresentação e a primeira foto de trabalho (ou a de perfil), servida em `/p/<endereço>/foto`.
+- Ao reabrir os Ajustes, os campos mostram o que já está publicado (antes "Atualizar" podia apagar o texto sem querer).
+- **Limite conhecido:** como as fotos viajam junto com a página, cada visita baixa até ~1,5 MB. Serve bem para o começo; se o volume crescer, mover as fotos para o Storage público.

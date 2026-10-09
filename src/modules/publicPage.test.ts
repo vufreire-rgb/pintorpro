@@ -6,7 +6,7 @@ vi.mock("@/repositories/cloudStore", () => ({ cloudConfigured: false, deleteRequ
 vi.mock("@/repositories/fileStore", () => ({ putFile: vi.fn(), getFile: vi.fn(), deleteFile: vi.fn() }));
 
 import { newDb } from "./db";
-import { buildPageSnapshot, isValidSlug, pageErrorText, phoneLabel, requestWhatsApp, slugify, visitFromRequest } from "./publicPage";
+import { buildPageSnapshot, isValidSlug, pageErrorText, pageUrl, phoneLabel, requestWhatsApp, slugify, visitFromRequest } from "./publicPage";
 import type { Db } from "./types";
 
 const read = (): Db => JSON.parse(store.get("pintorpro:v1")!) as Db;
@@ -33,10 +33,14 @@ describe("endereço da página", () => {
 describe("buildPageSnapshot", () => {
   it("leva só o que o cliente pode ver", () => {
     const db = setup();
-    const s = buildPageSnapshot(db, { slug: "silva", headline: " Pintura com capricho ", about: "10 anos", showServices: true });
+    const s = buildPageSnapshot(db, { slug: "silva", headline: " Pintura com capricho ", about: "10 anos", photos: [] });
     expect(s).toMatchObject({ company: "Silva Pinturas", city: "São Paulo, SP", whatsapp: "11999990000", color: "#B3261E", headline: "Pintura com capricho", initials: "SP" });
-    expect(s.services.length).toBeGreaterThan(0);
-    expect(buildPageSnapshot(db, { slug: "silva", headline: "", about: "", showServices: false }).services).toEqual([]);
+    expect(s.services).toEqual([]);
+    expect(s.avatar).toBeUndefined();
+    const jpg = "data:image/jpeg;base64,/9j/AAAA";
+    const c = buildPageSnapshot(db, { slug: "silva", headline: "", about: "", avatar: jpg, photos: Array.from({ length: 9 }, () => jpg) });
+    expect(c.avatar).toBe(jpg);
+    expect(c.photos).toHaveLength(6);
     expect(JSON.stringify(s).toLowerCase()).not.toMatch(/pix|dailyrate|margin|custo/);
   });
 });
@@ -62,5 +66,11 @@ describe("pedido recebido", () => {
     visitFromRequest(read(), { name: "maria souza", phone: "(11) 98888-7777", address: "Rua B", message: "" });
     expect(read().clients).toHaveLength(1);
     expect(read().visits).toHaveLength(2);
+  });
+});
+
+describe("pageUrl", () => {
+  it("usa o endereço oficial curto do Medde", () => {
+    expect(pageUrl("silva-pinturas")).toBe("https://medde.com.br/p/silva-pinturas");
   });
 });

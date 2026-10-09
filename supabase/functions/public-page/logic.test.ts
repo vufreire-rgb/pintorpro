@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSlug, sanitizePage, sanitizeRequest, slugify } from "./logic";
+import { isSlug, jpegDataUrl, MAX_PHOTOS, sanitizePage, sanitizeRequest, slugify } from "./logic";
 
 describe("slug", () => {
   it("vira endereço sem acento nem símbolo", () => {
@@ -19,6 +19,22 @@ describe("sanitizePage", () => {
     expect(p.color).toBe("#0F3B7A");
     expect(p.services).toHaveLength(12);
     expect(JSON.stringify(p)).not.toContain("extra");
+  });
+});
+describe("fotos da página", () => {
+  const jpg = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+  it("aceita só JPEG em data URL dentro do limite", () => {
+    expect(jpegDataUrl(jpg, 1000)).toBe(jpg);
+    expect(jpegDataUrl("data:image/png;base64,AAAA", 1000)).toBeUndefined();
+    expect(jpegDataUrl("https://x.com/a.jpg", 1000)).toBeUndefined();
+    expect(jpegDataUrl("data:image/jpeg;base64,<script>", 1000)).toBeUndefined();
+    expect(jpegDataUrl(jpg, 10)).toBeUndefined();
+  });
+  it("limita a quantidade e descarta o que não for imagem válida", () => {
+    const p = sanitizePage({ company: "Silva", avatar: jpg, photos: [jpg, "lixo", ...Array.from({ length: 20 }, () => jpg)] })!;
+    expect(p.avatar).toBe(jpg);
+    expect(p.photos).toHaveLength(MAX_PHOTOS);
+    expect(sanitizePage({ company: "Silva", avatar: "javascript:alert(1)" })!.avatar).toBeUndefined();
   });
 });
 describe("sanitizeRequest", () => {
