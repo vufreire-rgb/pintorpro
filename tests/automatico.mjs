@@ -16,6 +16,7 @@ await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
 await page.waitForURL(base + "/visitas");
+await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("pintorpro:v1")); d.company.quoteModeAsked = true; localStorage.setItem("pintorpro:v1", JSON.stringify(d)); });
 
 const DAY = 86400000;
 await page.evaluate((DAY) => {
@@ -100,8 +101,10 @@ check(true, "Perdeu → aparece 'Reabrir'");
 // obra: botões por ação
 await page.goto(base + "/obras");
 await page.locator("a", { hasText: "Cliente Inicio" }).click();
+await page.getByText("Mais ações").click();
 await page.getByRole("button", { name: "Tem pendência" }).click();
 check(await page.getByText("Pendências").first().isVisible(), "'Tem pendência' marca pendências");
+if (!(await page.getByRole("button", { name: "Concluir" }).isVisible())) await page.getByText("Mais ações").click();
 await page.getByRole("button", { name: "Concluir" }).click();
 check(await page.getByRole("button", { name: "Reabrir" }).isVisible(), "'Concluir' conclui a obra");
 await page.getByRole("button", { name: "Reabrir" }).click();

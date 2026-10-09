@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, ChevronRight, FileText, MapPin, Minus, PaintRoller, Plus, ShoppingBag, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, ChevronRight, CircleHelp, FileText, MapPin, Minus, PaintRoller, Plus, ShoppingBag, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import { fmtNum, parseNum } from "@/shared/format";
 
 export function Screen({ title, back, children, nav = false, corner }: { title: string; back?: string; children: React.ReactNode; nav?: boolean; corner?: React.ReactNode }) {
@@ -169,10 +169,13 @@ export const Card = ({ children, className = "" }: { children: React.ReactNode; 
   <section className={`rounded-[20px] border p-4 shadow-[0_1px_2px_rgba(15,59,122,.05)] ${/\bbg-/.test(className) ? "" : "bg-white"} ${/(^|\s)border-(brand|accent|slate|amber|red|blue|emerald|green|white|black)/.test(className) ? "" : "border-line"} ${className}`}>{children}</section>
 );
 
-export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+export function Field({ label, hint, help, children }: { label: string; hint?: string; /** Explicação curta com exemplo, aberta pelo "?" ao lado do rótulo. */ help?: string; children: React.ReactNode }) {
+  const [helpOpen, setHelpOpen] = useState(false);
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-base font-normal leading-[22px] text-support">{label}</span>
+    <label className="relative flex flex-col gap-1.5">
+      <span className={`text-base font-normal leading-[22px] text-support ${help ? "pr-12" : ""}`}>{label}</span>
+      {help ? <button type="button" aria-label={`Ajuda: ${label}`} aria-expanded={helpOpen} onClick={(e) => { e.preventDefault(); setHelpOpen(!helpOpen); }} className="absolute right-0 top-[-13px] grid h-12 w-12 place-items-center rounded-full text-live"><CircleHelp size={22} strokeWidth={2.2} aria-hidden /></button> : null}
+      {helpOpen && help ? <span className="rounded-2xl bg-brand-soft p-3 text-base leading-[22px] text-ink">{help}</span> : null}
       {children}
       {hint ? <span className="text-base text-support">{hint}</span> : null}
     </label>

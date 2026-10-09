@@ -14,6 +14,7 @@ import { isPriceOnly, previewQuote, saveQuote, updateQuote } from "@/modules/quo
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
 import { SimpleQuoteForm } from "@/components/SimpleQuoteForm";
+import { QuoteModeFirstAsk } from "@/components/QuoteModeFirstAsk";
 import type { Adjustment, Db, Quote, QuoteInput, Room, Visit } from "@/modules/types";
 import { formatBRL } from "@/shared/money";
 import { fmtNum, plural, UNIT_LABEL } from "@/shared/format";
@@ -32,6 +33,7 @@ function NovoOrcamento() {
   if (!db) return <Loading />;
   const quote = db.quotes.find((q) => q.id === params.get("editar"));
   const visit = db.visits.find((v) => v.id === (params.get("visita") ?? quote?.visitId));
+  if (db.company && db.company.quoteModeAsked === false && !quote) return <QuoteModeFirstAsk company={db.company} />;
   if (isSimpleMode(db.company) && (!quote || isPriceOnly(quote))) return <SimpleQuoteForm key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
   return <Wizard key={quote?.id ?? visit?.id ?? "novo"} db={db} quote={quote} visit={visit} />;
 }
@@ -176,7 +178,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <ServicePicker services={db.services.filter((sv) => enabled.includes(sv.id))} selected={r.services.map((x) => x.serviceId)} onToggle={(id) => toggleService(r.id, id)} />
               {r.services.some((sel) => { const svc = db.services.find((x) => x.id === sel.serviceId); return svc && (svc.basis === "fixed" || svc.usesCoats); }) ? (
                 <details>
-                  <summary className="flex min-h-12 cursor-pointer items-center text-base font-semibold text-brand">Demãos e quantidades</summary>
+                  <summary className="flex min-h-12 cursor-pointer items-center text-base font-semibold text-brand">Demãos (camadas de tinta) e quantidades</summary>
                   <div className="mt-2 flex flex-col gap-2">
                     {r.services.map((sel) => {
                       const svc = db.services.find((x) => x.id === sel.serviceId);
@@ -221,7 +223,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
                       <div><b>{m.name}</b><div className="text-base text-support">Comprar {fmtNum(m.purchaseQty)} {m.unit} · {formatBRL(m.costCents)}</div></div>
                       <Chip active={m.included} onClick={() => setIncluded({ ...included, [m.materialId]: !m.included })}>{m.included ? "Incluso" : "Cliente fornece"}</Chip>
                     </div>
-                    <Field label={`Rendimento (cobre ${UNIT_LABEL.m2} por ${m.unit})`}>
+                    <Field label={`Rendimento (cobre ${UNIT_LABEL.m2} por ${m.unit})`} help="Quanto 1 unidade do material cobre. Se o seu material rende mais ou menos que o padrão, ajuste aqui e a quantidade a comprar muda.">
                       <NumberInput value={m.yieldUsed} onChange={(n) => setYields({ ...yields, [m.materialId]: n > 0 ? n : m.yieldUsed })} />
                     </Field>
                   </Card>

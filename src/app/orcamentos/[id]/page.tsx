@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { FechouNotice } from "@/components/FechouNotice";
 import { PixSetupCard } from "@/components/PixSetupCard";
-import { BlocoRecolhivel, Badge, Button, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
-import { Bell, Copy, Eye, Hammer, Link2Off, ListChecks, MoreHorizontal, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
+import { BlocoRecolhivel, Badge, Button, buttonCls, Card, CardTitle, ConfirmDialog, LinkButton, Loading, Screen } from "@/components/ui";
+import { daysWaiting, followUpMessage, needsFollowUp } from "@/modules/followUp";
+import { waUrl } from "@/modules/visitList";
+import { Bell, Copy, Eye, Hammer, Link2Off, ListChecks, MessageCircle, MoreHorizontal, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { enablePush, shouldAskPush, usePushState } from "@/modules/push";
 import { linkIsStale, publishLinkFor, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
@@ -111,6 +113,11 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
               <Button variant="ghost" icon={X} className="!min-h-16" onClick={() => setAskLose(true)}>Perdeu</Button>
             </div>
             <p className="text-base text-support">Ao fechar, a obra é criada na aba Obras.</p>
+            {client?.phone ? (
+              <a href={waUrl(client.phone, followUpMessage(client.name, q.number, db.company?.name ?? ""))} target="_blank" rel="noreferrer" className={buttonCls("ghost")}>
+                <MessageCircle size={24} strokeWidth={2.2} aria-hidden />{needsFollowUp(q) ? `Sem resposta há ${daysWaiting(q)} dias: lembrar o cliente` : "Lembrar o cliente pelo WhatsApp"}
+              </a>
+            ) : null}
           </>
         ) : q.status === "won" ? (
           <>

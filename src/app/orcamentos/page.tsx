@@ -8,6 +8,7 @@ import { UndoBar } from "@/components/UndoBar";
 import { isExpired, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { useAppDb } from "@/modules/useApp";
 import { useHint } from "@/modules/hints";
+import { daysWaiting, needsFollowUp } from "@/modules/followUp";
 import { usePendingVoice } from "@/modules/voice";
 import { agoLabel, useQuoteLinks } from "@/modules/quoteLinks";
 import { useRequests } from "@/modules/publicPage";
@@ -89,7 +90,7 @@ export default function Orcamentos() {
           <Link href={`/orcamentos/${q.id}`}>
             <Card>
               <div className="flex justify-between gap-2 text-lg"><b className="min-w-0 truncate">Nº {q.number} · {name}</b><b className="font-display text-xl font-semibold">{formatBRL(q.result.totals.totalCents)}</b></div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{q.autoClosed ? <Badge tone="lost">Sem resposta</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-base text-support">{fmtDate(q.createdAt)}{isExpired(q) ? <Badge tone="warn">Vencido (7 dias)</Badge> : null}{q.autoClosed ? <Badge tone="lost">Sem resposta</Badge> : null}{needsFollowUp(q) ? <Badge tone="warn">Sem resposta há {daysWaiting(q)} dias</Badge> : null}{links[q.id]?.lastViewedAt ? <span className="inline-flex items-center gap-1 font-semibold text-brand"><Eye size={16} aria-hidden />Visto {agoLabel(links[q.id]!.lastViewedAt!)}</span> : null}</div>
             </Card>
           </Link>
         );

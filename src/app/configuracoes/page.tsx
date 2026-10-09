@@ -155,8 +155,8 @@ export default function Configuracoes() {
             <div className="font-medium">{m.name} ({m.unit}){m.isDemo ? <span className="ml-2 text-base text-[#8A4B00]">exemplo</span> : null}</div>
             <div className="grid grid-cols-3 gap-2">
               <Field label="Preço R$"><NumberInput value={m.priceCents / 100} onChange={(n) => updateMaterial(m.id, { priceCents: toCents(n) })} /></Field>
-              <Field label="Rende"><NumberInput value={m.yieldPerUnit} onChange={(n) => updateMaterial(m.id, { yieldPerUnit: n > 0 ? n : 1 })} /></Field>
-              <Field label="Perda %"><NumberInput value={m.wastePct} onChange={(n) => updateMaterial(m.id, { wastePct: n })} /></Field>
+              <Field label="Rende" help="Quantos m² (ou metros ou unidades) 1 unidade do material cobre. Ex.: se 1 lata cobre 100 m², escreva 100."><NumberInput value={m.yieldPerUnit} onChange={(n) => updateMaterial(m.id, { yieldPerUnit: n > 0 ? n : 1 })} /></Field>
+              <Field label="Perda de material (%)" help="Quanto do material se perde em respingos e sobras. Ex.: 10 significa 10% a mais de material."><NumberInput value={m.wastePct} onChange={(n) => updateMaterial(m.id, { wastePct: n })} /></Field>
             </div>
           </div>
         ))}
@@ -166,19 +166,22 @@ export default function Configuracoes() {
         <Field label="Diária que você quer ganhar (R$)"><NumberInput value={c.dailyRateCents / 100} onChange={(n) => set({ dailyRateCents: toCents(n) })} /></Field>
         <Field label="Horas de trabalho por dia"><NumberInput value={c.hoursPerDay} onChange={(n) => set({ hoursPerDay: n || 8 })} /></Field>
         <Field label="Dias de segurança no prazo"><NumberInput value={c.safetyDays} onChange={(n) => set({ safetyDays: n })} /></Field>
-        <Field label="Margem desejada (%)"><NumberInput value={c.marginPct} onChange={(n) => set({ marginPct: Math.min(n, 95) })} /></Field>
+        <Field label="Quanto quero que sobre (%)" help="Parte do preço final que deve sobrar de lucro. Ex.: 30 significa que de cada R$ 100 cobrados, R$ 30 sobram."><NumberInput value={c.marginPct} onChange={(n) => set({ marginPct: Math.min(n, 95) })} /></Field>
         <div>
           <p className="mb-2 font-medium">Como calcular o preço?</p>
           <div className="flex flex-wrap gap-2">
             <Chip active={c.pricingMode === "base_price"} onClick={() => set({ pricingMode: "base_price" })}>Pelo meu preço por serviço</Chip>
-            <Chip active={c.pricingMode === "cost_plus"} onClick={() => set({ pricingMode: "cost_plus" })}>Custo + margem</Chip>
+            <Chip active={c.pricingMode === "cost_plus"} onClick={() => set({ pricingMode: "cost_plus" })}>Custo + lucro</Chip>
           </div>
         </div>
         {c.pricingMode === "cost_plus" ? (
           <div className="flex flex-wrap gap-2">
-            <Chip active={c.marginMode === "on_price"} onClick={() => set({ marginMode: "on_price" })}>Margem sobre a venda</Chip>
-            <Chip active={c.marginMode === "markup"} onClick={() => set({ marginMode: "markup" })}>Markup sobre o custo</Chip>
+            <Chip active={c.marginMode === "on_price"} onClick={() => set({ marginMode: "on_price" })}>% do preço que sobra</Chip>
+            <Chip active={c.marginMode === "markup"} onClick={() => set({ marginMode: "markup" })}>% somada ao custo</Chip>
           </div>
+        ) : null}
+        {c.pricingMode === "cost_plus" ? (
+          <p className="text-base leading-[22px] text-support">Ex.: custo de R$ 70 e 30%. <b>% do preço que sobra:</b> o preço sai R$ 100 e sobram R$ 30. <b>% somada ao custo:</b> o preço sai R$ 91 (70 + 30% de 70).</p>
         ) : null}
       </Section>
       </>}

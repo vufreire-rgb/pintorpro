@@ -46,3 +46,21 @@ export function PhotoGrid({ ids, onRemove, selectedIds, onToggle, marksOf, onMar
     </div>
   );
 }
+
+function MiniThumb({ id }: { id: string }) {
+  const url = usePhotoUrl(id);
+  // eslint-disable-next-line @next/next/no-img-element
+  return url ? <img src={url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" /> : <span className="h-12 w-12 shrink-0 rounded-xl bg-[#F3F6FA]" aria-hidden />;
+}
+
+/** Tira de miniaturas (as 3 últimas fotos) para ver, sem abrir o bloco, que as fotos estão lá. */
+export function PhotoStrip({ ids }: { ids: string[] }) {
+  if (ids.length === 0) return null;
+  const last = ids.slice(-3);
+  return (
+    <span className="flex items-center gap-2" aria-hidden>
+      {last.map((id) => <MiniThumb key={id} id={id} />)}
+      {ids.length > 3 ? <span className="text-base font-semibold text-support">+{ids.length - 3}</span> : null}
+    </span>
+  );
+}

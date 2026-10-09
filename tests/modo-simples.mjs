@@ -15,10 +15,15 @@ const next = () => page.getByRole("button", { name: /Continuar|Começar/ }).clic
 await page.goto(base);
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
-check(await page.getByRole("button", { name: /Com cálculo/ }).getAttribute("aria-pressed") !== "false", "cadastro: 'Com cálculo' vem marcado");
-await page.getByRole("button", { name: /Só voz e preço fechado/ }).click();
+check((await page.getByRole("button", { name: /Só voz e preço fechado/ }).count()) === 0, "cadastro não faz mais a pergunta técnica");
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
 await page.waitForURL(base + "/visitas");
+check((await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).company.quoteModeAsked)) === false, "conta nova ainda não escolheu o jeito de orçar");
+await page.goto(base + "/orcamentos/novo");
+await page.getByText("Como você prefere fazer este orçamento?").waitFor();
+check(await page.getByRole("button", { name: /Calcular pelas medidas/ }).isVisible(), "primeiro orçamento: pergunta com dois cartões");
+await page.getByRole("button", { name: /Só falar o valor/ }).click();
+await page.getByLabel("Nome do cliente").waitFor();
 const mode = await page.evaluate(() => JSON.parse(localStorage.getItem("pintorpro:v1")).company.quoteMode);
 check(mode === "simple", "escolha salva: " + mode);
 

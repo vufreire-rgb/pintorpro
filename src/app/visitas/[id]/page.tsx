@@ -5,7 +5,7 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 import { CameraCapture } from "@/components/CameraCapture";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoMarker } from "@/components/PhotoMarker";
-import { PhotoGrid } from "@/components/PhotoGrid";
+import { PhotoGrid, PhotoStrip } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
 import { BlocoRecolhivel, bareTextCls, Button, buttonCls, CartaoDeObservacao, Card, CardTitle, Chip, ConfirmDialog, Field, LinhaDeDado, LinkButton, Loading, Screen, TextArea2, TextInput } from "@/components/ui";
 import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, X } from "lucide-react";
@@ -147,6 +147,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         title="Fotos"
         icon={Camera}
         summary={v.photoIds.length === 0 ? "Nenhuma foto" : plural(v.photoIds.length, "foto", "fotos")}
+        preview={<PhotoStrip ids={v.photoIds} />}
         openWhen={!!msg}
         openSignal={photoSignal}
         action={{ label: "Foto", ariaLabel: "Tirar fotos (várias)", icon: Camera, opens: true, onClick: () => setCamera(true) }}

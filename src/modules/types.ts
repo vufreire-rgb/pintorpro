@@ -39,6 +39,8 @@ export interface Company {
   stepsHidden?: boolean;
   /** Como o pintor orça: "calc" (padrão) usa a base de cálculo; "simple" só voz e preço fechado, sem telas de cálculo. */
   quoteMode?: "calc" | "simple";
+  /** false = conta nova que ainda não escolheu o jeito de orçar (a escolha aparece no primeiro "Novo orçamento"). */
+  quoteModeAsked?: boolean;
 }
 
 export interface Client {

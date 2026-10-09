@@ -57,13 +57,13 @@ await page.getByRole("button", { name: "Entrar", exact: true }).click();
 await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas");
 await page.getByRole("button", { name: "Continuar" }).click();
-await page.getByRole("button", { name: /Só voz e preço fechado/ }).click();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777");
 await page.getByRole("button", { name: "Começar" }).click();
 await page.waitForURL(base + "/visitas");
 
 // orçamento só com preço
 await page.goto(base + "/orcamentos/novo");
+await page.getByRole("button", { name: /Só falar o valor/ }).click();
 await page.getByLabel("Nome do cliente").fill("Dona Maria");
 await page.getByLabel("O que será feito").fill("Pintura completa da sala e dos quartos");
 await page.getByLabel("Preço fechado").fill("2800");

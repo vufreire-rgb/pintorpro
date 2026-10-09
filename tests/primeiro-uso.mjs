@@ -16,6 +16,7 @@ await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("Silva Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
 await page.waitForURL(base + "/visitas");
+await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("pintorpro:v1")); d.company.quoteModeAsked = true; localStorage.setItem("pintorpro:v1", JSON.stringify(d)); });
 check(page.url().endsWith("/visitas"), "depois de 2 perguntas o pintor cai na tela de Visitas");
 await page.goto(base + "/orcamentos/novo");
 check(!(await page.getByText("Confirme seus preços").isVisible().catch(() => false)), "sem medidas, ainda não pede preço");

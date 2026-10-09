@@ -20,6 +20,7 @@ await page.waitForURL("**/onboarding");
 await page.getByPlaceholder("Ex.: João Pinturas").fill("João Pinturas"); await next();
 await page.getByPlaceholder("(11) 99999-9999").fill("11988887777"); await next();
 await page.waitForURL(base + "/visitas");
+await page.evaluate(() => { const d = JSON.parse(localStorage.getItem("pintorpro:v1")); d.company.quoteModeAsked = true; localStorage.setItem("pintorpro:v1", JSON.stringify(d)); });
 await shot("01-primeiro-acesso");
 await page.goto(base + "/visitas");
 await page.getByRole("button", { name: /nova visita/i }).waitFor();

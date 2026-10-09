@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
-import { CalendarDays, CalendarPlus, Check, CircleCheck, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, Play, Plus, QrCode, Receipt, RefreshCw, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
+import { CalendarDays, CalendarPlus, Check, ChevronDown, CircleCheck, CircleHelp, ClipboardList, FileText, Landmark, MessageCircle, Paperclip, Play, Plus, QrCode, Receipt, RefreshCw, RotateCcw, Send, Trash2, TriangleAlert, Wallet, X } from "lucide-react";
 import { ContactActions } from "@/components/ContactActions";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { WorkCostsCard } from "@/components/WorkCostsCard";
@@ -54,6 +54,7 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
   const [pixModal, setPixModal] = useState<{ code: string; title: string; amount: string } | null>(null);
   const [changePlan, setChangePlan] = useState(false);
   const [msg, setMsg] = useState("");
+  const [autoHelp, setAutoHelp] = useState(false);
   const [busy, setBusy] = useState(false);
   const proofInput = useRef<HTMLInputElement>(null);
   const registerForm = useRef<HTMLDivElement>(null);
@@ -108,15 +109,24 @@ export default function ObraPage({ params }: { params: Promise<{ id: string }> }
       <Card className="flex flex-col gap-3">
         <div className="text-support">{quote?.siteAddress || "Sem endereço"}</div>
         <ContactActions phone={client?.phone} address={quote?.siteAddress || client?.address} location={visit?.location} />
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={w.status === "done" ? "ok" : w.status === "issues" ? "warn" : "open"}>{WORK_STATUS_LABEL[w.status]}</Badge>
-          {w.status === "scheduled" ? <Button variant="ghost" size="sm" icon={Play} className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Começar a obra</Button> : null}
-          {w.status === "in_progress" || w.status === "issues" ? <Button variant="ghost" icon={CircleCheck} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
-          {w.status === "in_progress" ? <Button variant="ghost" icon={TriangleAlert} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "issues")}>Tem pendência</Button> : null}
-          {w.status === "issues" ? <Button variant="ghost" size="sm" icon={Check} className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Resolvi a pendência</Button> : null}
-          {w.status === "done" ? <Button variant="ghost" icon={RotateCcw} size="sm" className="!w-auto" onClick={() => setWorkStatus(w.id, "in_progress")}>Reabrir</Button> : null}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2"><span className="text-base text-support">Situação</span><Badge tone={w.status === "done" ? "ok" : w.status === "issues" ? "warn" : "open"}>{WORK_STATUS_LABEL[w.status]}</Badge></div>
+          {w.status === "scheduled" || w.status === "in_progress" ? <button type="button" aria-label="Ajuda: situação da obra" aria-expanded={autoHelp} onClick={() => setAutoHelp(!autoHelp)} className="grid h-12 w-12 place-items-center rounded-full text-live"><CircleHelp size={22} strokeWidth={2.2} aria-hidden /></button> : null}
         </div>
-        {w.status === "scheduled" || w.status === "in_progress" ? <p className="text-base text-support">A situação muda sozinha: começa na data de início e conclui quando tudo foi pago e o término passou.</p> : null}
+        {autoHelp ? <p className="rounded-2xl bg-brand-soft p-3 text-base leading-[22px]">A situação muda sozinha: começa na data de início e conclui quando tudo foi pago e o término passou.</p> : null}
+        {w.status === "scheduled" ? <Button variant="ghost" icon={Play} onClick={() => setWorkStatus(w.id, "in_progress")}>Começar a obra</Button> : null}
+        {w.status === "in_progress" ? <Button variant="ghost" icon={CircleCheck} onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
+        {w.status === "issues" ? <Button variant="ghost" icon={Check} onClick={() => setWorkStatus(w.id, "in_progress")}>Resolvi a pendência</Button> : null}
+        {w.status === "done" ? <Button variant="ghost" icon={RotateCcw} onClick={() => setWorkStatus(w.id, "in_progress")}>Reabrir</Button> : null}
+        {w.status === "in_progress" || w.status === "issues" ? (
+          <details className="group">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 font-display text-lg font-semibold text-live">Mais ações<ChevronDown size={20} strokeWidth={2.2} aria-hidden className="transition-transform group-open:rotate-180" /></summary>
+            <div className="mt-2 flex flex-col gap-2">
+              {w.status === "in_progress" ? <Button variant="ghost" size="sm" icon={TriangleAlert} onClick={() => setWorkStatus(w.id, "issues")}>Tem pendência</Button> : null}
+              {w.status === "issues" ? <Button variant="ghost" size="sm" icon={CircleCheck} onClick={() => setWorkStatus(w.id, "done")}>Concluir</Button> : null}
+            </div>
+          </details>
+        ) : null}
       </Card>
 
       <BlocoRecolhivel title="Datas" icon={CalendarDays} summary={w.startDate || w.endDate ? `${w.startDate ? dateBR(w.startDate) : "—"} a ${w.endDate ? dateBR(w.endDate) : "—"}` : undefined}>
