@@ -63,6 +63,7 @@ export default function Painel() {
   const [form, setForm] = useState<{ goal: number; date: string; tax: number; fixed: number; voice: number; receipt: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [expErr, setExpErr] = useState("");
   const [exp, setExp] = useState<{ desc: string; value: number; day: string }>({ desc: "", value: 0, day: "" });
 
   const apply = (s: AdminStats) => {
@@ -92,8 +93,8 @@ export default function Painel() {
   };
 
   const expense = async (extra: { addExpense?: { description: string; amountCents: number; day: string }; deleteExpense?: string }) => {
-    setBusy(true);
-    try { apply(await loadAdminStats(period, undefined, extra)); if (extra.addExpense) setExp({ desc: "", value: 0, day: "" }); } catch (e) { setWhy(e instanceof Error ? e.message : ""); setErr("failed"); } finally { setBusy(false); }
+    setBusy(true); setExpErr("");
+    try { apply(await loadAdminStats(period, undefined, extra)); if (extra.addExpense) setExp({ desc: "", value: 0, day: "" }); } catch (e) { setExpErr(/admin_expenses/.test(e instanceof Error ? e.message : "") ? "Falta rodar a migração 0011 no GitHub (Actions → Supabase migrate). Seu texto foi mantido." : "Não consegui salvar agora. Tente de novo."); } finally { setBusy(false); }
   };
   return (
     <Screen title="Painel Medde" corner={<Link href="/visitas" className="inline-flex min-h-12 items-center font-display text-lg font-semibold text-live">Ir ao app</Link>}>
@@ -163,6 +164,7 @@ export default function Painel() {
         <Field label="Valor (R$)"><NumberInput aria-label="Valor do gasto" value={exp.value} onChange={(n) => setExp({ ...exp, value: n })} /></Field>
         <Field label="Dia" hint="Se deixar vazio, vale hoje."><TextInput type="date" aria-label="Dia do gasto" value={exp.day} onChange={(e) => setExp({ ...exp, day: e.target.value })} /></Field>
         <Button icon={Plus} disabled={busy || !exp.desc.trim() || exp.value <= 0} onClick={() => void expense({ addExpense: { description: exp.desc.trim(), amountCents: Math.round(exp.value * 100), day: exp.day } })}>{busy ? "Salvando…" : "Adicionar gasto"}</Button>
+        {expErr ? <p role="alert" className="text-base font-bold text-err">{expErr}</p> : null}
         {stats.gastos.length ? (
           <ul className="flex flex-col">
             {stats.gastos.map((g, i) => (

@@ -10,3 +10,6 @@ create table if not exists public.admin_expenses (
 );
 
 alter table public.admin_expenses enable row level security;
+
+-- Faz a API enxergar a tabela nova na hora.
+notify pgrst, 'reload schema';
