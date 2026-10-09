@@ -5,6 +5,7 @@ export interface Sub { user_id: string; status: string; trial_ends_at: string; c
 export interface Doc { user_id: string; updated_at: string; company: { name?: string; whatsapp?: string } | null; visits: unknown[] | null; quotes: unknown[] | null }
 export interface Usage { user_id: string; day: string; count: number }
 export interface Shared { user_id: string; views_count: number }
+export interface Expense { id: string; day: string; description: string; amountCents: number }
 export interface Settings { goalSubscribers: number; goalDate: string | null; taxPct: number; fixedCostCents: number; voiceCostCents: number; receiptCostCents: number }
 
 export const DEFAULT_SETTINGS: Settings = { goalSubscribers: 100, goalDate: null, taxPct: 6, fixedCostCents: 0, voiceCostCents: 10, receiptCostCents: 2 };
@@ -68,7 +69,7 @@ export function periodStats(i: Inputs, r: Range): PeriodStats {
   };
 }
 
-export interface Inputs { now: Date; users: AuthUser[]; subs: Sub[]; docs: Doc[]; voice: Usage[]; receipts: Usage[]; shared: Shared[]; settings: Settings }
+export interface Inputs { now: Date; users: AuthUser[]; subs: Sub[]; docs: Doc[]; voice: Usage[]; receipts: Usage[]; shared: Shared[]; settings: Settings; expenses?: Expense[] }
 
 export function buildStats(i: Inputs, kind: "7d" | "mes") {
   const P = periodsFor(kind, i.now);
@@ -118,6 +119,8 @@ export function buildStats(i: Inputs, kind: "7d" | "mes") {
 
   const s = i.settings;
   const fixos = Math.round(s.fixedCostCents * (P.days / 30));
+  const expenses = i.expenses ?? [];
+  const gastosCents = expenses.filter((e) => inR(e.day, P.cur)).reduce((n, e) => n + e.amountCents, 0);
   const faturamento = null as number | null; // liga quando o pagamento existir
   return {
     periodo: kind, intervalo: P,
@@ -126,7 +129,8 @@ export function buildStats(i: Inputs, kind: "7d" | "mes") {
     atual: cur, anterior: prev,
     deltas: { orcamentos: delta(cur.orcamentos, prev.orcamentos), novasContas: delta(cur.novasContas, prev.novasContas), valorOrcado: delta(cur.valorOrcadoCents, prev.valorOrcadoCents), taxaFechamento: cur.taxaFechamentoPct !== null && prev.taxaFechamentoPct !== null ? delta(cur.taxaFechamentoPct, prev.taxaFechamentoPct, "abs") : null, custoIa: delta(cur.custoIaCents, prev.custoIaCents) },
     ativas7d, sumidas, fimDoTeste, funil, serieNovasContas: serie,
-    dinheiro: { ligado: false, faturamentoCents: faturamento, impostoCents: null as number | null, custoIaCents: cur.custoIaCents, fixosCents: fixos, lucroCents: null as number | null },
+    dinheiro: { ligado: false, faturamentoCents: faturamento, impostoCents: null as number | null, custoIaCents: cur.custoIaCents, fixosCents: fixos, gastosCents, lucroCents: null as number | null },
+    gastos: [...expenses].sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0)).slice(0, 60),
     ajustes: s,
   };
 }
@@ -144,4 +148,14 @@ export function sanitizeSettings(raw: unknown, base: Settings): Settings {
     voiceCostCents: Math.round(num(r.voiceCostCents, 0, 10_000, base.voiceCostCents)),
     receiptCostCents: Math.round(num(r.receiptCostCents, 0, 10_000, base.receiptCostCents)),
   };
+}
+
+/** Um gasto digitado pelo titular: descrição curta, valor em centavos e dia (AAAA-MM-DD). Devolve null se algo estiver inválido. */
+export function sanitizeExpense(raw: unknown, today: string): Omit<Expense, "id"> | null {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const description = typeof r.description === "string" ? r.description.trim().slice(0, 80) : "";
+  const amount = typeof r.amountCents === "number" && Number.isFinite(r.amountCents) ? Math.round(r.amountCents) : 0;
+  const day = typeof r.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.day) ? r.day : today;
+  if (!description || amount <= 0 || amount > 1_000_000_000) return null;
+  return { day, description, amountCents: amount };
 }

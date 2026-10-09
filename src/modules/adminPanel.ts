@@ -6,6 +6,7 @@ export interface AdminPeriod {
   taxaFechamentoPct: number | null; voz: number; recibos: number; custoIaCents: number;
 }
 export interface AdminSettings { goalSubscribers: number; goalDate: string | null; taxPct: number; fixedCostCents: number; voiceCostCents: number; receiptCostCents: number }
+export interface AdminExpense { id: string; day: string; description: string; amountCents: number }
 export interface AdminStats {
   periodo: "7d" | "mes";
   meta: { alvo: number; data: string | null; atual: number; faltam: number; ritmoPorSemana: number | null };
@@ -15,13 +16,14 @@ export interface AdminStats {
   ativas7d: number; sumidas: AdminContact[]; fimDoTeste: AdminContact[];
   funil: { contas: number; primeiraVisita: number; primeiroOrcamento: number; orcamentoEnviado: number; orcamentoFechado: number };
   serieNovasContas: number[];
-  dinheiro: { ligado: boolean; faturamentoCents: number | null; impostoCents: number | null; custoIaCents: number; fixosCents: number; lucroCents: number | null };
+  dinheiro: { ligado: boolean; faturamentoCents: number | null; impostoCents: number | null; custoIaCents: number; fixosCents: number; gastosCents: number; lucroCents: number | null };
+  gastos: AdminExpense[];
   ajustes: AdminSettings;
 }
 
 /** Busca os números do painel. Com `settings`, grava os ajustes antes de calcular. */
-export async function loadAdminStats(period: "7d" | "mes", settings?: AdminSettings): Promise<AdminStats> {
-  return (await adminStatsOnServer({ period, settings })) as AdminStats;
+export async function loadAdminStats(period: "7d" | "mes", settings?: AdminSettings, extra?: { addExpense?: { description: string; amountCents: number; day: string }; deleteExpense?: string }): Promise<AdminStats> {
+  return (await adminStatsOnServer({ period, settings, ...extra })) as AdminStats;
 }
 
 /** Só os dígitos do telefone, com o 55 do Brasil na frente, para o link do WhatsApp. */

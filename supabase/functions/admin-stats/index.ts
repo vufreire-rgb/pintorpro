@@ -2,7 +2,7 @@
 // Só responde para o administrador (e-mail em ADMIN_EMAIL, ou o padrão abaixo; ADMIN_USER_ID, se existir, também precisa bater).
 // Devolve apenas totais e a lista de contatos dos próprios pintores (nome, e-mail, WhatsApp). Nunca dados dos clientes deles.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { buildStats, DEFAULT_SETTINGS, sanitizeSettings, type AuthUser, type Doc, type Settings, type Shared, type Sub, type Usage } from "./logic.ts";
+import { brDay, buildStats, DEFAULT_SETTINGS, sanitizeExpense, sanitizeSettings, type AuthUser, type Doc, type Expense, type Settings, type Shared, type Sub, type Usage } from "./logic.ts";
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://admin.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
 const DEFAULT_ADMIN = "vufreire@gmail.com";
@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
   const adminId = Deno.env.get("ADMIN_USER_ID")?.trim();
   if ((auth.user.email ?? "").toLowerCase() !== adminEmail || (adminId && auth.user.id !== adminId)) return reply(403, { error: "forbidden" });
 
-  let body: { period?: string; settings?: unknown } = {};
+  let body: { period?: string; settings?: unknown; addExpense?: unknown; deleteExpense?: unknown } = {};
   try { body = await req.json(); } catch { /* sem corpo: usa 7 dias */ }
   const kind = body.period === "mes" ? "mes" : "7d";
 
@@ -46,6 +46,17 @@ Deno.serve(async (req: Request) => {
       settings = sanitizeSettings(body.settings, settings);
       const up = await db.from("admin_settings").upsert({ id: 1, goal_subscribers: settings.goalSubscribers, goal_date: settings.goalDate, tax_pct: settings.taxPct, fixed_cost_cents: settings.fixedCostCents, voice_cost_cents: settings.voiceCostCents, receipt_cost_cents: settings.receiptCostCents, updated_at: new Date().toISOString() });
       if (up.error) throw new Error("settings " + up.error.message);
+    }
+
+    if (body.addExpense) {
+      const e = sanitizeExpense(body.addExpense, brDay(new Date()));
+      if (!e) return reply(400, { error: "invalid_expense" });
+      const ins = await db.from("admin_expenses").insert({ day: e.day, description: e.description, amount_cents: e.amountCents });
+      if (ins.error) throw new Error("expenses " + ins.error.message);
+    }
+    if (typeof body.deleteExpense === "string" && /^[0-9a-f-]{36}$/i.test(body.deleteExpense)) {
+      const del = await db.from("admin_expenses").delete().eq("id", body.deleteExpense);
+      if (del.error) throw new Error("expenses " + del.error.message);
     }
 
     const users: AuthUser[] = [];
@@ -65,14 +76,16 @@ Deno.serve(async (req: Request) => {
       }
       return out;
     };
-    const [subs, docs, voice, receipts, shared] = await Promise.all([
+    const [subs, docs, voice, receipts, shared, expenseRows] = await Promise.all([
       all<Sub>("subscriptions", "user_id,status,trial_ends_at,current_period_end"),
       all<Doc>("user_data", "user_id,updated_at,company:data->company,visits:data->visits,quotes:data->quotes"),
       all<Usage>("voice_usage", "user_id,day,count"),
       all<Usage>("receipt_usage", "user_id,day,count"),
       all<Shared>("shared_quotes", "user_id,views_count"),
+      all<{ id: string; day: string; description: string; amount_cents: number }>("admin_expenses", "id,day,description,amount_cents").catch(() => []), // antes da migração 0011 a lista fica vazia
     ]);
-    return reply(200, buildStats({ now: new Date(), users, subs, docs, voice, receipts, shared, settings }, kind) as unknown as Record<string, unknown>);
+    const expenses: Expense[] = expenseRows.map((r) => ({ id: r.id, day: r.day, description: r.description, amountCents: r.amount_cents }));
+    return reply(200, buildStats({ now: new Date(), users, subs, docs, voice, receipts, shared, settings, expenses }, kind) as unknown as Record<string, unknown>);
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
     console.error("admin-stats", detail);

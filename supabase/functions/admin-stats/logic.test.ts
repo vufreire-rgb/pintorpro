@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brDay, buildStats, DEFAULT_SETTINGS, delta, periodsFor, sanitizeSettings, type Inputs } from "./logic";
+import { brDay, buildStats, DEFAULT_SETTINGS, delta, periodsFor, sanitizeExpense, sanitizeSettings, type Inputs } from "./logic";
 
 const now = new Date("2026-10-15T15:00:00Z"); // 12h em Brasília
 const DAY = 86400000;
@@ -113,5 +113,21 @@ describe("sanitizeSettings", () => {
     const r = sanitizeSettings({ goalSubscribers: 250, taxPct: -3, fixedCostCents: 14000.4, goalDate: "2026-12-31", x: 1 }, DEFAULT_SETTINGS);
     expect(r).toMatchObject({ goalSubscribers: 250, taxPct: 6, fixedCostCents: 14000, goalDate: "2026-12-31" });
     expect(Object.keys(r)).not.toContain("x");
+  });
+});
+
+describe("gastos do app", () => {
+  it("soma só os gastos do período e lista do mais novo ao mais antigo", () => {
+    const i = base();
+    const today = brDay(i.now);
+    i.expenses = [{ id: "a", day: "2000-01-01", description: "velho", amountCents: 500 }, { id: "b", day: today, description: "domínio", amountCents: 4000 }];
+    const s = buildStats(i, "7d");
+    expect(s.dinheiro.gastosCents).toBe(4000);
+    expect(s.gastos.map((g) => g.id)).toEqual(["b", "a"]);
+  });
+  it("sanitizeExpense recusa vazio/zero e usa hoje sem data", () => {
+    expect(sanitizeExpense({ description: " ", amountCents: 100 }, "2026-01-01")).toBeNull();
+    expect(sanitizeExpense({ description: "x", amountCents: 0 }, "2026-01-01")).toBeNull();
+    expect(sanitizeExpense({ description: " Vercel ", amountCents: 2000.4, day: "" }, "2026-01-01")).toEqual({ day: "2026-01-01", description: "Vercel", amountCents: 2000 });
   });
 });

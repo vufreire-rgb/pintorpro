@@ -13,6 +13,7 @@ O painel mostra **totais** e o contato dos pintores (nome, e-mail, WhatsApp). Nu
 - Contas sumidas (7 dias sem usar) e teste acabando (próximos 3 dias), com botão para chamar no WhatsApp.
 - Funil: cadastrou → primeira visita → primeiro orçamento → enviou pelo link → fechou. Dados de exemplo do app não contam.
 - Uso e custo da IA (voz e recibo, com o custo por uso que você digita).
+- Gastos do app: bloco "Gastos do app" no painel, com descrição, valor e dia. A soma do período aparece em "Dinheiro". Exige rodar a migração `0011_admin_expenses.sql` (Actions → "Supabase migrate (SQL)"); sem ela a lista fica vazia e adicionar dá erro.
 - Dinheiro: faturamento, imposto e lucro ficam em "—" até o pagamento estar ligado. Custo de IA e custos fixos já aparecem.
 
 ## Como ligar (uma vez)

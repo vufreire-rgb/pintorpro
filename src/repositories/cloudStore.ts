@@ -54,7 +54,7 @@ export async function deleteAccountOnServer(): Promise<void> {
 }
 
 /** Painel do administrador (Edge Function admin-stats). Falha com "forbidden" para quem não é o administrador, ou "network". */
-export async function adminStatsOnServer(body: { period: "7d" | "mes"; settings?: unknown }): Promise<unknown> {
+export async function adminStatsOnServer(body: { period: "7d" | "mes"; settings?: unknown; addExpense?: unknown; deleteExpense?: string }): Promise<unknown> {
   const { data, error } = await c().functions.invoke("admin-stats", { method: "POST", body });
   if (error) {
     const res = (error as { context?: Response }).context;

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Check, Clock, MessageCircle, Sparkles, TriangleAlert, Wallet } from "lucide-react";
+import { BarChart3, Check, Clock, MessageCircle, Plus, Sparkles, Trash2, TriangleAlert, Wallet } from "lucide-react";
 import { BlocoRecolhivel, Button, Card, Field, Loading, NumberInput, Screen, TAB_LIST_CLS, tabCls, TextInput } from "@/components/ui";
 import { cloudEnabled } from "@/modules/auth";
 import { deltaTone, loadAdminStats, whatsappDigits, type AdminContact, type AdminSettings, type AdminStats } from "@/modules/adminPanel";
@@ -63,6 +63,7 @@ export default function Painel() {
   const [form, setForm] = useState<{ goal: number; date: string; tax: number; fixed: number; voice: number; receipt: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exp, setExp] = useState<{ desc: string; value: number; day: string }>({ desc: "", value: 0, day: "" });
 
   const apply = (s: AdminStats) => {
     setStats(s);
@@ -90,6 +91,10 @@ export default function Painel() {
     try { apply(await loadAdminStats(period, settings())); setSaved(true); } catch (e) { setWhy(e instanceof Error ? e.message : ""); setErr("failed"); } finally { setBusy(false); }
   };
 
+  const expense = async (extra: { addExpense?: { description: string; amountCents: number; day: string }; deleteExpense?: string }) => {
+    setBusy(true);
+    try { apply(await loadAdminStats(period, undefined, extra)); if (extra.addExpense) setExp({ desc: "", value: 0, day: "" }); } catch (e) { setWhy(e instanceof Error ? e.message : ""); setErr("failed"); } finally { setBusy(false); }
+  };
   return (
     <Screen title="Painel Medde" corner={<Link href="/visitas" className="inline-flex min-h-12 items-center font-display text-lg font-semibold text-live">Ir ao app</Link>}>
       <div role="tablist" className={`${TAB_LIST_CLS} grid-cols-2`}>
@@ -140,7 +145,7 @@ export default function Painel() {
       <h2 className="px-1 font-display text-xl font-medium">Dinheiro</h2>
       <Card className="flex flex-col gap-1">
         {m.ligado ? null : <div className="mb-2 flex items-start gap-2 rounded-2xl bg-[#FFF3D6] p-3 text-[#8A4B00]"><Wallet size={22} aria-hidden className="mt-0.5 shrink-0" />Faturamento aparece aqui depois que o pagamento estiver ligado.</div>}
-        {([["Faturamento", m.faturamentoCents === null ? "—" : formatBRL(m.faturamentoCents)], ["Imposto", m.impostoCents === null ? "—" : formatBRL(m.impostoCents)], ["Custo de IA (voz e recibo)", formatBRL(m.custoIaCents)], ["Custos fixos do período", formatBRL(m.fixosCents)], ["Lucro estimado", m.lucroCents === null ? "—" : formatBRL(m.lucroCents)]] as const).map(([t, v], i, arr) => (
+        {([["Faturamento", m.faturamentoCents === null ? "—" : formatBRL(m.faturamentoCents)], ["Imposto", m.impostoCents === null ? "—" : formatBRL(m.impostoCents)], ["Custo de IA (voz e recibo)", formatBRL(m.custoIaCents)], ["Custos fixos do período", formatBRL(m.fixosCents)], ["Gastos lançados no período", formatBRL(m.gastosCents)], ["Lucro estimado", m.lucroCents === null ? "—" : formatBRL(m.lucroCents)]] as const).map(([t, v], i, arr) => (
           <div key={t} className={`flex justify-between gap-2 py-2.5 ${i ? "border-t border-line" : ""} ${i === arr.length - 1 ? "font-bold" : ""}`}><span>{t}</span><span className="tabular-nums">{v}</span></div>
         ))}
       </Card>
@@ -152,6 +157,23 @@ export default function Painel() {
         ))}
         <Delta text={d.custoIa} goodWhenUp={false} />
       </Card>
+
+      <BlocoRecolhivel title="Gastos do app" icon={Wallet} summary={stats.gastos.length ? `${stats.gastos.length} lançado${stats.gastos.length === 1 ? "" : "s"}` : "Anote o que você gasta"}>
+        <Field label="O que foi"><TextInput aria-label="Descrição do gasto" maxLength={80} placeholder="Ex.: domínio medde.com.br" value={exp.desc} onChange={(e) => setExp({ ...exp, desc: e.target.value })} /></Field>
+        <Field label="Valor (R$)"><NumberInput aria-label="Valor do gasto" value={exp.value} onChange={(n) => setExp({ ...exp, value: n })} /></Field>
+        <Field label="Dia" hint="Se deixar vazio, vale hoje."><TextInput type="date" aria-label="Dia do gasto" value={exp.day} onChange={(e) => setExp({ ...exp, day: e.target.value })} /></Field>
+        <Button icon={Plus} disabled={busy || !exp.desc.trim() || exp.value <= 0} onClick={() => void expense({ addExpense: { description: exp.desc.trim(), amountCents: Math.round(exp.value * 100), day: exp.day } })}>{busy ? "Salvando…" : "Adicionar gasto"}</Button>
+        {stats.gastos.length ? (
+          <ul className="flex flex-col">
+            {stats.gastos.map((g, i) => (
+              <li key={g.id} className={`flex items-center justify-between gap-2 py-2 ${i ? "border-t border-line" : ""}`}>
+                <span className="min-w-0"><span className="block truncate font-semibold">{g.description}</span><span className="text-base text-support">{g.day.split("-").reverse().join("/")}</span></span>
+                <span className="flex shrink-0 items-center gap-1"><b className="tabular-nums">{formatBRL(g.amountCents)}</b><button type="button" aria-label={`Apagar gasto ${g.description}`} disabled={busy} onClick={() => void expense({ deleteExpense: g.id })} className="grid h-12 w-12 place-items-center text-support"><Trash2 size={22} aria-hidden /></button></span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </BlocoRecolhivel>
 
       <BlocoRecolhivel title="Ajustes do painel" icon={Check} summary="Meta, imposto e custos">
         <Field label="Meta de assinantes"><NumberInput aria-label="Meta de assinantes" value={form.goal} onChange={(n) => setForm({ ...form, goal: n })} /></Field>
