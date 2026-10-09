@@ -70,8 +70,8 @@ export default function Visitas() {
         }}
       >
       <div className="grid grid-cols-[1fr_auto] gap-3">
-        <Button icon={Plus} onClick={() => router.push(startQuickVisit())}>Nova visita</Button>
-        <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!w-auto !px-4">Agendar</LinkButton>
+        <Button icon={Plus} className="whitespace-nowrap !px-3" onClick={() => router.push(startQuickVisit())}>Nova visita</Button>
+        <LinkButton href="/visitas/agendar" variant="ghost" icon={CalendarDays} className="!w-auto !px-3 whitespace-nowrap">Agendar</LinkButton>
       </div>
       <FirstSteps db={db} />
       {filter === "quoted" ? (
@@ -109,14 +109,19 @@ export default function Visitas() {
         const n = (k: number, one: string, many: string) => (k > 0 ? `${k} ${k === 1 ? one : many}` : null);
         const scheduled = visitState(v) !== "done";
         const bits = [!scheduled ? fmtDate(v.startedAt ?? v.createdAt) : null, n(v.photoIds.length, "foto", "fotos"), n((v.audios ?? []).length, "áudio", "áudios"), n((v.rooms ?? []).length, "ambiente", "ambientes")].filter(Boolean).join(" · ");
+        const quick = scheduled
+          ? { label: "Começar visita", icon: <Play size={24} strokeWidth={2.4} aria-hidden />, go: () => { startVisit(v.id); router.push(`/visitas/${v.id}`); } }
+          : !v.quoteId
+            ? { label: "Montar orçamento", icon: <FilePlus2 size={24} strokeWidth={2.4} aria-hidden />, go: () => router.push(`/orcamentos/novo?visita=${v.id}`) }
+            : { label: "Ver orçamento", icon: <FileText size={24} strokeWidth={2.4} aria-hidden />, go: () => router.push(`/orcamentos/${v.quoteId}`) };
         const card = (
+          <div className="relative">
           <Link href={`/visitas/${v.id}`}>
-            <Card className="flex gap-3">
+            <Card className="flex gap-3 pr-[72px]">
               <Thumb id={v.photoIds[0]} />
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between gap-2">
                   <b className="truncate text-lg font-bold">{client?.name ?? "Cliente a definir"}</b>
-                  
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-2"><VisitBadge v={v} />{v.isExample ? <Badge tone="lost">Exemplo</Badge> : null}</div>
                 <div className="mt-1 line-clamp-2 text-base text-support">{v.siteAddress || "Sem endereço"}</div>
@@ -125,6 +130,13 @@ export default function Visitas() {
               </div>
             </Card>
           </Link>
+          <button
+            type="button"
+            onClick={quick.go}
+            aria-label={`${quick.label} de ${client?.name ?? "cliente a definir"}`}
+            className="absolute right-3 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-brand text-white shadow-sm active:scale-95"
+          >{quick.icon}</button>
+          </div>
         );
         const name = client?.name ?? "Cliente a definir";
         const GREEN = "bg-[#0A8545]", GREY = "bg-[#5B6B80]";
