@@ -1,6 +1,7 @@
 // Edge Function "quote-link": link público do orçamento, com aviso de quando o cliente abriu.
 //  - POST (com login): o pintor publica/atualiza o link do orçamento dele ({ quoteId, snapshot }) ou o apaga ({ quoteId, revoke: true }).
 //  - GET ?t=TOKEN (público): devolve o orçamento do link e conta a visualização.
+//  - GET ?t=TOKEN&peek=1 (público): só quem fez, número e total, para a prévia do link. NÃO conta visualização nem avisa o pintor.
 // Só esta função escreve na tabela shared_quotes (chave de administrador, que fica só no servidor).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -55,6 +56,7 @@ const isToken = (t: unknown): t is string => typeof t === "string" && /^[A-Za-z0
 function sanitizeSnapshot(raw: unknown): SharedQuote | null {
   if (!raw || typeof raw !== "object") return null;
   if (JSON.stringify(raw).length > MAX_JSON) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const o = raw as Record<string, any>;
   const p = (o.painter ?? {}) as Record<string, unknown>;
   const dep = o.deposit && typeof o.deposit === "object" ? (o.deposit as Record<string, unknown>) : null;
@@ -93,6 +95,16 @@ const shouldCountView = (lastViewedAt: string | null, now: number = Date.now()):
 const SIX_HOURS_MS = 6 * 3600 * 1000;
 const shouldNotifyView = (viewsCount: number, lastViewedAt: string | null, now: number = Date.now()): boolean =>
   viewsCount === 0 || !lastViewedAt || now - Date.parse(lastViewedAt) >= SIX_HOURS_MS;
+
+/** O mínimo para a prévia do link (WhatsApp, redes): quem fez, número e total. Nada de itens, preços por ambiente, endereço ou Pix. */
+function peekSnapshot(raw: unknown): { color: string; company: string; number: string; total: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as { color?: unknown; number?: unknown; total?: unknown; painter?: { company?: unknown } };
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const company = str(o.painter?.company, 80);
+  if (!company) return null;
+  return { color: typeof o.color === "string" && /^#[0-9a-fA-F]{6}$/.test(o.color) ? o.color : "#0F3B7A", company, number: str(o.number, 12), total: str(o.total, 30) };
+}
 // ---- fim de logic.ts ----
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
@@ -133,6 +145,10 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await admin.from("shared_quotes").select("snapshot, views_count, last_viewed_at, user_id, quote_id").eq("token", t).maybeSingle();
     if (error) { console.error("quote-link read", error.message); return reply(500, { error: "failed" }); }
     if (!data) return reply(404, { error: "not_found" });
+    if (new URL(req.url).searchParams.get("peek") === "1") {
+      const peek = peekSnapshot(data.snapshot);
+      return peek ? reply(200, { peek }) : reply(404, { error: "not_found" });
+    }
     if (shouldCountView(data.last_viewed_at)) {
       const now = new Date().toISOString();
       if (shouldNotifyView(data.views_count ?? 0, data.last_viewed_at)) {

@@ -1,9 +1,10 @@
 // Edge Function "quote-link": link público do orçamento, com aviso de quando o cliente abriu.
 //  - POST (com login): o pintor publica/atualiza o link do orçamento dele ({ quoteId, snapshot }) ou o apaga ({ quoteId, revoke: true }).
 //  - GET ?t=TOKEN (público): devolve o orçamento do link e conta a visualização.
+//  - GET ?t=TOKEN&peek=1 (público): só quem fez, número e total, para a prévia do link. NÃO conta visualização nem avisa o pintor.
 // Só esta função escreve na tabela shared_quotes (chave de administrador, que fica só no servidor).
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { isToken, newToken, sanitizeSnapshot, shouldCountView, shouldNotifyView } from "./logic.ts";
+import { isToken, newToken, peekSnapshot, sanitizeSnapshot, shouldCountView, shouldNotifyView } from "./logic.ts";
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
 const MAX_LINKS_PER_USER = 2000;
@@ -43,6 +44,10 @@ Deno.serve(async (req: Request) => {
     const { data, error } = await admin.from("shared_quotes").select("snapshot, views_count, last_viewed_at, user_id, quote_id").eq("token", t).maybeSingle();
     if (error) { console.error("quote-link read", error.message); return reply(500, { error: "failed" }); }
     if (!data) return reply(404, { error: "not_found" });
+    if (new URL(req.url).searchParams.get("peek") === "1") {
+      const peek = peekSnapshot(data.snapshot);
+      return peek ? reply(200, { peek }) : reply(404, { error: "not_found" });
+    }
     if (shouldCountView(data.last_viewed_at)) {
       const now = new Date().toISOString();
       if (shouldNotifyView(data.views_count ?? 0, data.last_viewed_at)) {

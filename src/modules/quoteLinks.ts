@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchSharedQuote, listQuoteLinks, publishQuoteLink, revokeQuoteLink, type QuoteLinkRow } from "@/repositories/cloudStore";
 import { cloudEnabled } from "./auth";
 import { buildPdfData } from "./pdfData";
+import { publicOrigin } from "./publicOrigin";
 import { normalizePixKey, pixPayload, pixText } from "./pix";
 import { formatBRL } from "@/shared/money";
 import type { Db, Quote } from "./types";
@@ -63,7 +64,7 @@ export function buildShareSnapshot(db: Db, q: Quote): SharedQuote {
   };
 }
 
-export const linkUrl = (token: string): string => `${typeof window === "undefined" ? "https://medde.com.br" : window.location.origin}/o/${token}`;
+export const linkUrl = (token: string): string => `${publicOrigin()}/o/${token}`;
 
 /** Publica o link do orçamento (ou atualiza o que o cliente vê) e devolve o endereço. */
 export async function publishLinkFor(db: Db, q: Quote): Promise<string> {

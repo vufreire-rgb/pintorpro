@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { deleteRequestRow, disablePublicPage, fetchPublicPage, getMyPage, listRequests, publishPublicPage, setRequestStatus, submitPublicRequest, type PageRow, type RequestRow } from "@/repositories/cloudStore";
 import { cloudEnabled } from "./auth";
+import { publicOrigin } from "./publicOrigin";
 import { initialsOf } from "./pdfData";
 import { updateDb, uid } from "./db";
 import { addClient } from "./clients";
@@ -49,12 +50,8 @@ export function buildPageSnapshot(db: Db, f: PageForm): PageSnapshot {
   };
 }
 
-/** Endereço público oficial. Em testes locais usa o endereço aberto; em produção sempre o domínio do Medde (curto e bonito para compartilhar). */
-export const PUBLIC_ORIGIN = "https://medde.com.br";
-export const pageUrl = (slug: string): string => {
-  const local = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
-  return `${local ? window.location.origin : PUBLIC_ORIGIN}/p/${slug}`;
-};
+export { PUBLIC_ORIGIN } from "./publicOrigin";
+export const pageUrl = (slug: string): string => `${publicOrigin()}/p/${slug}`;
 
 const PAGE_ERRORS: Record<string, string> = {
   slug_taken: "Este endereço já está em uso. Escolha outro (por exemplo, com o nome da cidade).",

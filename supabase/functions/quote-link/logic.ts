@@ -87,3 +87,13 @@ export const shouldCountView = (lastViewedAt: string | null, now: number = Date.
 export const SIX_HOURS_MS = 6 * 3600 * 1000;
 export const shouldNotifyView = (viewsCount: number, lastViewedAt: string | null, now: number = Date.now()): boolean =>
   viewsCount === 0 || !lastViewedAt || now - Date.parse(lastViewedAt) >= SIX_HOURS_MS;
+
+/** O mínimo para a prévia do link (WhatsApp, redes): quem fez, número e total. Nada de itens, preços por ambiente, endereço ou Pix. */
+export function peekSnapshot(raw: unknown): { color: string; company: string; number: string; total: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as { color?: unknown; number?: unknown; total?: unknown; painter?: { company?: unknown } };
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const company = str(o.painter?.company, 80);
+  if (!company) return null;
+  return { color: typeof o.color === "string" && /^#[0-9a-fA-F]{6}$/.test(o.color) ? o.color : "#0F3B7A", company, number: str(o.number, 12), total: str(o.total, 30) };
+}
