@@ -3,6 +3,7 @@ import { MessageCircle, Package, Share2 } from "lucide-react";
 import { useState } from "react";
 import { BlocoRecolhivel, Button, buttonCls, Chip } from "./ui";
 import { DictationField } from "./DictationField";
+import { organizeMaterials } from "@/modules/dictation";
 import { materialsForShopping, materialsMessage } from "@/modules/materials";
 import { setQuoteMaterials } from "@/modules/quotes";
 import { waUrl } from "@/modules/visitList";
@@ -28,7 +29,7 @@ export function QuoteMaterials({ db, q, client }: { db: Db; q: Quote; client?: C
 
   return (
     <BlocoRecolhivel title="Materiais da obra" icon={Package} summary={total ? plural(total, "item", "itens") : "Anote o que vai comprar"}>
-      <DictationField label="Lista de materiais" hint="Um item por linha. Você pode ditar ou escrever." value={text} onChange={setText} placeholder={"Ex.:\n2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg"} />
+      <DictationField label="Lista de materiais" hint="Um item por linha. Ao ditar, a lista já sai organizada." value={text} onChange={setText} organize={organizeMaterials} placeholder={"Ex.:\n2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg"} />
       <div className="flex items-center justify-between gap-3">
         <span className="text-base">Mostrar no PDF e no link do cliente</span>
         <Chip active={show} onClick={() => setShow(!show)}>{show ? "Sim" : "Não"}</Chip>
