@@ -34,6 +34,16 @@ export interface QuotePdfData {
 
 export const MAX_PDF_PHOTOS = 6;
 
+/** Link de pagamento (cartão) que vale para este orçamento: o do orçamento ou o padrão do pintor. Só se ele não desligou o cartão. */
+export function effectivePaymentLink(q: Pick<Quote, "paymentLink" | "payCard">, company?: { paymentLink?: string } | null): string | undefined {
+  if (q.payCard === false) return undefined;
+  const link = (q.paymentLink?.trim() || company?.paymentLink?.trim() || "");
+  return /^https:\/\//i.test(link) ? link : undefined;
+}
+
+/** O Pix entra no orçamento? Só se a chave existe e o pintor não desligou o Pix. */
+export const offersPix = (q: Pick<Quote, "payPix">): boolean => q.payPix !== false;
+
 /** Lista de materiais escrita pelo pintor: um item por linha (ou separado por ponto e vírgula). Até 60 itens. */
 export function materialLines(text?: string): string[] {
   return (text ?? "").split(/[\n;]+/).map((l) => l.replace(/^[\s•\-–*]+/, "").trim()).filter(Boolean).slice(0, 60);
@@ -172,7 +182,7 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
     days: days > 0 ? `${days} ${days === 1 ? "dia útil" : "dias úteis"}` : "A combinar",
     payment: q.paymentTerms,
     validity: `7 dias, até ${fmtDate(q.validUntil)}`,
-    deposit: q.paymentLink?.trim() ? { amount: formatBRL(Math.round((total * pct) / 100)), pct: `${pct}% do valor total.`, link: q.paymentLink.trim() } : null,
+    deposit: effectivePaymentLink(q, c) ? { amount: formatBRL(Math.round((total * pct) / 100)), pct: `${pct}% do valor total.`, link: effectivePaymentLink(q, c)! } : null,
     rooms: rooms.map((r, i) => ({ name: r.name, facts: r.facts, items: r.items, materials: r.materials, price: q.showRoomPrices ? formatBRL(prices[i]!) : undefined, priceCents: prices[i]! })),
     showRoomPrices: !!q.showRoomPrices,
     terms: {

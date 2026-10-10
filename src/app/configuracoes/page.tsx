@@ -10,6 +10,7 @@ import { downloadMyData, prepareLogout, signOutAndWipe } from "@/modules/account
 import { BrandHeader } from "@/components/BrandHeader";
 import { PixModal } from "@/components/PixModal";
 import { normalizePixKey, pixPayload } from "@/modules/pix";
+import { validPaymentLink } from "@/components/PaymentOptionsField";
 import { PixKeyInput } from "@/components/PixKeyInput";
 import { removePhotoFile, storeLogo, useFileUrl } from "@/modules/photos";
 import { isSimpleMode, saveCompany, setEnabledServices, updateMaterial, updateService } from "@/modules/settings";
@@ -22,7 +23,7 @@ import { PushCard } from "@/components/PushCard";
 import { PublicPageCard } from "@/components/PublicPageCard";
 import { QuoteModeChoice } from "@/components/QuoteModeChoice";
 import { APP_NAME } from "@/shared/brand";
-import { AlarmClock, Calculator, Check, Download, FileText, ImagePlus, Package, PaintRoller, QrCode, Store, Users, Wrench } from "lucide-react";
+import { AlarmClock, Calculator, Check, Download, FileText, ImagePlus, Package, PaintRoller, QrCode, CreditCard, Store, Users, Wrench } from "lucide-react";
 
 function LogoPreview({ id }: { id: string }) {
   const url = useFileUrl(id);
@@ -115,6 +116,24 @@ export default function Configuracoes() {
         {pixTest && c.pix ? (
           <PixModal code={pixPayload(c.pix, { name: c.name, city: c.city }, 100)} title="QR de teste" amount="R$ 1,00" onClose={() => setPixTest(false)} />
         ) : null}
+      </Section>
+      <Section title="Receber por cartão" hint={validPaymentLink(c.paymentLink ?? "") ? "Link cadastrado" : "Cadastre seu link de pagamento"} icon={CreditCard} badge={validPaymentLink(c.paymentLink ?? "") ? { text: "Pronto", ok: true } : undefined}>
+        <p className="text-base text-support">O cliente paga o cartão no <b>seu</b> link de pagamento e o dinheiro cai direto na <b>sua</b> conta. O Medde não recebe nem guarda dinheiro, nem vê o cartão do cliente.</p>
+        <Field label="Seu link de pagamento" hint="Começa com https://. Ele aparece como “Pagar com cartão” depois que o cliente toca em Fechar agora.">
+          <TextInput type="url" inputMode="url" placeholder="https://" value={c.paymentLink ?? ""} onChange={(e) => set({ paymentLink: e.target.value.trim() || undefined })} />
+        </Field>
+        {c.paymentLink && !validPaymentLink(c.paymentLink) ? <p role="alert" className="text-base text-err">O link precisa começar com https://</p> : null}
+        {validPaymentLink(c.paymentLink ?? "") ? <a className="inline-flex min-h-12 items-center font-display font-semibold text-live underline" href={c.paymentLink} target="_blank" rel="noopener noreferrer">Abrir meu link para conferir</a> : null}
+        <details className="rounded-2xl bg-[#F3F6FA] p-3 text-base">
+          <summary className="flex min-h-12 cursor-pointer items-center font-display font-semibold">Como criar meu link de pagamento</summary>
+          <ol className="mt-2 list-decimal pl-5 leading-6">
+            <li>Abra o app do seu banco ou de um serviço como Mercado Pago, InfinitePay ou PagBank.</li>
+            <li>Procure por <b>“link de pagamento”</b> ou <b>“cobrar por link”</b>.</li>
+            <li>Crie um link, de preferência sem valor fixo (ou com o valor da entrada).</li>
+            <li>Copie o endereço e cole aqui.</li>
+          </ol>
+          <p className="mt-2 text-support">Taxas, parcelamento e prazo para receber são definidos por esse serviço. Confira as condições dele antes de usar. Os nomes dos menus mudam de app para app.</p>
+        </details>
       </Section>
       </SectionGroup>
       <h2 className="mt-2 px-1 text-base font-semibold uppercase tracking-wide text-support">Clientes e avisos</h2>

@@ -31,6 +31,8 @@ export interface Company {
   warrantyText?: string;
   /** % da entrada sugerida no botão de pagamento do PDF. */
   depositPct?: number;
+  /** Link de pagamento (cartão) do próprio pintor, usado nos orçamentos novos. O dinheiro vai direto para a conta dele. */
+  paymentLink?: string;
   /** Já oferecemos cadastrar a chave Pix (e a pessoa disse "agora não"). */
   pixAsked?: boolean;
   /** Já perguntamos se a pessoa quer os avisos de "cliente abriu o orçamento". */
@@ -72,6 +74,9 @@ export interface Quote {
   /** PDF: link para o cliente pagar a entrada (Pix/cartão do próprio pintor). Sem link, o bloco não aparece. */
   paymentLink?: string;
   depositPct?: number;
+  /** Como o cliente pode pagar a entrada. Ausente = oferece o que estiver cadastrado. */
+  payPix?: boolean;
+  payCard?: boolean;
   status: QuoteStatus;
   createdAt: string;
   validUntil: string;

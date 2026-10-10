@@ -1,4 +1,5 @@
 "use client";
+import { initialPayment, PaymentOptionsField, payLinkValue, type PaymentChoice } from "@/components/PaymentOptionsField";
 import { MaterialsField } from "@/components/MaterialsField";
 import { openVisitFor, VisitSuggestion } from "@/components/VisitSuggestion";
 import { DictationField } from "@/components/DictationField";
@@ -64,8 +65,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const [showMaterials, setShowMaterials] = useState(quote?.showMaterials ?? false);
   const [usedVisit, setUsedVisit] = useState<Visit | null>(null);
   const [showRoomPrices, setShowRoomPrices] = useState(quote?.showRoomPrices ?? false);
-  const [paymentLink, setPaymentLink] = useState(quote?.paymentLink ?? "");
-  const [depositPct, setDepositPct] = useState(quote?.depositPct ?? db.company?.depositPct ?? 50);
+  const [pay, setPay] = useState<PaymentChoice>(() => initialPayment(db.company, quote));
 
   const enabled = db.enabledServiceIds;
   const formOpen = rooms.length === 0 || showForm;
@@ -111,12 +111,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     const paymentTerms = payment ?? db.company!.paymentTerms;
     const finalInput: QuoteInput = pending ? { ...input, rooms: [...rooms, { ...pending, id: crypto.randomUUID() }] } : input;
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: paymentLink.trim() || undefined, depositPct });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ ...newClient, address: newClient.address || siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: paymentLink.trim() || undefined, depositPct });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -259,11 +259,8 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
                 <span>Mostrar o valor de cada ambiente</span>
                 <Chip active={showRoomPrices} onClick={() => setShowRoomPrices(!showRoomPrices)}>{showRoomPrices ? "Sim" : "Não"}</Chip>
               </div>
-              <Field label="Link para o cliente pagar a entrada (opcional)" hint="Cole o link de pagamento (Pix, cartão) que você já usa. Sem link, o botão de pagar não aparece.">
-                <TextInput type="url" inputMode="url" placeholder="https://" value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} />
-              </Field>
-              {paymentLink.trim() ? <Field label="Entrada (% do valor total)"><NumberInput value={depositPct} onChange={(n) => setDepositPct(Math.min(100, Math.max(1, n || 50)))} /></Field> : null}
             </div>
+            <PaymentOptionsField company={db.company} value={pay} onChange={setPay} />
           </div>
         </BlocoRecolhivel>
 

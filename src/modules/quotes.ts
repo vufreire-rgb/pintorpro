@@ -22,6 +22,8 @@ interface NewQuote {
   showMaterials?: boolean;
   paymentLink?: string;
   depositPct?: number;
+  payPix?: boolean;
+  payCard?: boolean;
 }
 
 export function saveQuote(db: Db, data: NewQuote): string {
@@ -52,7 +54,7 @@ export function saveQuote(db: Db, data: NewQuote): string {
 const DAY = 86400000;
 
 /** Edita um orçamento ainda não fechado. Recalcula com os valores ATUAIS dos Ajustes. */
-export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes" | "showRoomPrices" | "paymentLink" | "depositPct"> & Partial<Pick<Quote, "materialsText" | "showMaterials">>): void {
+export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes" | "showRoomPrices" | "paymentLink" | "depositPct"> & Partial<Pick<Quote, "materialsText" | "showMaterials" | "payPix" | "payCard">>): void {
   const config = buildEngineConfig(db);
   const result = calculateQuote(data.input, config);
   const now = new Date();
@@ -99,6 +101,8 @@ export function duplicateQuote(db: Db, id: string): string | null {
     showMaterials: q.showMaterials,
     paymentLink: q.paymentLink,
     depositPct: q.depositPct,
+    payPix: q.payPix,
+    payCard: q.payCard,
   });
 }
 

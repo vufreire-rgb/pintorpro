@@ -49,6 +49,7 @@ await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
     await page.getByRole("button", { name: "Não", exact: true }).first().click(); // mostrar a lista no PDF
   }
   if (comValores) await page.getByRole("button", { name: "Não", exact: true }).last().click();
+  if (comLink) await page.locator("div", { hasText: /^Cartão \(pelo seu link de pagamento\)/ }).last().getByRole("button").click();
   if (comLink) await page.getByPlaceholder("https://").fill("https://pague.exemplo.com.br/0042");
   await page.getByRole("button", { name: "Salvar orçamento" }).click();
   await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);

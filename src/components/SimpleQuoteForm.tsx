@@ -1,4 +1,5 @@
 "use client";
+import { initialPayment, PaymentOptionsField, payLinkValue, type PaymentChoice } from "./PaymentOptionsField";
 import { VisitSuggestion, openVisitFor } from "./VisitSuggestion";
 import { MaterialsField } from "./MaterialsField";
 import { DictationField } from "./DictationField";
@@ -28,6 +29,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
   const [payment, setPayment] = useState(quote?.paymentTerms ?? db.company?.paymentTerms ?? "");
   const [notes, setNotes] = useState(quote?.notes ?? visit?.notes ?? "");
   const [usedVisit, setUsedVisit] = useState<Visit | null>(null);
+  const [pay, setPay] = useState<PaymentChoice>(() => initialPayment(db.company, quote));
   const [materials, setMaterials] = useState(quote?.materialsText ?? "");
   const [showMaterials, setShowMaterials] = useState(quote?.showMaterials ?? false);
 
@@ -53,12 +55,12 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
       ? { rooms: [], extras: areaRows.map((a, i) => ({ description: a.name.trim() || `Ambiente ${i + 1}`, priceCents: Math.round(a.price * 100), costCents: 0 })), adjustment: undefined }
       : { rooms: built.rooms, extras: built.extras, adjustment: built.adjustment };
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ name: newClient.name.trim(), phone: newClient.phone.trim(), address: siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -107,6 +109,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
           <Field label="Forma de pagamento"><TextInput value={payment} onChange={(e) => setPayment(e.target.value)} /></Field>
           <DictationField label="Observações para o cliente (opcional)" hint="Só deste orçamento: a cor escolhida, o que ficou combinado a mais. Aparecem no PDF e no link. Garantia e o que não está incluso você ajusta uma vez em Ajustes." value={notes} onChange={setNotes} />
           <MaterialsField text={materials} onText={setMaterials} show={showMaterials} onShow={setShowMaterials} />
+          <PaymentOptionsField company={db.company} value={pay} onChange={setPay} />
         </Card>
       </div>
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

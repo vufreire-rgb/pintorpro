@@ -6,6 +6,7 @@ vi.mock("@/repositories/fileStore", () => ({ putFile: vi.fn(), getFile: vi.fn(),
 
 import { calculateQuote } from "@/engine";
 import { DEFAULT_MATERIALS, DEFAULT_SERVICES } from "./catalog";
+import { effectivePaymentLink, offersPix } from "./pdfData";
 import { agoLabel, buildShareSnapshot, linkIsStale, linkMessage, viewedLabel, type QuoteLink } from "./quoteLinks";
 import type { Db, EngineConfig, Quote, QuoteInput } from "./types";
 
@@ -23,6 +24,36 @@ describe("buildShareSnapshot", () => {
     expect(s.validUntil).toBe("2026-10-09T12:00:00Z");
     const json = JSON.stringify(s).toLowerCase();
     for (const w of ["custo", "lucro", "margem", "profit", "cost", "logo1", "photos"]) expect(json).not.toContain(w);
+  });
+});
+
+describe("pagamento da entrada escolhido pelo pintor", () => {
+  const withPay = (over: Record<string, unknown>, company: Record<string, unknown> = {}) =>
+    ({ ...db, company: { ...db.company, pix: { type: "doc", key: "52998224725", name: "Silva" }, ...company }, quotes: [{ ...q, ...over }] }) as unknown as Db;
+  const quote = (d: Db) => d.quotes[0]!;
+  it("cartão: usa o link do orçamento e só aceita https", () => {
+    expect(effectivePaymentLink({ paymentLink: "https://pagar.me/x" }, null)).toBe("https://pagar.me/x");
+    expect(effectivePaymentLink({ paymentLink: "http://x.com" }, null)).toBeUndefined();
+    expect(effectivePaymentLink({ paymentLink: "https://pagar.me/x", payCard: false }, null)).toBeUndefined();
+  });
+  it("cartão: usa o link padrão das configurações", () => {
+    expect(effectivePaymentLink({}, { paymentLink: "https://pay.me/p" })).toBe("https://pay.me/p");
+  });
+  it("pix: ligado por padrão, desligável", () => {
+    expect(offersPix({})).toBe(true);
+    expect(offersPix({ payPix: false })).toBe(false);
+  });
+  it("o link só leva Pix e cartão quando o pintor deixou ligado", () => {
+    const both = withPay({ paymentLink: "https://pay.me/p" });
+    const s1 = buildShareSnapshot(both, quote(both));
+    expect(s1.pix).not.toBeNull();
+    expect(s1.deposit?.link).toBe("https://pay.me/p");
+    const none = withPay({ paymentLink: "https://pay.me/p", payPix: false, payCard: false });
+    const s2 = buildShareSnapshot(none, quote(none));
+    expect(s2.pix).toBeNull();
+    expect(s2.deposit).toBeNull();
+    const cfg = withPay({}, { paymentLink: "https://pay.me/c" });
+    expect(buildShareSnapshot(cfg, quote(cfg)).deposit?.link).toBe("https://pay.me/c");
   });
 });
 

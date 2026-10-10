@@ -1,4 +1,4 @@
-import { buildPdfData, MAX_PDF_PHOTOS, type QuotePdfData } from "./pdfData";
+import { buildPdfData, MAX_PDF_PHOTOS, offersPix, type QuotePdfData } from "./pdfData";
 import { normalizePixKey, pixPayload, pixText } from "./pix";
 import { qrDataUrl } from "./qr";
 import { formatBRL } from "@/shared/money";
@@ -38,7 +38,7 @@ async function makePdf(db: Db, q: Quote): Promise<{ blob: Blob; data: QuotePdfDa
   const logo = logoId ? await logoForPdf(logoId).catch(() => undefined) : undefined;
   const data: QuotePdfData = { ...buildPdfData(db, q, await loadPdfPhotos(db, q)), logo };
   const px = db.company?.pix;
-  if (px && db.company && normalizePixKey(px.type, px.key)) {
+  if (px && db.company && offersPix(q) && normalizePixKey(px.type, px.key)) {
     const pct = q.depositPct ?? db.company.depositPct ?? 50;
     const cents = Math.round((q.result.totals.totalCents * pct) / 100);
     const code = pixPayload(px, { name: db.company.name, city: db.company.city }, cents);

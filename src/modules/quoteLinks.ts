@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchSharedQuote, listQuoteLinks, publishQuoteLink, revokeQuoteLink, type QuoteLinkRow } from "@/repositories/cloudStore";
 import { cloudEnabled } from "./auth";
-import { buildPdfData, MAX_PDF_PHOTOS } from "./pdfData";
+import { buildPdfData, MAX_PDF_PHOTOS, offersPix } from "./pdfData";
 import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
 import { shrinkDataUrl } from "./publicImages";
 import { publicOrigin } from "./publicOrigin";
@@ -43,7 +43,7 @@ export function buildShareSnapshot(db: Db, q: Quote): SharedQuote {
   const d = buildPdfData(db, q);
   let pix: SharedQuote["pix"] = null;
   const px = db.company?.pix;
-  if (px && db.company && normalizePixKey(px.type, px.key)) {
+  if (px && db.company && offersPix(q) && normalizePixKey(px.type, px.key)) {
     const pct = q.depositPct ?? db.company.depositPct ?? 50;
     const cents = Math.round((q.result.totals.totalCents * pct) / 100);
     const code = pixPayload(px, { name: db.company.name, city: db.company.city }, cents);
