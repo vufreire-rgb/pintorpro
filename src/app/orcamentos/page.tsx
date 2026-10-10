@@ -26,7 +26,8 @@ export default function Orcamentos() {
   const hint = useHint("orcamentos", (db?.quotes.length ?? 0) > 0);
   const voicePending = usePendingVoice().length;
   const { links } = useQuoteLinks();
-  const newRequests = useRequests().requests.filter((r) => r.status === "new").length;
+  const allRequests = useRequests().requests;
+  const newRequests = allRequests.filter((r) => r.status === "new").length;
   const [tab, setTab] = useState<QuoteStatus>("open");
   const [choosing, setChoosing] = useState(false);
   const touchX = useRef<number | null>(null);
@@ -64,7 +65,7 @@ export default function Orcamentos() {
         ) : (
           <LinkButton href="/orcamentos/novo" icon={Plus}>Novo orçamento</LinkButton>
         )}
-        {newRequests > 0 ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="!px-3 !text-lg">{newRequests} {newRequests === 1 ? "pedido novo" : "pedidos novos"} de clientes</LinkButton> : null}
+        {newRequests > 0 ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="!px-3 !text-lg">{newRequests} {newRequests === 1 ? "pedido novo" : "pedidos novos"} de clientes</LinkButton> : allRequests.length > 0 ? <LinkButton href="/pedidos" icon={Inbox} variant="ghost" className="!px-3 !text-lg">Pedidos de clientes ({allRequests.length})</LinkButton> : null}
       </div>
       <div role="tablist" className={`${TAB_LIST_CLS} grid-cols-3`}>
         {TABS.map((s) => (

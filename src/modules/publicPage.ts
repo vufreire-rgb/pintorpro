@@ -93,14 +93,15 @@ export function useMyPage(): { page: PageRow | null; loaded: boolean; reload: ()
   return { page, loaded, reload: () => setTick((t) => t + 1) };
 }
 
-export function useRequests(): { requests: RequestRow[]; loaded: boolean; reload: () => void } {
+export function useRequests(): { requests: RequestRow[]; loaded: boolean; failed: boolean; reload: () => void } {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!cloudEnabled) return;
     let alive = true;
-    listRequests().then((r) => { if (alive) { setRequests(r); setLoaded(true); } }).catch(() => undefined);
+    listRequests().then((r) => { if (alive) { setRequests(r); setLoaded(true); setFailed(false); } }).catch(() => { if (alive) setFailed(true); });
     return () => { alive = false; };
   }, [tick]);
   useEffect(() => {
@@ -108,7 +109,7 @@ export function useRequests(): { requests: RequestRow[]; loaded: boolean; reload
     document.addEventListener("visibilitychange", on);
     return () => document.removeEventListener("visibilitychange", on);
   }, []);
-  return { requests, loaded, reload: () => setTick((t) => t + 1) };
+  return { requests, loaded, failed, reload: () => setTick((t) => t + 1) };
 }
 
 export const markRequest = setRequestStatus;

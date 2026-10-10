@@ -29,6 +29,8 @@ interface RequestInput { name: string; phone: string; address: string; message: 
 const RESERVED = ["o", "p", "api", "admin", "app", "login", "medde", "pedidos", "orcamentos", "obras", "visitas", "clientes", "configuracoes", "onboarding", "privacidade", "termos", "excluir-conta", "redefinir-senha", "suporte", "ajuda", "www"];
 const MAX_REQUESTS_PER_PAGE_PER_DAY = 40;
 const MAX_OPEN_REQUESTS = 300;
+/** Mesmo telefone: no máximo este tanto de pedidos por dia. */
+const MAX_REQUESTS_PER_PHONE_PER_DAY = 3;
 const MAX_PHOTOS = 6;
 /** Tamanho máximo (em caracteres do data URL) da foto de perfil e de cada foto de trabalho. */
 const MAX_AVATAR_CHARS = 80_000;
@@ -76,6 +78,17 @@ function sanitizeRequest(raw: unknown): RequestInput | "spam" | null {
   const name = s(o.name, 80);
   if (name.length < 2 || phone.length < 10 || phone.length > 13) return null;
   return { name, phone, address: s(o.address, 200), message: s(o.message, 1000) };
+}
+
+/**
+ * Pedido repetido? Só descarta (sem avisar o pintor de novo) quando o mesmo telefone já mandou o MESMO texto hoje,
+ * ou quando já mandou 3 pedidos hoje. Pedido novo do mesmo cliente, com outro texto, passa.
+ */
+function isRepeatedRequest(recent: { phone: string; message?: string | null; address?: string | null }[], r: RequestInput): boolean {
+  const same = recent.filter((x) => x.phone === r.phone);
+  if (same.length >= MAX_REQUESTS_PER_PHONE_PER_DAY) return true;
+  const norm = (t?: string | null) => (t ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return same.some((x) => norm(x.message) === norm(r.message) && norm(x.address) === norm(r.address));
 }
 // ---- fim de logic.ts ----
 
@@ -133,10 +146,10 @@ Deno.serve(async (req: Request) => {
     if (!page.data) return reply(404, { error: "not_found" });
     const uid = page.data.user_id as string;
     const since = new Date(Date.now() - 86400000).toISOString();
-    const recent = await admin.from("quote_requests").select("phone", { count: "exact" }).eq("user_id", uid).gte("created_at", since);
+    const recent = await admin.from("quote_requests").select("phone, message, address", { count: "exact" }).eq("user_id", uid).gte("created_at", since);
     if (recent.error) { console.error("public-page recent", recent.error.message); return reply(500, { error: "failed" }); }
     if ((recent.count ?? 0) >= MAX_REQUESTS_PER_PAGE_PER_DAY) return reply(429, { error: "busy" });
-    if ((recent.data ?? []).some((x: { phone: string }) => x.phone === r.phone)) return reply(200, { ok: true }); // mesmo telefone hoje: já recebemos
+    if (isRepeatedRequest((recent.data ?? []) as { phone: string; message?: string; address?: string }[], r)) return reply(200, { ok: true }); // mesmo telefone e mesmo texto hoje (ou 3 pedidos hoje): já recebemos
     const open = await admin.from("quote_requests").select("id", { count: "exact", head: true }).eq("user_id", uid).eq("status", "new");
     if ((open.count ?? 0) >= MAX_OPEN_REQUESTS) return reply(429, { error: "busy" });
     const ins = await admin.from("quote_requests").insert({ user_id: uid, ...r });

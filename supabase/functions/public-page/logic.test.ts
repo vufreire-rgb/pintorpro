@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSlug, jpegDataUrl, MAX_PHOTOS, sanitizePage, sanitizeRequest, slugify } from "./logic";
+import { isRepeatedRequest, isSlug, jpegDataUrl, MAX_PHOTOS, sanitizePage, sanitizeRequest, slugify } from "./logic";
 
 describe("slug", () => {
   it("vira endereço sem acento nem símbolo", () => {
@@ -48,5 +48,22 @@ describe("sanitizeRequest", () => {
   });
   it("campo escondido preenchido = robô", () => {
     expect(sanitizeRequest({ name: "Maria", phone: "11988887777", hp: "http://spam" })).toBe("spam");
+  });
+});
+
+describe("isRepeatedRequest", () => {
+  const req = { name: "Maria", phone: "11988887777", address: "Rua A", message: "Pintar a sala" };
+  it("descarta o mesmo pedido repetido", () => {
+    expect(isRepeatedRequest([{ phone: "11988887777", message: " pintar  a SALA ", address: "rua a" }], req)).toBe(true);
+  });
+  it("aceita um pedido novo do mesmo telefone com outro texto", () => {
+    expect(isRepeatedRequest([{ phone: "11988887777", message: "Pintar o quarto", address: "Rua A" }], req)).toBe(false);
+  });
+  it("outro telefone nunca conta como repetido", () => {
+    expect(isRepeatedRequest([{ phone: "11911112222", message: "Pintar a sala", address: "Rua A" }], req)).toBe(false);
+  });
+  it("trava no 4º pedido do mesmo telefone no dia", () => {
+    const old = (m: string) => ({ phone: "11988887777", message: m, address: "x" });
+    expect(isRepeatedRequest([old("a"), old("b"), old("c")], { ...req, message: "d" })).toBe(true);
   });
 });

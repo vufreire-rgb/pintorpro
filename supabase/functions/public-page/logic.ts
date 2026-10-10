@@ -21,6 +21,8 @@ export interface RequestInput { name: string; phone: string; address: string; me
 export const RESERVED = ["o", "p", "api", "admin", "app", "login", "medde", "pedidos", "orcamentos", "obras", "visitas", "clientes", "configuracoes", "onboarding", "privacidade", "termos", "excluir-conta", "redefinir-senha", "suporte", "ajuda", "www"];
 export const MAX_REQUESTS_PER_PAGE_PER_DAY = 40;
 export const MAX_OPEN_REQUESTS = 300;
+/** Mesmo telefone: no máximo este tanto de pedidos por dia. */
+export const MAX_REQUESTS_PER_PHONE_PER_DAY = 3;
 export const MAX_PHOTOS = 6;
 /** Tamanho máximo (em caracteres do data URL) da foto de perfil e de cada foto de trabalho. */
 export const MAX_AVATAR_CHARS = 80_000;
@@ -68,4 +70,15 @@ export function sanitizeRequest(raw: unknown): RequestInput | "spam" | null {
   const name = s(o.name, 80);
   if (name.length < 2 || phone.length < 10 || phone.length > 13) return null;
   return { name, phone, address: s(o.address, 200), message: s(o.message, 1000) };
+}
+
+/**
+ * Pedido repetido? Só descarta (sem avisar o pintor de novo) quando o mesmo telefone já mandou o MESMO texto hoje,
+ * ou quando já mandou 3 pedidos hoje. Pedido novo do mesmo cliente, com outro texto, passa.
+ */
+export function isRepeatedRequest(recent: { phone: string; message?: string | null; address?: string | null }[], r: RequestInput): boolean {
+  const same = recent.filter((x) => x.phone === r.phone);
+  if (same.length >= MAX_REQUESTS_PER_PHONE_PER_DAY) return true;
+  const norm = (t?: string | null) => (t ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return same.some((x) => norm(x.message) === norm(r.message) && norm(x.address) === norm(r.address));
 }

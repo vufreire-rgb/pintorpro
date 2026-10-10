@@ -4,7 +4,7 @@
 //  - POST { action: "publish" | "disable", ... } (com login): o pintor publica, atualiza ou desliga a página dele.
 // Só esta função escreve nas tabelas public_pages e quote_requests (chave de administrador, só no servidor).
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { isSlug, MAX_OPEN_REQUESTS, MAX_REQUESTS_PER_PAGE_PER_DAY, sanitizePage, sanitizeRequest } from "./logic.ts";
+import { isRepeatedRequest, isSlug, MAX_OPEN_REQUESTS, MAX_REQUESTS_PER_PAGE_PER_DAY, sanitizePage, sanitizeRequest } from "./logic.ts";
 
 /** Pede à função "push" para avisar o pintor no celular. Não atrasa a resposta e nunca derruba o fluxo principal. */
 function notifyUser(userId: string, message: { title: string; body: string; url: string }): void {
@@ -60,10 +60,10 @@ Deno.serve(async (req: Request) => {
     if (!page.data) return reply(404, { error: "not_found" });
     const uid = page.data.user_id as string;
     const since = new Date(Date.now() - 86400000).toISOString();
-    const recent = await admin.from("quote_requests").select("phone", { count: "exact" }).eq("user_id", uid).gte("created_at", since);
+    const recent = await admin.from("quote_requests").select("phone, message, address", { count: "exact" }).eq("user_id", uid).gte("created_at", since);
     if (recent.error) { console.error("public-page recent", recent.error.message); return reply(500, { error: "failed" }); }
     if ((recent.count ?? 0) >= MAX_REQUESTS_PER_PAGE_PER_DAY) return reply(429, { error: "busy" });
-    if ((recent.data ?? []).some((x: { phone: string }) => x.phone === r.phone)) return reply(200, { ok: true }); // mesmo telefone hoje: já recebemos
+    if (isRepeatedRequest((recent.data ?? []) as { phone: string; message?: string; address?: string }[], r)) return reply(200, { ok: true }); // mesmo telefone e mesmo texto hoje (ou 3 pedidos hoje): já recebemos
     const open = await admin.from("quote_requests").select("id", { count: "exact", head: true }).eq("user_id", uid).eq("status", "new");
     if ((open.count ?? 0) >= MAX_OPEN_REQUESTS) return reply(429, { error: "busy" });
     const ins = await admin.from("quote_requests").insert({ user_id: uid, ...r });

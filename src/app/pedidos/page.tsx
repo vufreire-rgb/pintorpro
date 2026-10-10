@@ -22,7 +22,7 @@ const STATUS: Record<RequestRow["status"], { label: string; tone: "open" | "ok" 
 export default function Pedidos() {
   const db = useAppDb();
   const router = useRouter();
-  const { requests, reload } = useRequests();
+  const { requests, failed, reload } = useRequests();
   const hint = useHint("pedidos", requests.length > 0);
   const { page } = useMyPage();
   const [err, setErr] = useState("");
@@ -61,6 +61,13 @@ export default function Pedidos() {
     <Screen title="Pedidos de clientes" back="/orcamentos">
       <div className="flex flex-col gap-4 pb-8">
         {!cloudEnabled ? <Card>Os pedidos pela página precisam de uma conta com internet.</Card> : null}
+        {failed ? (
+          <Card className="flex flex-col gap-2">
+            <b>Não consegui carregar os pedidos agora</b>
+            <p className="text-base text-support">Verifique a internet e tente de novo. Os pedidos continuam guardados.</p>
+            <Button variant="ghost" onClick={reload}>Tentar de novo</Button>
+          </Card>
+        ) : null}
         {err ? <p role="alert" className="text-base text-err">{err}</p> : null}
         {cloudEnabled && !page?.enabled ? (
           <Card className="flex flex-col gap-2">
