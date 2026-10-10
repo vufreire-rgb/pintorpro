@@ -1,4 +1,5 @@
 "use client";
+import { dictationFailureText, transcribeDictation } from "@/modules/dictation";
 import { useRef, useState } from "react";
 import { cloudEnabled } from "@/modules/auth";
 import { fmtClock, useRecorder } from "@/modules/audio";
@@ -49,11 +50,18 @@ function Player({ note, index, onRemove }: { note: AudioNote; index: number; onR
   );
 }
 
-export function AudioRecorder({ visitId, audios, consent }: { visitId: string; audios: AudioNote[]; consent: boolean }) {
+/** Passa disso o áudio não vira texto sozinho (é uma conversa longa): fica só gravado. */
+const MAX_AUTO_TEXT_SECONDS = 90;
+const MAX_AUTO_TEXT_BYTES = 2_900_000;
+
+/** `onTranscript`: recebe o que foi falado, escrito, para ir às Observações. Só roda com conta e em áudios curtos. */
+export function AudioRecorder({ visitId, audios, consent, onTranscript }: { visitId: string; audios: AudioNote[]; consent: boolean; onTranscript?: (text: string) => void }) {
   const { state, seconds, start, stop } = useRecorder();
   const [saving, setSaving] = useState(false);
   const [asking, setAsking] = useState(false);
   const [markers, setMarkers] = useState<AudioMarker[]>([]);
+  const [textMsg, setTextMsg] = useState("");
+  const [writing, setWriting] = useState(false);
 
   const begin = async () => {
     setMarkers([]);
@@ -63,11 +71,27 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
 
   const finish = async () => {
     setSaving(true);
+    setTextMsg("");
+    let out: { blob: Blob; seconds: number } | null = null;
     try {
-      const out = await stop();
+      out = await stop();
       if (out) await addVisitAudio(visitId, out.blob, out.seconds, markers);
     } finally {
       setSaving(false);
+    }
+    // O áudio já está guardado. Se for curto, também vira texto nas Observações (um microfone só).
+    if (out && onTranscript && cloudEnabled) {
+      if (out.seconds > MAX_AUTO_TEXT_SECONDS || out.blob.size > MAX_AUTO_TEXT_BYTES) { setTextMsg("Áudio guardado. Como é longo, ele não virou texto nas Observações."); return; }
+      setWriting(true);
+      try {
+        const text = await transcribeDictation(out.blob);
+        if (text) { onTranscript(text); setTextMsg("Áudio guardado e escrito nas Observações."); }
+        else setTextMsg("Áudio guardado. Não entendi nada para escrever nas Observações.");
+      } catch (e) {
+        setTextMsg(`Áudio guardado. ${dictationFailureText(e instanceof Error ? e.message : "")}`);
+      } finally {
+        setWriting(false);
+      }
     }
   };
 
@@ -78,8 +102,8 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
       <BlocoRecolhivel
         title="Áudio"
         icon={Mic}
-        summary={summary}
-        openWhen={state === "recording" || state === "denied" || state === "unsupported"}
+        summary={writing ? "Escrevendo nas Observações…" : summary}
+        openWhen={state === "recording" || state === "denied" || state === "unsupported" || !!textMsg}
         action={state === "recording" ? undefined : { label: "Gravar", ariaLabel: "Gravar áudio", icon: Mic, opens: true, disabled: saving || state === "unsupported", onClick: press }}
       >
         {audios.map((a, i) => <Player key={a.id} note={a} index={i} onRemove={() => removeVisitAudio(visitId, a.id)} />)}
@@ -105,9 +129,10 @@ export function AudioRecorder({ visitId, audios, consent }: { visitId: string; a
             {markers.length > 0 ? <p className="text-base text-support">{markers.length} {markers.length === 1 ? "marca" : "marcas"} neste áudio.</p> : <p className="text-base text-support">Toque numa marca para guardar o momento exato.</p>}
           </>
         ) : null}
+        {writing ? <p role="status" className="text-base font-bold text-brand">Escrevendo o que você falou nas Observações…</p> : textMsg ? <p role="status" className="text-base text-ink">{textMsg}</p> : null}
         {state === "denied" ? <p className="text-base text-err">Sem acesso ao microfone. Permita o microfone nas configurações do navegador e tente de novo.</p> : null}
         {state === "unsupported" ? <p className="text-base text-err">Este navegador não consegue gravar áudio.</p> : null}
-        <p className="text-base text-support">{cloudEnabled ? "Os áudios ficam guardados na sua conta." : "Os áudios ficam guardados neste aparelho."}</p>
+        <p className="text-base text-support">{cloudEnabled ? "Os áudios ficam guardados na sua conta. Os curtos (até 1 min 30 s) também são escritos nas Observações." : "Os áudios ficam guardados neste aparelho."}</p>
       </BlocoRecolhivel>
       <ConfirmDialog
         open={asking}

@@ -1,6 +1,4 @@
 "use client";
-import { appendDictation } from "@/modules/dictation";
-import { DictateButton } from "@/components/DictateButton";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
@@ -19,7 +17,7 @@ import { blankRoom, cloneSurfaces, legacyToSurfaces, measuresSummary, surfacesSu
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
-import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit } from "@/modules/visits";
+import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit, appendVisitNotes } from "@/modules/visits";
 import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum, plural } from "@/shared/format";
 
@@ -152,7 +150,7 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
         )}
       />
 
-      <AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} />
+      <AudioRecorder visitId={v.id} audios={v.audios ?? []} consent={!!v.recordingConsent} onTranscript={(t) => appendVisitNotes(v.id, t)} />
 
       <BlocoRecolhivel
         title="Fotos"
@@ -222,7 +220,6 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       <CartaoDeObservacao
         label="Observações"
         hint="O que o cliente pediu, problemas que viu…"
-        mic={<DictateButton round onText={(t) => setVisitNotes(v.id, appendDictation(v.notes, t))} />}
       >
         <textarea className={bareTextCls} value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </CartaoDeObservacao>

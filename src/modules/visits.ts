@@ -1,4 +1,5 @@
 import { uid, updateDb } from "./db";
+import { appendDictation } from "./dictation";
 import { removePhotoFile, saveAudioFile, storePhotos } from "./photos";
 import { addClient } from "./clients";
 import type { RoomDraft } from "./rooms";
@@ -56,6 +57,8 @@ export function saveVisitRoom(id: string, draft: RoomDraft, roomId?: string): vo
 export const removeVisitRoom = (id: string, roomId: string) => patch(id, (v) => ({ ...v, rooms: (v.rooms ?? []).filter((r) => r.id !== roomId) }));
 
 export const setVisitNotes = (id: string, notes: string) => patch(id, (v) => ({ ...v, notes }));
+/** Soma o que foi ditado ao fim das observações da visita, sobre o texto mais recente (não apaga o que a pessoa digitou enquanto o áudio era escrito). */
+export const appendVisitNotes = (id: string, said: string) => patch(id, (v) => ({ ...v, notes: appendDictation(v.notes, said) }));
 /** Guarda o ponto no mapa; se veio um endereço escrito, ele passa a ser o endereço da obra. */
 export const setVisitLocation = (id: string, location: GeoPoint, address?: string) =>
   patch(id, (v) => ({ ...v, location, siteAddress: address || v.siteAddress }));
