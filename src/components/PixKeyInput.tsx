@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { Chip, Field, TextInput } from "./ui";
-import { guessPixType, normalizePixKey, PIX_TYPE_LABEL, type PixKeyType } from "@/modules/pix";
+import { guessPixType, normalizePixKey, PIX_TYPE_LABEL, pixKeyPreview, type PixKeyType } from "@/modules/pix";
 
 export interface PixKeyValue { type: PixKeyType; key: string }
 
@@ -39,7 +39,13 @@ export function PixKeyInput({ initial, onChange }: { initial?: PixKeyValue; onCh
           </div>
         </div>
       ) : null}
-      {valid && type ? <p className="inline-flex items-center gap-1.5 text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden />Chave válida ({PIX_TYPE_LABEL[type].toLowerCase()})</p> : null}
+      {valid && type ? (
+        <div className="flex flex-col gap-1">
+          <p className="inline-flex items-center gap-1.5 text-base font-bold text-accent-dark"><Check size={20} strokeWidth={2.6} aria-hidden />Chave válida ({PIX_TYPE_LABEL[type].toLowerCase()})</p>
+          <p className="text-base">No QR vai: <b className="break-all" data-testid="pix-key-preview">{pixKeyPreview(type, text)}</b></p>
+          <p className="text-base text-support">Confira se é igual à chave que aparece no seu banco, em Pix → Minhas chaves. Chave errada = o banco diz o banco diz "chave não encontrada"ldquo;chave não encontradao banco diz "chave não encontrada"rdquo;.</p>
+        </div>
+      ) : null}
       {text && guess !== "ask" && !valid ? <p className="text-base text-err">Essa chave não parece certa. Confira o número ou o e-mail.</p> : null}
     </div>
   );

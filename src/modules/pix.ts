@@ -65,6 +65,15 @@ export function normalizePixKey(type: PixKeyType, raw: string): string {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v) ? v.toLowerCase() : "";
 }
 
+/** Como mostrar a chave que vai no QR, para a pessoa conferir com o banco. "" se a chave não valer. */
+export function pixKeyPreview(type: PixKeyType, raw: string): string {
+  const k = normalizePixKey(type, raw);
+  if (!k) return "";
+  if (type === "doc") return k.length === 11 ? `${k.slice(0, 3)}.${k.slice(3, 6)}.${k.slice(6, 9)}-${k.slice(9)}` : `${k.slice(0, 2)}.${k.slice(2, 5)}.${k.slice(5, 8)}/${k.slice(8, 12)}-${k.slice(12)}`;
+  if (type === "phone") { const d = k.slice(3); return `+55 (${d.slice(0, 2)}) ${d.length === 11 ? `${d.slice(2, 7)}-${d.slice(7)}` : `${d.slice(2, 6)}-${d.slice(6)}`}`; }
+  return k;
+}
+
 /** Tira acento e símbolos, deixa só letras/números/espaço, em maiúsculas (o Pix exige texto simples). */
 export function pixText(s: string, max: number): string {
   return s
