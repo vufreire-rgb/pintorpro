@@ -29,6 +29,8 @@ describe("sanitizeSnapshot", () => {
     expect(sanitizeSnapshot({ ...ok, color: "red" })!.color).toBe("#0F3B7A");
     expect(sanitizeSnapshot({ ...ok, deposit: { amount: "R$ 1", pct: "50%", link: "javascript:alert(1)" } })!.deposit).toBeNull();
     expect(sanitizeSnapshot({ ...ok, deposit: { amount: "R$ 1", pct: "50%", link: "https://pagar.exemplo.com/x" } })!.deposit?.link).toBe("https://pagar.exemplo.com/x");
+    expect(sanitizeSnapshot({ ...ok, deposit: { amount: "R$ 9", pct: "50%", link: "https://p.com/x", installments: 3, installmentAmount: "R$ 3" } })!.deposit?.installments).toBe(3);
+    expect(sanitizeSnapshot({ ...ok, deposit: { amount: "R$ 9", pct: "50%", link: "https://p.com/x", installments: 99, installmentAmount: "R$ 3" } })!.deposit?.installments).toBeUndefined();
   });
   it("limita ambientes", () => {
     expect(sanitizeSnapshot({ ...ok, rooms: Array.from({ length: 80 }, () => ({ name: "x" })) })!.rooms).toHaveLength(30);

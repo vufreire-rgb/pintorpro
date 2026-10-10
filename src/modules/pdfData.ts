@@ -20,7 +20,7 @@ export interface QuotePdfData {
   days: string;
   payment: string;
   validity: string;
-  deposit: null | { amount: string; pct: string; link: string };
+  deposit: null | { amount: string; pct: string; link: string; installments?: number; installmentAmount?: string };
   /** Pix da entrada: QR (imagem) e o código "copia e cola". */
   pix?: { qr: string; code: string; amount: string; pct: string; receiver: string };
   rooms: { name: string; facts: string; items: string[]; materials: string; price?: string; /** Valor do ambiente em centavos, sempre calculado (o PDF só mostra se showRoomPrices). */ priceCents?: number }[];
@@ -42,6 +42,12 @@ export function effectivePaymentLink(q: Pick<Quote, "paymentLink" | "payCard">, 
 }
 
 /** O Pix entra no orçamento? Só se a chave existe e o pintor não desligou o Pix. */
+function depositInfo(cents: number, pct: number, link: string, installments?: number) {
+  const n = Math.min(12, Math.max(1, Math.floor(installments ?? 1)));
+  const base = { amount: formatBRL(cents), pct: `${pct}% do valor total.`, link };
+  return n > 1 ? { ...base, installments: n, installmentAmount: formatBRL(Math.round(cents / n)) } : base;
+}
+
 export const offersPix = (q: Pick<Quote, "payPix">): boolean => q.payPix !== false;
 
 /** Lista de materiais escrita pelo pintor: um item por linha (ou separado por ponto e vírgula). Até 60 itens. */
@@ -182,7 +188,7 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
     days: days > 0 ? `${days} ${days === 1 ? "dia útil" : "dias úteis"}` : "A combinar",
     payment: q.paymentTerms,
     validity: `7 dias, até ${fmtDate(q.validUntil)}`,
-    deposit: effectivePaymentLink(q, c) ? { amount: formatBRL(Math.round((total * pct) / 100)), pct: `${pct}% do valor total.`, link: effectivePaymentLink(q, c)! } : null,
+    deposit: effectivePaymentLink(q, c) ? depositInfo(Math.round((total * pct) / 100), pct, effectivePaymentLink(q, c)!, q.payInstallments) : null,
     rooms: rooms.map((r, i) => ({ name: r.name, facts: r.facts, items: r.items, materials: r.materials, price: q.showRoomPrices ? formatBRL(prices[i]!) : undefined, priceCents: prices[i]! })),
     showRoomPrices: !!q.showRoomPrices,
     terms: {

@@ -24,7 +24,7 @@ export interface SharedQuote {
   payment: string;
   validity: string;
   validUntil: string;
-  deposit: { amount: string; pct: string; link: string } | null;
+  deposit: { amount: string; pct: string; link: string; installments?: number; installmentAmount?: string } | null;
   pix: { code: string; amount: string; pct: string; receiver: string } | null;
   rooms: { name: string; facts: string; items: string[]; materials: string; price: string; priceCents?: number }[];
   showRoomPrices: boolean;

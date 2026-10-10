@@ -138,14 +138,29 @@ check(u2.includes("Ambientes escolhidos (2 de 3): Sala, Cozinha") && /Total dos 
 await wa2.close();
 await c2.getByText("Pedido enviado!").waitFor();
 check(JSON.stringify(calls.accept.at(-1).rooms) === "[0,2]", "servidor recebe só as posições escolhidas");
-check((await c2.getByAltText("QR Code do Pix").count()) === 0 && await c2.getByText(/vai te mandar o Pix com o valor certo/).isVisible(), "escolha parcial: sem Pix pronto (o pintor manda o valor certo)");
+check((await c2.getByAltText("QR Code do Pix").count()) === 0 && await c2.getByText(/o pintor vai combinar com você a forma de pagar/).isVisible(), "escolha parcial: sem Pix pronto (o pintor manda o valor certo)");
 const c3 = await (await browser.newContext({ ...devices["iPhone 13"] })).newPage();
 await c3.goto(`${base}/o/${TOKEN2}`);
 await c3.getByRole("button", { name: "Fechar agora" }).click();
 const [wa3] = await Promise.all([c3.context().waitForEvent("page"), c3.getByRole("link", { name: /Confirmar e enviar/ }).click()]);
 await wa3.close();
 await c3.getByAltText("QR Code do Pix").waitFor();
-check(await c3.getByText(/Se quiser, já pague a entrada por Pix/).isVisible(), "todos os ambientes: o Pix aparece depois de fechar");
+check(await c3.getByText("Entrada para reservar a data").isVisible(), "todos os ambientes: o Pix aparece depois de fechar");
+
+// Pix e cartão: o cliente escolhe como paga e vê as parcelas
+snap2.deposit = { amount: "R$ 1.750,00", pct: "50% do valor total.", link: "https://pague.exemplo.com.br/9", installments: 3, installmentAmount: "R$ 583,33" };
+const c4 = await (await browser.newContext({ ...devices["iPhone 13"] })).newPage();
+await c4.goto(`${base}/o/${TOKEN2}`);
+await c4.getByRole("button", { name: "Fechar agora" }).click();
+const [wa4] = await Promise.all([c4.context().waitForEvent("page"), c4.getByRole("link", { name: /Confirmar e enviar/ }).click()]);
+await wa4.close();
+await c4.getByText("Como você prefere pagar?").waitFor();
+check((await c4.getByAltText("QR Code do Pix").count()) === 0, "com Pix e cartão: primeiro o cliente escolhe como paga");
+await c4.getByRole("button", { name: /Cartão/ }).click();
+check(await c4.getByText(/Em até 3x de R\$ 583,33/).isVisible() && (await c4.getByRole("link", { name: "Ir para o pagamento" }).getAttribute("href")) === "https://pague.exemplo.com.br/9", "cartão: mostra as parcelas e leva ao link do pintor");
+await c4.getByRole("button", { name: /Pix/ }).click();
+await c4.getByAltText("QR Code do Pix").waitFor();
+check(true, "Pix: mostra o QR Code");
 
 // o pintor vê que foi aberto
 await page.reload();

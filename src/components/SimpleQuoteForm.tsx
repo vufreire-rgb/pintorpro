@@ -55,12 +55,12 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
       ? { rooms: [], extras: areaRows.map((a, i) => ({ description: a.name.trim() || `Ambiente ${i + 1}`, priceCents: Math.round(a.price * 100), costCents: 0 })), adjustment: undefined }
       : { rooms: built.rooms, extras: built.extras, adjustment: built.adjustment };
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card, payInstallments: pay.installments });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ name: newClient.name.trim(), phone: newClient.phone.trim(), address: siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card, payInstallments: pay.installments });
     router.replace(`/orcamentos/${id}`);
   };
 

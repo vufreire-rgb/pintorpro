@@ -16,7 +16,7 @@ export interface SharedQuote {
   validity: string;
   /** ISO da validade, para o link avisar quando venceu. */
   validUntil: string;
-  deposit: { amount: string; pct: string; link: string } | null;
+  deposit: { amount: string; pct: string; link: string; installments?: number; installmentAmount?: string } | null;
   pix: { code: string; amount: string; pct: string; receiver: string } | null;
   rooms: SharedRoom[];
   showRoomPrices: boolean;
@@ -79,7 +79,7 @@ export function sanitizeSnapshot(raw: unknown): SharedQuote | null {
     payment: s(o.payment, 200),
     validity: s(o.validity, 60),
     validUntil: Number.isNaN(Date.parse(validUntil)) ? "" : validUntil,
-    deposit: dep && httpsUrl(dep.link) ? { amount: s(dep.amount, 30), pct: s(dep.pct, 60), link: httpsUrl(dep.link) } : null,
+    deposit: dep && httpsUrl(dep.link) ? { amount: s(dep.amount, 30), pct: s(dep.pct, 60), link: httpsUrl(dep.link), ...(Number.isInteger(dep.installments) && (dep.installments as number) >= 2 && (dep.installments as number) <= 12 ? { installments: dep.installments as number, installmentAmount: s(dep.installmentAmount, 30) } : {}) } : null,
     pix: pix && s(pix.code, 600) ? { code: s(pix.code, 600), amount: s(pix.amount, 30), pct: s(pix.pct, 60), receiver: s(pix.receiver, 60) } : null,
     rooms: (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 30).map((r: Record<string, unknown>) => ({ name: s(r?.name, 60), facts: s(r?.facts, 200), items: list(r?.items, 30, 200), materials: s(r?.materials, 300), price: s(r?.price, 30), ...(typeof r?.priceCents === "number" && Number.isInteger(r.priceCents) && r.priceCents >= 0 && r.priceCents <= 10_000_000_000 ? { priceCents: r.priceCents } : {}) })),
     showRoomPrices: o.showRoomPrices === true,

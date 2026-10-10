@@ -5,13 +5,13 @@ import { normalizePixKey } from "@/modules/pix";
 import { saveCompany } from "@/modules/settings";
 import type { Company } from "@/modules/types";
 
-export interface PaymentChoice { pix: boolean; card: boolean; link: string; pct: number }
+export interface PaymentChoice { pix: boolean; card: boolean; link: string; pct: number; installments: number }
 
 /** Valor inicial: o que o orçamento já tinha, ou o que o pintor tem cadastrado (Pix e link padrão). */
-export function initialPayment(company: Company | null | undefined, q?: { payPix?: boolean; payCard?: boolean; paymentLink?: string; depositPct?: number }): PaymentChoice {
+export function initialPayment(company: Company | null | undefined, q?: { payPix?: boolean; payCard?: boolean; paymentLink?: string; depositPct?: number; payInstallments?: number }): PaymentChoice {
   const hasPix = !!company?.pix && !!normalizePixKey(company.pix.type, company.pix.key);
   const link = q?.paymentLink ?? company?.paymentLink ?? "";
-  return { pix: q?.payPix ?? hasPix, card: q?.payCard ?? !!link.trim(), link, pct: q?.depositPct ?? company?.depositPct ?? 50 };
+  return { pix: q?.payPix ?? hasPix, card: q?.payCard ?? !!link.trim(), link, pct: q?.depositPct ?? company?.depositPct ?? 50, installments: q?.payInstallments ?? 1 };
 }
 
 /** Link a guardar no orçamento: só se for válido (https). */
@@ -44,6 +44,11 @@ export function PaymentOptionsField({ company, value, onChange }: { company: Com
         <>
           <Field label="Seu link de pagamento" hint="Crie no app do seu banco ou do Mercado Pago, InfinitePay, PagBank… (procure “link de pagamento” ou “cobrar por link”) e cole aqui. O cartão cai na sua conta, e você escolhe parcelamento e taxa lá.">
             <TextInput type="url" inputMode="url" placeholder="https://" value={value.link} onChange={(e) => set({ link: e.target.value })} />
+          </Field>
+          <Field label="Em quantas vezes o cliente pode pagar no cartão?" hint="Só para avisar o cliente. As parcelas e a taxa valem o que você configurou no seu link de pagamento.">
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5, 6, 10, 12].map((n) => <Chip key={n} active={value.installments === n} onClick={() => set({ installments: n })}>{n === 1 ? "À vista" : `${n}x`}</Chip>)}
+            </div>
           </Field>
           {value.link.trim() && !linkOk ? <p role="alert" className="text-base text-err">O link precisa começar com https://</p> : null}
           {linkOk && company && value.link.trim() !== (company.paymentLink ?? "") ? (

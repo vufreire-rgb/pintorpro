@@ -77,6 +77,8 @@ export interface Quote {
   /** Como o cliente pode pagar a entrada. Ausente = oferece o que estiver cadastrado. */
   payPix?: boolean;
   payCard?: boolean;
+  /** Até quantas parcelas o cliente pode pagar a entrada no cartão (1 = só à vista). */
+  payInstallments?: number;
   status: QuoteStatus;
   createdAt: string;
   validUntil: string;

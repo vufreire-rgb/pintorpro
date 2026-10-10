@@ -23,6 +23,7 @@ export default function Orcamento() {
   const [closing, setClosing] = useState(false);
   const [picked, setPicked] = useState<Set<number> | null>(null);
   const [done, setDone] = useState(false);
+  const [method, setMethod] = useState<"pix" | "card" | null>(null);
   const [zoom, setZoom] = useState<string | null>(null);
 
   useEffect(() => {
@@ -124,25 +125,49 @@ export default function Orcamento() {
         <section role="status" className="flex flex-col gap-3 rounded-2xl border-2 p-4 text-center" style={{ borderColor: brand }}>
           <b className="font-display text-xl">Pedido enviado!</b>
           <p className="text-lg">{q.painter.company.split(" ")[0]} vai confirmar com você o preço, o prazo e o dia de começar.</p>
-          {choice.all && (q.pix || q.deposit) ? (
-            <div className="flex flex-col gap-3 border-t border-line pt-3 text-left">
-              <b className="text-center font-display text-lg">{q.pix && q.deposit ? "Pague a entrada do jeito que preferir" : "Se quiser, já pague a entrada"}</b>
-              <p className="text-center text-base text-support">O pagamento vai direto para {q.painter.company}.</p>
-              {q.pix ? (
-                <div className="flex flex-col items-center gap-2 rounded-2xl border border-line p-3">
-                  <b className="font-display">Pix</b>
-                  <div className="text-base text-support">{q.pix.amount} · {q.pix.pct}</div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {qr ? <img src={qr} alt="QR Code do Pix" className="h-52 w-52" /> : null}
-                  <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-semibold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
-                  {q.pix.receiver ? <div className="text-base text-support">Recebedor: {q.pix.receiver}</div> : null}
-                </div>
-              ) : null}
-              {q.deposit ? (
-                <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 text-center font-display text-lg font-semibold text-white" style={{ background: brand }}>Pagar com cartão ({q.deposit.amount})</a>
-              ) : null}
-            </div>
-          ) : (q.pix || q.deposit) ? <p className="border-t border-line pt-3 text-base text-support">Como você escolheu só alguns ambientes, o pintor vai combinar com você a forma de pagar e o valor certo da entrada.</p> : null}
+          {choice.all && (q.pix || q.deposit) ? (() => {
+            const how = q.pix && q.deposit ? method : q.pix ? "pix" : "card";
+            const amount = q.pix?.amount ?? q.deposit!.amount;
+            const pct = q.pix?.pct ?? q.deposit!.pct;
+            return (
+              <div className="flex flex-col gap-3 border-t border-line pt-3 text-left">
+                <b className="text-center font-display text-lg">Entrada para reservar a data</b>
+                <p className="text-center font-display text-3xl font-semibold">{amount}</p>
+                <p className="text-center text-base text-support">{pct} O pagamento vai direto para {q.painter.company}. É opcional agora: você também pode combinar com o pintor.</p>
+                {q.pix && q.deposit ? (
+                  <>
+                    <b className="text-center">Como você prefere pagar?</b>
+                    <div className="grid grid-cols-2 gap-3">
+                      {([["pix", "Pix", "na hora, sem taxa"], ["card", "Cartão", q.deposit.installments ? `até ${q.deposit.installments}x` : "à vista"]] as const).map(([id, name, sub]) => (
+                        <button key={id} type="button" aria-pressed={method === id} onClick={() => setMethod(id)} className="flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 px-2 font-display" style={method === id ? { borderColor: brand, background: brand, color: "#fff" } : { borderColor: brand, color: brand }}>
+                          <span className="text-xl font-semibold">{name}</span>
+                          <span className="text-base">{sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+                {how === "pix" && q.pix ? (
+                  <div className="flex flex-col items-center gap-2 rounded-2xl border border-line p-3">
+                    <b className="font-display">Pague com Pix</b>
+                    <p className="text-center text-base text-support">Abra o app do seu banco, escolha Pix e leia o QR Code, ou use “copia e cola”.</p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {qr ? <img src={qr} alt="QR Code do Pix" className="h-52 w-52" /> : null}
+                    <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-semibold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
+                    {q.pix.receiver ? <div className="text-base text-support">Recebedor: {q.pix.receiver}</div> : null}
+                  </div>
+                ) : null}
+                {how === "card" && q.deposit ? (
+                  <div className="flex flex-col gap-2 rounded-2xl border border-line p-3">
+                    <b className="text-center font-display">Pague com cartão</b>
+                    {q.deposit.installments ? <p className="text-center text-lg">Em até <b>{q.deposit.installments}x de {q.deposit.installmentAmount}</b></p> : <p className="text-center text-lg">Pagamento à vista</p>}
+                    <p className="text-center text-base text-support">Você escolhe o número de parcelas na próxima tela. Pode haver taxa do cartão, que aparece lá antes de confirmar.</p>
+                    <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 text-center font-display text-lg font-semibold text-white" style={{ background: brand }}>Ir para o pagamento</a>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })() : (q.pix || q.deposit) ? <p className="border-t border-line pt-3 text-base text-support">Como você escolheu só alguns ambientes, o pintor vai combinar com você a forma de pagar e o valor certo da entrada.</p> : null}
         </section>
       ) : closing ? (
         <section className="flex flex-col gap-3 rounded-2xl border-2 p-4" style={{ borderColor: brand }} aria-label="Fechar o orçamento">

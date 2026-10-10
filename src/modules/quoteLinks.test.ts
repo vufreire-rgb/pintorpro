@@ -43,6 +43,14 @@ describe("pagamento da entrada escolhido pelo pintor", () => {
     expect(offersPix({})).toBe(true);
     expect(offersPix({ payPix: false })).toBe(false);
   });
+  it("parcelas: avisa o cliente só quando passa de 1x", () => {
+    const d = withPay({ paymentLink: "https://pay.me/p", payInstallments: 3 });
+    const dep = buildShareSnapshot(d, quote(d)).deposit!;
+    expect(dep.installments).toBe(3);
+    expect(dep.installmentAmount).toMatch(/R\$/);
+    const v = withPay({ paymentLink: "https://pay.me/p", payInstallments: 1 });
+    expect(buildShareSnapshot(v, quote(v)).deposit!.installments).toBeUndefined();
+  });
   it("o link só leva Pix e cartão quando o pintor deixou ligado", () => {
     const both = withPay({ paymentLink: "https://pay.me/p" });
     const s1 = buildShareSnapshot(both, quote(both));

@@ -111,12 +111,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     const paymentTerms = payment ?? db.company!.paymentTerms;
     const finalInput: QuoteInput = pending ? { ...input, rooms: [...rooms, { ...pending, id: crypto.randomUUID() }] } : input;
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card, payInstallments: pay.installments });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ ...newClient, address: newClient.address || siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: payLinkValue(pay), depositPct: pay.pct, payPix: pay.pix, payCard: pay.card, payInstallments: pay.installments });
     router.replace(`/orcamentos/${id}`);
   };
 
