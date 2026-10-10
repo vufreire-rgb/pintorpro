@@ -1,4 +1,6 @@
 "use client";
+import { DictationField } from "@/components/DictationField";
+import { AddressInput } from "@/components/AddressInput";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Square, Check, Trash2 } from "lucide-react";
@@ -183,7 +185,7 @@ function OrcamentoPorVoz() {
                   <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={fields.phone} onChange={(e) => setFields({ ...fields, phone: e.target.value })} /></Field>
                 </>
               )}
-              <Field label="Endereço da obra"><TextInput value={fields.address} onChange={(e) => setFields({ ...fields, address: e.target.value })} /></Field>
+              <AddressInput label="Endereço da obra" value={fields.address} onChange={(t) => setFields({ ...fields, address: t })} />
             </Card>
 
             {simple ? null : <Card className="flex flex-col gap-2">
@@ -204,7 +206,7 @@ function OrcamentoPorVoz() {
                 <NumberInput value={price} onChange={(n) => setPrice(Math.max(0, n))} />
               </Field>
               <Field label="Forma de pagamento"><TextInput value={fields.paymentTerms} placeholder={db.company?.paymentTerms ?? ""} onChange={(e) => setFields({ ...fields, paymentTerms: e.target.value })} /></Field>
-              <Field label="Observações (aparecem no PDF)"><TextInput value={fields.notes} onChange={(e) => setFields({ ...fields, notes: e.target.value })} /></Field>
+              <DictationField label="Observações (aparecem no PDF)" value={fields.notes} onChange={(t) => setFields({ ...fields, notes: t })} />
             </Card>
 
             <details className="rounded-2xl border border-line p-3">

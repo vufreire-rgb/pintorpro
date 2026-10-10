@@ -36,6 +36,10 @@ interface VoiceDraft {
 
 const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
 const DAILY_LIMIT = 40;
+/** Ditado de texto (só transcrever): bem mais barato que o orçamento por voz, por isso o limite é maior. */
+const DICTATION_DAILY_LIMIT = 150;
+/** Ditado de um campo de texto: áudio curto. */
+const MAX_DICTATION_BYTES = 3 * 1024 * 1024;
 
 const SYSTEM_PROMPT = `Você ajuda um pintor de obras brasileiro. Ele ditou um orçamento falando. Extraia os dados do texto transcrito.
 Regras:
@@ -160,21 +164,50 @@ Deno.serve(async (req: Request) => {
   const { data, error } = await admin.auth.getUser(token);
   if (error || !data.user) return reply(401, { error: "unauthorized" });
 
-  // Limite diário por pessoa (protege o custo). Se a tabela ainda não existir, segue sem limite e avisa no log.
   const day = new Date().toISOString().slice(0, 10);
-  const used = await admin.from("voice_usage").select("count").eq("user_id", data.user.id).eq("day", day).maybeSingle();
-  if (used.error) console.error("voice_usage indisponível", used.error.message);
-  else if ((used.data?.count ?? 0) >= DAILY_LIMIT) return reply(429, { error: "daily_limit" });
 
+  // Corpo: o áudio e, opcionalmente, mode="transcribe" (só devolve o texto, para ditar dentro de um campo).
   let audio: File;
+  let transcribeOnly = false;
   try {
-    const f = (await req.formData()).get("audio");
+    const form = await req.formData();
+    const f = form.get("audio");
     if (!(f instanceof File)) return reply(400, { error: "no_audio" });
     audio = f;
+    transcribeOnly = form.get("mode") === "transcribe";
   } catch {
     return reply(400, { error: "bad_request" });
   }
   if (audio.size === 0) return reply(400, { error: "no_audio" });
+
+  if (transcribeOnly) {
+    if (audio.size > MAX_DICTATION_BYTES) return reply(413, { error: "too_big" });
+    // Limite diário do ditado. Se a tabela ainda não existir (migração 0013), segue sem limite e avisa no log.
+    const usedD = await admin.from("dictation_usage").select("count").eq("user_id", data.user.id).eq("day", day).maybeSingle();
+    if (usedD.error) console.error("dictation_usage indisponível", usedD.error.message);
+    else if ((usedD.data?.count ?? 0) >= DICTATION_DAILY_LIMIT) return reply(429, { error: "daily_limit" });
+    try {
+      const form = new FormData();
+      form.append("file", audio, audio.name || "audio.wav");
+      form.append("model", TRANSCRIBE_MODEL);
+      form.append("language", "pt");
+      form.append("prompt", "Observações de uma visita de pintura: parede, teto, mofo, infiltração, massa corrida, cor, demão, cliente pediu.");
+      const t = await fetch("https://api.openai.com/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form });
+      if (!t.ok) throw new Error(`transcribe ${t.status}`);
+      const text = String((await t.json()).text ?? "").trim();
+      if (!usedD.error) await admin.from("dictation_usage").upsert({ user_id: data.user.id, day, count: (usedD.data?.count ?? 0) + 1 });
+      return reply(200, { transcript: text });
+    } catch (e) {
+      console.error("voice-quote dictation failed", e instanceof Error ? e.message : e);
+      return reply(502, { error: "ai_failed" });
+    }
+  }
+
+  // Limite diário por pessoa (protege o custo). Se a tabela ainda não existir, segue sem limite e avisa no log.
+  const used = await admin.from("voice_usage").select("count").eq("user_id", data.user.id).eq("day", day).maybeSingle();
+  if (used.error) console.error("voice_usage indisponível", used.error.message);
+  else if ((used.data?.count ?? 0) >= DAILY_LIMIT) return reply(429, { error: "daily_limit" });
+
   if (audio.size > MAX_AUDIO_BYTES) return reply(413, { error: "too_big" });
 
   try {

@@ -123,3 +123,22 @@ describe("pdfData", () => {
     expect(d.days).toBe("A combinar");
   });
 });
+
+describe("orçamento só com preço, por ambientes", () => {
+  const priceInput: QuoteInput = { rooms: [], extras: [{ description: "Sala", priceCents: 120000, costCents: 0 }, { description: "Quarto", priceCents: 150000, costCents: 0 }, { description: "Cozinha", priceCents: 80000, costCents: 0 }] };
+  it("cada ambiente vira um bloco com o seu valor e a soma fecha o total", () => {
+    const { db, q } = make({ input: priceInput, result: calculateQuote(priceInput, config) });
+    const d = buildPdfData(db, q);
+    expect(d.rooms.map((r) => r.name)).toEqual(["Sala", "Quarto", "Cozinha"]);
+    expect(d.rooms.map((r) => r.priceCents)).toEqual([120000, 150000, 80000]);
+    expect(d.rooms.reduce((a, r) => a + (r.priceCents ?? 0), 0)).toBe(q.result.totals.totalCents);
+    expect(d.summary).toMatch(/3 ambientes: sala, quarto e cozinha/);
+  });
+  it("um item só continua sem ambientes (resumo em texto)", () => {
+    const one: QuoteInput = { rooms: [], extras: [{ description: "Pintura completa", priceCents: 280000, costCents: 0 }] };
+    const { db, q } = make({ input: one, result: calculateQuote(one, config) });
+    const d = buildPdfData(db, q);
+    expect(d.rooms).toEqual([]);
+    expect(d.summary).toBe("Pintura completa.");
+  });
+});

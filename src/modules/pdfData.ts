@@ -125,6 +125,11 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
     })
     .filter((r) => r.items.length > 0);
 
+  // Orçamento só com preço, separado por ambientes: cada ambiente vira um bloco com o seu valor (2 ou mais).
+  const priceRooms = rooms.length === 0 && q.input.extras.length >= 2
+    ? q.input.extras.map((e, i) => ({ name: e.description.trim() || `Ambiente ${i + 1}`, facts: "", items: [] as string[], materials: "", weight: e.priceCents, wall: 0, ceiling: 0, prep: false }))
+    : [];
+  if (priceRooms.length) rooms.push(...priceRooms);
   const prices = allocate(q.result.totals.totalCents, rooms.map((r) => r.weight));
   const wall = rooms.reduce((a, r) => a + r.wall, 0);
   const ceiling = rooms.reduce((a, r) => a + r.ceiling, 0);
@@ -133,7 +138,7 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
   const roomNames = rooms.length > 0 && rooms.length <= 4 ? `, ${joinPt(rooms.map((r) => r.name.toLowerCase()))}` : "";
   // Orçamento só com preço (sem medidas): o texto do pintor sobre o que será feito vira o resumo do PDF.
   const extrasText = q.input.extras.map((e) => e.description.trim()).filter(Boolean).join("; ");
-  const summary = rooms.length === 0 && extrasText ? `${extrasText}.` : rooms.length
+  const summary = priceRooms.length ? `Pintura de ${priceRooms.length} ambientes${priceRooms.length <= 4 ? `: ${joinPt(priceRooms.map((r) => r.name.toLowerCase()))}` : ""}.` : rooms.length === 0 && extrasText ? `${extrasText}.` : rooms.length
     ? `Pintura de ${rooms.length} ${rooms.length === 1 ? "ambiente" : "ambientes"}${roomNames}${measures.length ? `: ${joinPt(measures)}` : ""}, com ${joinPt(parts)}.`
     : "";
 

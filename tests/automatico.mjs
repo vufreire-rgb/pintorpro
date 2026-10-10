@@ -46,7 +46,10 @@ await page.getByText("Cliente Inicio").waitFor();
 const card = async (t) => (await page.locator("a", { hasText: t }).first().innerText()).replace(/\s+/g, " ");
 check(/Em andamento/.test(await card("Cliente Inicio")), "obra que chegou na data de início vira 'Em andamento': " + await card("Cliente Inicio"));
 check(/Agendada/.test(await card("Cliente Futura")), "obra com início futuro continua 'Agendada'");
-check(/Concluída/.test(await card("Cliente Paga")), "tudo pago e término passado: 'Concluída'");
+check((await page.locator("a", { hasText: "Cliente Paga" }).count()) === 0, "obra concluída sai da lista principal");
+await page.getByRole("button", { name: /Obras concluídas \(1\)/ }).click();
+check(/Concluída/.test(await card("Cliente Paga")), "tudo pago e término passado: 'Concluída' (na aba de concluídas)");
+await page.getByRole("button", { name: "Voltar" }).click();
 
 // deslizar o cartão (toque de verdade, pelo protocolo do navegador)
 const cdp = await ctx.newCDPSession(page);

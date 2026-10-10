@@ -69,9 +69,10 @@ export async function adminStatsOnServer(body: { period: "7d" | "mes"; settings?
 }
 
 /** Chama uma função de IA do servidor mandando um arquivo. Falha com o código do erro: "daily_limit", "too_big", "ai_failed", "network"… */
-async function invokeAi(fn: string, field: string, blob: Blob, filename: string): Promise<unknown> {
+async function invokeAi(fn: string, field: string, blob: Blob, filename: string, extra: Record<string, string> = {}): Promise<unknown> {
   const body = new FormData();
   body.append(field, blob, filename);
+  for (const [k, v] of Object.entries(extra)) body.append(k, v);
   const { data, error } = await c().functions.invoke(fn, { method: "POST", body });
   if (error) {
     const res = (error as { context?: Response }).context;
@@ -87,6 +88,10 @@ async function invokeAi(fn: string, field: string, blob: Blob, filename: string)
 /** Manda o áudio ditado ao servidor (Edge Function voice-quote). */
 export const sendVoice = (audio: Blob): Promise<unknown> =>
   invokeAi("voice-quote", "audio", audio, audio.type.includes("wav") ? "audio.wav" : audio.type.includes("mp4") ? "audio.m4a" : "audio.webm");
+
+/** Ditado dentro de um campo de texto: só devolve o que foi dito, escrito (Edge Function voice-quote, modo transcribe). */
+export const sendDictation = (audio: Blob): Promise<unknown> =>
+  invokeAi("voice-quote", "audio", audio, audio.type.includes("wav") ? "audio.wav" : audio.type.includes("mp4") ? "audio.m4a" : "audio.webm", { mode: "transcribe" });
 
 /** Manda a foto do recibo ao servidor (Edge Function receipt-scan). */
 export const sendReceipt = (image: Blob): Promise<unknown> => invokeAi("receipt-scan", "image", image, "recibo.jpg");

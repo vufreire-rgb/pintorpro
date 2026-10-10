@@ -1,7 +1,8 @@
 "use client";
+import { DictationField } from "./DictationField";
 import { useEffect, useRef, useState } from "react";
 import { Copy, Share2, Check, Globe, Inbox, Power, ImagePlus, X, QrCode, Download } from "lucide-react";
-import { Button, Field, LinkButton, Section, TextArea, TextInput } from "./ui";
+import { Button, Field, LinkButton, Section, TextInput } from "./ui";
 import { activatePage, deactivatePage, isValidSlug, pageErrorText, pageUrl, slugify, useMyPage } from "@/modules/publicPage";
 import { toAvatar, toWorkPhoto } from "@/modules/publicImages";
 import { pageQrPoster } from "@/modules/pageQr";
@@ -146,7 +147,7 @@ export function PublicPageCard({ db }: { db: Db }) {
       </div>
 
       <Field label="Frase de apresentação (opcional)"><TextInput value={headline} placeholder="Ex.: Pintura residencial com capricho" onChange={(e) => setHeadline(e.target.value)} /></Field>
-      <Field label="Sobre você (opcional)"><TextArea value={about} placeholder="Ex.: 10 anos de experiência. Atendo São Paulo e região." onChange={(e) => setAbout(e.target.value)} /></Field>
+      <DictationField label="Sobre você (opcional)" value={about} placeholder="Ex.: 10 anos de experiência. Atendo São Paulo e região." onChange={setAbout} />
 
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-2"><span className="font-semibold">Fotos dos seus trabalhos</span><span className="text-base text-support">{photos.length} de {MAX_PHOTOS}</span></div>

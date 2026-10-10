@@ -34,7 +34,7 @@ const dflt = await page.locator('input[type="datetime-local"]').inputValue();
 check(/T09:00$/.test(dflt), `data padrão sugerida é amanhã às 9h (${dflt})`);
 await page.getByText("Nome", { exact: true }).locator("..").locator("input").fill("Ana Lima");
 await page.getByText("Telefone (WhatsApp)").locator("..").locator("input").fill("11 98888-7777");
-await page.getByText("Endereço da visita").locator("..").locator("input").fill("Av. Brasil, 5; ap. 3");
+await page.getByLabel("Endereço da visita").fill("Av. Brasil, 5; ap. 3");
 await page.getByRole("button", { name: "Agendar", exact: true }).click();
 await page.getByText("Visita agendada").waitFor();
 check(await page.getByText("Amanhã, 09:00").isVisible(), "visita agendada para 'Amanhã, 09:00'");

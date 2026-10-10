@@ -1,4 +1,6 @@
 "use client";
+import { DictationField } from "@/components/DictationField";
+import { AddressInput } from "@/components/AddressInput";
 import { CalendarPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,8 +44,8 @@ export default function AgendarVisita() {
           <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
         </Card>
       ) : null}
-      <Field label="Endereço da visita"><TextInput value={f.address || chosen?.address || ""} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
-      <Field label="Anotação (opcional)"><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex.: portão azul, tocar interfone 32" /></Field>
+      <AddressInput label="Endereço da visita" value={f.address || chosen?.address || ""} onChange={(t) => setF({ ...f, address: t })} />
+      <DictationField label="Anotação (opcional)" value={notes} onChange={setNotes} placeholder="Ex.: portão azul, tocar interfone 32" />
       <Button icon={CalendarPlus} disabled={!ok} onClick={() => router.push(`/visitas/${createScheduledVisit(db, { clientId, ...f, address: f.address || chosen?.address || "", scheduledAt: fromLocalInput(when), notes })}`)}>Agendar</Button>
     </Screen>
   );

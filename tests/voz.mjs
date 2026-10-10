@@ -149,7 +149,7 @@ await page.evaluate(() => {
   localStorage.setItem(k, JSON.stringify(d));
 });
 await page.goto(base + "/visitas/vv");
-await page.getByRole("link", { name: "Ditar orçamento" }).click();
+await page.getByRole("link", { name: "Ditar o orçamento por voz" }).click();
 await page.waitForURL("**/orcamentos/voz?visita=vv");
 draft.clientName = "Outro Nome Qualquer";
 await page.getByRole("button", { name: "Começar a falar" }).click();

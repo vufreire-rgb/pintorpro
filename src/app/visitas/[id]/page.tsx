@@ -1,4 +1,6 @@
 "use client";
+import { appendDictation } from "@/modules/dictation";
+import { DictateButton } from "@/components/DictateButton";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
@@ -211,13 +213,14 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       <CartaoDeObservacao
         label="Observações"
         hint="O que o cliente pediu, problemas que viu…"
-        mic={<LinkButton href={`/orcamentos/voz?visita=${v.id}`} icon={Mic} variant="ghost" className="!h-12 !min-h-12 !w-12 !min-w-12 !rounded-full !p-0" aria-label="Ditar orçamento">{""}</LinkButton>}
+        mic={<DictateButton round onText={(t) => setVisitNotes(v.id, appendDictation(v.notes, t))} />}
       >
         <textarea className={bareTextCls} value={v.notes} onChange={(e) => setVisitNotes(v.id, e.target.value)} placeholder="Ex.: Cliente quer cor branco gelo, parede com mofo perto da janela…" />
       </CartaoDeObservacao>
 
       <div className="flex flex-col gap-2">
         <LinkButton href={`/orcamentos/novo?visita=${v.id}`} variant="ghost" icon={FilePlus2} aria-label={v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}>{v.quoteId ? "Montar outro orçamento" : "Montar orçamento"}</LinkButton>
+        <LinkButton href={`/orcamentos/voz?visita=${v.id}`} variant="ghost" size="sm" icon={Mic}>Ditar o orçamento por voz</LinkButton>
         {v.quoteId ? <LinkButton href={`/orcamentos/${v.quoteId}`} variant="ghost" size="sm" icon={FileText}>Ver orçamento feito</LinkButton> : null}
       </div>
       <Button variant="danger" icon={Trash2} onClick={() => setAskDelete(true)}>Apagar visita</Button>

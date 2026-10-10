@@ -1,4 +1,5 @@
 "use client";
+import { AddressInput } from "@/components/AddressInput";
 import { Check, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, ConfirmDialog, Field, Loading, Screen, TextInput } from "@/components/ui";
@@ -35,7 +36,7 @@ export default function Clientes() {
         <Card className="flex flex-col gap-3">
           <Field label="Nome"><TextInput value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
           <Field label="Telefone"><TextInput type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></Field>
-          <Field label="Endereço"><TextInput value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} /></Field>
+          <AddressInput label="Endereço" value={f.address} onChange={(t) => setF({ ...f, address: t })} />
           <Button icon={Check} disabled={!f.name.trim()} onClick={save}>{editing === "new" ? "Salvar cliente" : "Salvar alterações"}</Button>
           <Button variant="ghost" size="sm" icon={X} onClick={() => setEditing(null)}>Cancelar</Button>
         </Card>

@@ -1,9 +1,11 @@
 "use client";
+import { DictationField } from "@/components/DictationField";
+import { AddressInput } from "@/components/AddressInput";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState } from "react";
 import { PhotoGrid } from "@/components/PhotoGrid";
 import { AudioList } from "@/components/AudioList";
-import { BlocoRecolhivel, Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextArea2, TextInput } from "@/components/ui";
+import { BlocoRecolhivel, Button, Card, Chip, Field, Loading, NumberInput, Screen, Stepper, TextInput } from "@/components/ui";
 import { Copy, Eye, EyeOff, Home, Settings, X, Plus, Check } from "lucide-react";
 import { addClient } from "@/modules/clients";
 import { PriceCheck } from "@/components/PriceCheck";
@@ -151,7 +153,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
             </>
           )}
-          <Field label="Endereço da obra"><TextArea2 value={siteValue} onChange={(e) => { setSite(e.target.value); setNewClient((n) => ({ ...n, address: e.target.value })); }} /></Field>
+          <AddressInput label="Endereço da obra" value={siteValue} onChange={(t) => { setSite(t); setNewClient((n) => ({ ...n, address: t })); }} />
         </Card>
         </div>
 
@@ -242,7 +244,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <NumberInput value={adj.mode === "cents" ? adj.value / 100 : adj.value} onChange={(n) => setAdj({ ...adj, value: adj.mode === "cents" ? Math.round(n * 100) : n })} />
             </div>
             <Field label="Condição de pagamento"><TextInput value={payment ?? db.company!.paymentTerms} onChange={(e) => setPayment(e.target.value)} /></Field>
-            <Field label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados."><TextInput value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+            <DictationField label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados." value={notes} onChange={setNotes} />
             <div className="flex flex-col gap-3">
               <b>No PDF do cliente</b>
               <div className="flex items-center justify-between gap-3">
