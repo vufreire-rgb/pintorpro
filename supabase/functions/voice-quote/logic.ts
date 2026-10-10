@@ -139,3 +139,35 @@ export function echoesHint(transcript: string, hint: string): boolean {
   const tw = t.split(" ");
   return tw.length >= 6 && tw.filter((w) => hw.has(w)).length / tw.length >= 0.8;
 }
+
+/** Limite do texto que a IA organiza (lista de materiais). */
+export const MAX_ORGANIZE_CHARS = 4000;
+
+export const MATERIALS_PROMPT = `Você organiza a lista de materiais de um pintor de obras, escrita ou ditada de qualquer jeito, em português do Brasil.
+Devolva uma lista com UM item por linha, no formato "quantidade unidade material detalhe", por exemplo "2 latas de tinta acrílica branco neve 18 L".
+Regras: use SOMENTE o que o pintor disse; NÃO invente item, quantidade, marca, cor ou medida. Se não disse a quantidade, escreva só o item. Junte repetições do mesmo item. Corrija erros de fala e de digitação. Não escreva títulos, números de lista, traços nem explicações.`;
+
+export const MATERIALS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["itens"],
+  properties: { itens: { type: "array", items: { type: "string" } } },
+};
+
+/** Resposta da IA -> texto com um item por linha (limpa marcadores, vazios e repetidos). */
+export function normalizeMaterials(content: unknown): string {
+  let itens: unknown[] = [];
+  try {
+    const o = typeof content === "string" ? JSON.parse(content) : content;
+    if (o && Array.isArray((o as { itens?: unknown }).itens)) itens = (o as { itens: unknown[] }).itens;
+  } catch { /* resposta fora do formato: lista vazia */ }
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const i of itens) {
+    const t = String(i ?? "").replace(/^[\s\-–•*\d]+[.)]\s+|^[\s\-–•*]+/, "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const k = t.toLowerCase();
+    if (t && !seen.has(k)) { seen.add(k); out.push(t); }
+    if (out.length >= 60) break;
+  }
+  return out.join("\n");
+}

@@ -21,7 +21,7 @@ const server = http.createServer((req, res) => {
   if (url.startsWith("/auth/v1/user")) return send(200, user);
   if (url.startsWith("/rest/v1/user_data")) return req.method === "GET" ? send(200, []) : send(201);
   if (url.startsWith("/rest/v1/")) return send(200, []);
-  if (url.startsWith("/functions/v1/voice-quote")) { calls.dictation++; req.resume(); req.on("end", () => send(200, { transcript: "parede com mofo perto da janela" })); return; }
+  if (url.startsWith("/functions/v1/voice-quote")) { const chunks = []; req.on("data", (d) => chunks.push(d)); req.on("end", () => { if (Buffer.concat(chunks).toString("latin1").includes('name="mode"\r\n\r\norganize')) { calls.organize = (calls.organize ?? 0) + 1; return send(200, { list: "2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg" }); } calls.dictation++; send(200, { transcript: "parede com mofo perto da janela" }); }); return; }
   if (url.startsWith("/functions/v1/quote-link")) { let body = ""; req.on("data", (c) => (body += c)); req.on("end", () => { const b = JSON.parse(body); calls.publish.push(b.snapshot); send(200, { token: "AbCdEfGhIjKlMnOpQrStUvWx" }); }); return; }
   send(404, {});
 });
@@ -130,7 +130,10 @@ await page.getByRole("button", { name: "Adicionar ambiente" }).click();
 await page.getByPlaceholder("Ex.: Sala").nth(2).fill("Cozinha");
 await page.getByLabel("Valor do ambiente 3").fill("800");
 check((await page.getByTestId("total").textContent()).replace(/\s/g, "").includes("3.500,00"), "total é a soma dos ambientes: R$ 3.500,00");
-await page.getByLabel("Lista de materiais da obra (opcional)").fill("2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg");
+await page.getByLabel("Lista de materiais da obra (opcional)").fill("preciso de umas duas latas de tinta acrilica de dezoito litros e massa corrida");
+await page.getByRole("button", { name: "Organizar em lista" }).click();
+await page.waitForFunction(() => document.querySelector('textarea[aria-label="Lista de materiais da obra (opcional)"]').value.includes("\n"));
+check((await page.getByLabel("Lista de materiais da obra (opcional)").inputValue()) === "2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg" && calls.organize === 1, "Organizar em lista: a IA devolve um item por linha, direto no campo");
 check((await page.getByRole("button", { name: "Não", exact: true }).count()) >= 1, "lista de materiais começa escondida do cliente (Não)");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
 await page.waitForURL(/\/orcamentos\/[^/]+$/);

@@ -93,6 +93,23 @@ export const sendVoice = (audio: Blob): Promise<unknown> =>
 export const sendDictation = (audio: Blob): Promise<unknown> =>
   invokeAi("voice-quote", "audio", audio, audio.type.includes("wav") ? "audio.wav" : audio.type.includes("mp4") ? "audio.m4a" : "audio.webm", { mode: "transcribe" });
 
+/** Organiza a lista de materiais em um item por linha (Edge Function voice-quote, modo organize). */
+export async function sendOrganize(text: string): Promise<unknown> {
+  const body = new FormData();
+  body.append("mode", "organize");
+  body.append("text", text);
+  const { data, error } = await c().functions.invoke("voice-quote", { method: "POST", body });
+  if (error) {
+    const res = (error as { context?: Response }).context;
+    if (res && typeof res.json === "function") {
+      const code = (await res.json().catch(() => null))?.error;
+      throw new Error(typeof code === "string" ? code : "ai_failed");
+    }
+    throw new Error("network");
+  }
+  return data;
+}
+
 /** Manda a foto do recibo ao servidor (Edge Function receipt-scan). */
 export const sendReceipt = (image: Blob): Promise<unknown> => invokeAi("receipt-scan", "image", image, "recibo.jpg");
 

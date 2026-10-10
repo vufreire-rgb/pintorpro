@@ -1,4 +1,4 @@
-import { sendDictation } from "@/repositories/cloudStore";
+import { sendDictation, sendOrganize } from "@/repositories/cloudStore";
 
 /** Passa disso o áudio fica grande: o ditado para sozinho. */
 export const MAX_DICTATION_SECONDS = 90;
@@ -25,4 +25,10 @@ export function appendDictation(current: string, said: string): string {
   if (!t) return current;
   const base = current.replace(/\s+$/, "");
   return base ? `${base}${/[.!?:;]$/.test(base) ? " " : ". "}${t.charAt(0).toUpperCase()}${t.slice(1)}` : `${t.charAt(0).toUpperCase()}${t.slice(1)}`;
+}
+
+/** Pede à IA a lista de materiais organizada (um item por linha). Falha com o código do problema. */
+export async function organizeMaterials(text: string): Promise<string> {
+  const r = (await sendOrganize(text)) as { list?: string };
+  return String(r?.list ?? "").trim();
 }

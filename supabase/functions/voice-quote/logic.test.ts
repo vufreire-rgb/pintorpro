@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { echoesHint, normalizeDraft } from "./logic";
+import { echoesHint, normalizeDraft, normalizeMaterials } from "./logic";
 
 describe("normalizeDraft", () => {
   it("devolve rascunho vazio para lixo", () => {
@@ -29,5 +29,16 @@ describe("echoesHint", () => {
     expect(echoesHint("O cliente quer a sala em branco gelo e tem mofo perto da janela do quarto", hint)).toBe(false);
     expect(echoesHint("teto", hint)).toBe(false);
     expect(echoesHint("", hint)).toBe(false);
+  });
+});
+
+describe("normalizeMaterials", () => {
+  it("um item por linha, sem marcadores, vazios nem repetidos", () => {
+    const r = normalizeMaterials(JSON.stringify({ itens: ["- 2 latas de tinta 18 L", "1. massa corrida", "", "Massa corrida", "  3   rolos  "] }));
+    expect(r).toBe("2 latas de tinta 18 L\nmassa corrida\n3 rolos");
+  });
+  it("resposta fora do formato vira vazio", () => {
+    expect(normalizeMaterials("não é json")).toBe("");
+    expect(normalizeMaterials(JSON.stringify({ itens: "x" }))).toBe("");
   });
 });

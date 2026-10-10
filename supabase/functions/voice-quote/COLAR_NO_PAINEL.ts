@@ -145,6 +145,38 @@ function echoesHint(transcript: string, hint: string): boolean {
   const tw = t.split(" ");
   return tw.length >= 6 && tw.filter((w) => hw.has(w)).length / tw.length >= 0.8;
 }
+
+/** Limite do texto que a IA organiza (lista de materiais). */
+const MAX_ORGANIZE_CHARS = 4000;
+
+const MATERIALS_PROMPT = `Você organiza a lista de materiais de um pintor de obras, escrita ou ditada de qualquer jeito, em português do Brasil.
+Devolva uma lista com UM item por linha, no formato "quantidade unidade material detalhe", por exemplo "2 latas de tinta acrílica branco neve 18 L".
+Regras: use SOMENTE o que o pintor disse; NÃO invente item, quantidade, marca, cor ou medida. Se não disse a quantidade, escreva só o item. Junte repetições do mesmo item. Corrija erros de fala e de digitação. Não escreva títulos, números de lista, traços nem explicações.`;
+
+const MATERIALS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["itens"],
+  properties: { itens: { type: "array", items: { type: "string" } } },
+};
+
+/** Resposta da IA -> texto com um item por linha (limpa marcadores, vazios e repetidos). */
+function normalizeMaterials(content: unknown): string {
+  let itens: unknown[] = [];
+  try {
+    const o = typeof content === "string" ? JSON.parse(content) : content;
+    if (o && Array.isArray((o as { itens?: unknown }).itens)) itens = (o as { itens: unknown[] }).itens;
+  } catch { /* resposta fora do formato: lista vazia */ }
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const i of itens) {
+    const t = String(i ?? "").replace(/^[\s\-–•*\d]+[.)]\s+|^[\s\-–•*]+/, "").replace(/\s+/g, " ").trim().slice(0, 120);
+    const k = t.toLowerCase();
+    if (t && !seen.has(k)) { seen.add(k); out.push(t); }
+    if (out.length >= 60) break;
+  }
+  return out.join("\n");
+}
 // ---- fim de logic.ts ----
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
@@ -181,17 +213,51 @@ Deno.serve(async (req: Request) => {
   const day = new Date().toISOString().slice(0, 10);
 
   // Corpo: o áudio e, opcionalmente, mode="transcribe" (só devolve o texto, para ditar dentro de um campo).
-  let audio: File;
+  let audio!: File;
   let transcribeOnly = false;
+  let organizeText: string | null = null;
   try {
     const form = await req.formData();
-    const f = form.get("audio");
-    if (!(f instanceof File)) return reply(400, { error: "no_audio" });
-    audio = f;
-    transcribeOnly = form.get("mode") === "transcribe";
+    if (form.get("mode") === "organize") {
+      organizeText = String(form.get("text") ?? "").trim();
+    } else {
+      const f = form.get("audio");
+      if (!(f instanceof File)) return reply(400, { error: "no_audio" });
+      audio = f;
+      transcribeOnly = form.get("mode") === "transcribe";
+    }
   } catch {
     return reply(400, { error: "bad_request" });
   }
+
+  // Organizar a lista de materiais: texto entra, lista (um item por linha) sai. Usa o mesmo limite diário do ditado.
+  if (organizeText !== null) {
+    if (!organizeText) return reply(200, { list: "" });
+    if (organizeText.length > MAX_ORGANIZE_CHARS) return reply(413, { error: "too_big" });
+    const usedO = await admin.from("dictation_usage").select("count").eq("user_id", data.user.id).eq("day", day).maybeSingle();
+    if (usedO.error) console.error("dictation_usage indisponível", usedO.error.message);
+    else if ((usedO.data?.count ?? 0) >= DICTATION_DAILY_LIMIT) return reply(429, { error: "daily_limit" });
+    try {
+      const c = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: EXTRACT_MODEL,
+          temperature: 0,
+          messages: [{ role: "system", content: MATERIALS_PROMPT }, { role: "user", content: organizeText }],
+          response_format: { type: "json_schema", json_schema: { name: "materiais", strict: true, schema: MATERIALS_SCHEMA } },
+        }),
+      });
+      if (!c.ok) throw new Error(`organize ${c.status}`);
+      const list = normalizeMaterials((await c.json()).choices?.[0]?.message?.content);
+      if (!usedO.error) await admin.from("dictation_usage").upsert({ user_id: data.user.id, day, count: (usedO.data?.count ?? 0) + 1 });
+      return reply(200, { list });
+    } catch (e) {
+      console.error("voice-quote organize failed", e instanceof Error ? e.message : e);
+      return reply(502, { error: "ai_failed" });
+    }
+  }
+
   if (audio.size === 0) return reply(400, { error: "no_audio" });
 
   if (transcribeOnly) {
