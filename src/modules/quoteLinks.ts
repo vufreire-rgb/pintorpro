@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { fetchSharedQuote, listQuoteLinks, publishQuoteLink, revokeQuoteLink, type QuoteLinkRow } from "@/repositories/cloudStore";
 import { cloudEnabled } from "./auth";
-import { buildPdfData } from "./pdfData";
+import { buildPdfData, MAX_PDF_PHOTOS } from "./pdfData";
+import { loadFileBlob, logoForPdf, photoForPdf } from "./photos";
+import { shrinkDataUrl } from "./publicImages";
 import { publicOrigin } from "./publicOrigin";
 import { normalizePixKey, pixPayload, pixText } from "./pix";
 import { formatBRL } from "@/shared/money";
 import type { Db, Quote } from "./types";
 
-/** O que o cliente vê no link. Espelha supabase/functions/quote-link/logic.ts. Nunca tem custo, lucro, fotos nem logo. */
+/** O que o cliente vê no link. Espelha supabase/functions/quote-link/logic.ts. Nunca tem custo nem lucro. Logo e fotos só as que o pintor escolheu mostrar (as mesmas do PDF). */
 export interface SharedQuote {
   v: 1;
   color: string;
@@ -30,6 +32,10 @@ export interface SharedQuote {
   notes: string;
   /** Lista de materiais (só vai quando o pintor escolheu mostrar). */
   materialsList?: string[];
+  /** Logo do pintor (JPEG pequeno em data URL). */
+  logo?: string;
+  /** Fotos que o pintor marcou "No PDF" na visita (até 6, JPEG reduzido), com ambiente e legenda. */
+  photos?: { src: string; room: string; caption: string }[];
 }
 
 /** Monta o que vai para o link, a partir dos mesmos dados do PDF (sem fotos e sem logo). */
@@ -70,9 +76,34 @@ export function buildShareSnapshot(db: Db, q: Quote): SharedQuote {
 
 export const linkUrl = (token: string): string => `${publicOrigin()}/o/${token}`;
 
+/** Logo e fotos da visita (as marcadas "No PDF") para o link, reduzidas. Se alguma não puder ser lida, sai sem ela. */
+export async function shareImages(db: Db, q: Quote): Promise<Pick<SharedQuote, "logo" | "photos">> {
+  const out: Pick<SharedQuote, "logo" | "photos"> = {};
+  try {
+    const logoId = db.company?.logoId;
+    const raw = logoId ? await logoForPdf(logoId) : undefined;
+    const logo = raw ? await shrinkDataUrl(raw, { side: 240, maxChars: 40_000 }) : undefined;
+    if (logo) out.logo = logo;
+  } catch { /* sem logo */ }
+  const visit = db.visits.find((v) => v.id === q.visitId);
+  if (visit) {
+    const photos: NonNullable<SharedQuote["photos"]> = [];
+    for (const id of visit.photoIds.filter((x) => visit.photoMeta?.[x]?.inPdf).slice(0, MAX_PDF_PHOTOS)) {
+      try {
+        const blob = await loadFileBlob(id);
+        if (!blob) continue;
+        const src = await shrinkDataUrl(await photoForPdf(blob, visit.photoMeta?.[id]?.marks), { side: 800, maxChars: 150_000 });
+        if (src) photos.push({ src, room: visit.photoMeta?.[id]?.room ?? "", caption: visit.photoMeta?.[id]?.caption ?? "" });
+      } catch { /* foto ilegível: pula */ }
+    }
+    if (photos.length) out.photos = photos;
+  }
+  return out;
+}
+
 /** Publica o link do orçamento (ou atualiza o que o cliente vê) e devolve o endereço. */
 export async function publishLinkFor(db: Db, q: Quote): Promise<string> {
-  return linkUrl(await publishQuoteLink(q.id, buildShareSnapshot(db, q)));
+  return linkUrl(await publishQuoteLink(q.id, { ...buildShareSnapshot(db, q), ...(await shareImages(db, q)) }));
 }
 
 /** Apaga o link, se existir. Não falha: o orçamento some do app de qualquer jeito. */

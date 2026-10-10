@@ -1,12 +1,15 @@
 "use client";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Copy, HandCoins, MessageCircle } from "lucide-react";
+import { Copy, HandCoins, MessageCircle, X } from "lucide-react";
 import { loadSharedQuote, type SharedQuote } from "@/modules/quoteLinks";
 import { closeChoice, closeMessage, notifyClose } from "@/modules/quoteAccept";
 import { qrDataUrl } from "@/modules/qr";
 import { tintOf } from "@/modules/pdfData";
 import { APP_NAME } from "@/shared/brand";
+
+/** Só mostra imagem JPEG em data URL (é só isso que o servidor deixa passar). */
+const safeImg = (v?: string): string | undefined => (typeof v === "string" && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(v) ? v : undefined);
 
 type State = { name: "loading" } | { name: "ok"; q: SharedQuote } | { name: "gone" } | { name: "offline" };
 
@@ -20,6 +23,7 @@ export default function Orcamento() {
   const [closing, setClosing] = useState(false);
   const [picked, setPicked] = useState<Set<number> | null>(null);
   const [done, setDone] = useState(false);
+  const [zoom, setZoom] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -46,6 +50,7 @@ export default function Orcamento() {
   const expired = !!q.validUntil && Date.parse(q.validUntil) < now;
   const wa = q.painter.whatsapp.replace(/\D/g, "");
   const allRooms = new Set(q.rooms.map((_, i) => i));
+  const photos = (q.photos ?? []).map((p) => ({ ...p, src: safeImg(p.src) })).filter((p): p is { src: string; room: string; caption: string } => !!p.src);
   const selected = picked ?? allRooms;
   const choice = closeChoice(q, selected);
   const copy = async () => {
@@ -54,7 +59,10 @@ export default function Orcamento() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-white p-4 pb-10" style={{ ["--brand" as string]: brand }}>
       <header className="flex items-center gap-3">
-        <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-xl font-bold text-white" style={{ background: brand }} aria-hidden>{q.painter.initials}</div>
+        {safeImg(q.logo) ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={safeImg(q.logo)} alt={`Logo de ${q.painter.company}`} className="h-14 w-14 shrink-0 rounded-2xl border border-line bg-white object-contain" />
+        ) : <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-xl font-bold text-white" style={{ background: brand }} aria-hidden>{q.painter.initials}</div>}
         <div className="min-w-0">
           <div className="font-display text-xl font-semibold leading-6">{q.painter.company}</div>
           {q.painter.contact ? <div className="text-base text-support">{q.painter.contact}</div> : null}
@@ -89,6 +97,24 @@ export default function Orcamento() {
           {r.materials ? <p className="mt-2 text-base text-support"><b>Materiais:</b> {r.materials}</p> : null}
         </section>
       ))}
+
+      {photos.length ? (
+        <section>
+          <b className="font-display text-lg">Fotos da visita</b>
+          <ul className="mt-2 grid grid-cols-2 gap-2">
+            {photos.map((p, i) => (
+              <li key={i} className="flex flex-col gap-1">
+                <button type="button" onClick={() => setZoom(p.src)} aria-label={`Ampliar foto ${i + 1} de ${photos.length}`} className="aspect-[4/3] overflow-hidden rounded-xl bg-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.src} alt={p.caption || p.room || `Foto ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                </button>
+                {p.room ? <b className="text-base">{p.room}</b> : null}
+                {p.caption ? <span className="text-base text-support">{p.caption}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {q.materialsList?.length ? <section className="rounded-2xl border border-line p-4"><b className="font-display text-lg">Lista de materiais</b><ul className="mt-1 list-disc pl-5 text-base leading-6">{q.materialsList.map((m, i) => <li key={i}>{m}</li>)}</ul></section> : null}
 
@@ -162,6 +188,14 @@ export default function Orcamento() {
 
       {wa ? (
         <a href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent(`Olá! Vi o orçamento nº ${q.number}.`)}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 font-display text-xl font-semibold text-white"><MessageCircle size={24} aria-hidden />Falar com {q.painter.company.split(" ")[0]}</a>
+      ) : null}
+
+      {zoom ? (
+        <div role="dialog" aria-modal="true" aria-label="Foto ampliada" className="fixed inset-0 z-50 grid place-items-center bg-black/90 p-3" onClick={() => setZoom(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={zoom} alt="Foto ampliada" className="max-h-full max-w-full rounded-xl object-contain" />
+          <button type="button" aria-label="Fechar foto" onClick={() => setZoom(null)} className="absolute right-3 top-3 grid h-12 w-12 place-items-center rounded-full bg-white/90 text-ink"><X size={24} aria-hidden /></button>
+        </div>
       ) : null}
 
       <footer className="pt-2 text-center text-base text-support">

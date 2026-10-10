@@ -104,6 +104,14 @@ await page.getByRole("button", { name: "Salvar cliente" }).click();
 await page.getByText("Ana Lima").first().waitFor();
 check(page.url() === visitUrl && (await page.getByRole("button", { name: "Definir cliente" }).count()) === 0, "cliente definido na própria visita (sem terminar a visita)");
 
+// 3b) logo do pintor (vai no link do cliente)
+await page.goto(base + "/configuracoes");
+await page.getByText("Página para receber pedidos").first().waitFor();
+await page.waitForTimeout(500);
+await page.setInputFiles('[data-testid="logo-input"]', "tests/logo-teste.png");
+await page.waitForFunction(() => Object.keys(localStorage).some((k) => { if (!k.startsWith("pintorpro:v1")) return false; try { return !!JSON.parse(localStorage.getItem(k)).company?.logoId; } catch { return false; } }), null, { timeout: 15000 });
+await page.goto(visitUrl);
+
 // 4) orçamento a partir da visita: observações vêm da visita; ambientes por padrão; materiais; localização
 await page.getByRole("link", { name: "Montar orçamento" }).click();
 await page.waitForURL(/\/orcamentos\/novo\?visita=/);
@@ -133,6 +141,9 @@ let snap = calls.publish.at(-1);
 check(snap.rooms.length === 3 && snap.rooms.map((r) => r.name).join() === "Sala,Quarto,Cozinha" && snap.rooms.map((r) => r.priceCents).join() === "120000,150000,80000", "o link leva os 3 ambientes com os valores: " + snap.rooms.map((r) => `${r.name} ${r.price}`).join(" | "));
 check(snap.showRoomPrices === true, "o link sempre mostra o valor por ambiente");
 check(!snap.materialsList, "materiais escondidos: não vão no link");
+check(/^data:image\/jpeg;base64,/.test(snap.logo ?? "") && snap.logo.length < 60000, "o logo do pintor vai no link (JPEG pequeno): " + (snap.logo ?? "").length + " caracteres");
+check(snap.photos?.length === 1 && snap.photos[0].caption === "Teto. Parede com mofo perto da janela" && /^data:image\/jpeg;base64,/.test(snap.photos[0].src) && snap.photos[0].src.length < 220000, "a foto marcada 'No PDF' vai no link com a legenda");
+check(!/cost|custo|profit|lucro/i.test(Object.keys(snap).join()), "o link continua sem custo nem lucro");
 
 // 5) materiais na tela do orçamento: mostrar no link, salvar e enviar à loja
 await page.getByText("Materiais da obra").first().click();

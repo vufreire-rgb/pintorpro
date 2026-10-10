@@ -32,9 +32,18 @@ interface SharedQuote {
   terms: { exclusions: string[]; before: string[]; warranty: string };
   notes: string;
   materialsList?: string[];
+  /** Logo e fotos já reduzidas pelo app (JPEG em data URL). */
+  logo?: string;
+  photos?: { src: string; room: string; caption: string }[];
 }
 
+/** Limite do texto do orçamento (sem contar as imagens, que têm limites próprios). */
 const MAX_JSON = 80_000;
+const MAX_LOGO_CHARS = 60_000;
+const MAX_PHOTO_CHARS = 220_000;
+const MAX_PHOTOS = 6;
+const jpegData = (v: unknown, max: number): string | undefined =>
+  typeof v === "string" && v.length <= max && /^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(v) ? v : undefined;
 /** Várias aberturas seguidas (atualizar a página) contam como uma só dentro deste intervalo. */
 const VIEW_WINDOW_MS = 10 * 60 * 1000;
 
@@ -57,9 +66,9 @@ const isToken = (t: unknown): t is string => typeof t === "string" && /^[A-Za-z0
 /** Aceita o que o app mandou e devolve só os campos conhecidos, com tamanhos limitados. Devolve null se estiver vazio ou grande demais. */
 function sanitizeSnapshot(raw: unknown): SharedQuote | null {
   if (!raw || typeof raw !== "object") return null;
-  if (JSON.stringify(raw).length > MAX_JSON) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const o = raw as Record<string, any>;
+  if (JSON.stringify({ ...o, logo: undefined, photos: Array.isArray(o.photos) ? o.photos.map((p: Record<string, unknown>) => ({ ...p, src: "" })) : undefined }).length > MAX_JSON) return null;
   const p = (o.painter ?? {}) as Record<string, unknown>;
   const dep = o.deposit && typeof o.deposit === "object" ? (o.deposit as Record<string, unknown>) : null;
   const pix = o.pix && typeof o.pix === "object" ? (o.pix as Record<string, unknown>) : null;
@@ -86,7 +95,13 @@ function sanitizeSnapshot(raw: unknown): SharedQuote | null {
     terms: { exclusions: list(t.exclusions, 30, 200), before: list(t.before, 30, 200), warranty: s(t.warranty, 400) },
     notes: s(o.notes, 800),
     ...(list(o.materialsList, 60, 120).length ? { materialsList: list(o.materialsList, 60, 120) } : {}),
+    ...(jpegData(o.logo, MAX_LOGO_CHARS) ? { logo: jpegData(o.logo, MAX_LOGO_CHARS) } : {}),
   };
+  const photos = (Array.isArray(o.photos) ? o.photos : [])
+    .slice(0, MAX_PHOTOS)
+    .map((p: Record<string, unknown>) => ({ src: jpegData(p?.src, MAX_PHOTO_CHARS), room: s(p?.room, 60), caption: s(p?.caption, 200) }))
+    .filter((p: { src?: string }): p is { src: string; room: string; caption: string } => !!p.src);
+  if (photos.length) out.photos = photos;
   return out.painter.company && out.total && out.number ? out : null;
 }
 

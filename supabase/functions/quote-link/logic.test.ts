@@ -93,3 +93,22 @@ describe("fechar agora", () => {
     expect(isRepeatedAccept(null, now)).toBe(false);
   });
 });
+
+describe("logo e fotos no link", () => {
+  const jpg = "data:image/jpeg;base64,/9j/4AAQSkZJRg==";
+  it("aceita logo e fotos JPEG pequenas, com ambiente e legenda", () => {
+    const o = sanitizeSnapshot({ ...ok, logo: jpg, photos: [{ src: jpg, room: "Sala", caption: "Mofo no teto" }, { src: "https://x.com/a.jpg", room: "x", caption: "y" }, { src: jpg, room: "", caption: "" }] })!;
+    expect(o.logo).toBe(jpg);
+    expect(o.photos).toEqual([{ src: jpg, room: "Sala", caption: "Mofo no teto" }, { src: jpg, room: "", caption: "" }]);
+  });
+  it("descarta o que não for JPEG em data URL e limita a 6 fotos", () => {
+    const o = sanitizeSnapshot({ ...ok, logo: "javascript:alert(1)", photos: Array.from({ length: 10 }, () => ({ src: jpg, room: "", caption: "" })) })!;
+    expect(o.logo).toBeUndefined();
+    expect(o.photos).toHaveLength(6);
+  });
+  it("as imagens não entram no limite de tamanho do texto do orçamento", () => {
+    const big = "data:image/jpeg;base64," + "A".repeat(200_000);
+    expect(sanitizeSnapshot({ ...ok, photos: [{ src: big, room: "", caption: "" }] })?.photos).toHaveLength(1);
+    expect(sanitizeSnapshot({ ...ok, notes: "x".repeat(90_000) })).toBeNull();
+  });
+});

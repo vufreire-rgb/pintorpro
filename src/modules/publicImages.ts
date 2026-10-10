@@ -69,3 +69,33 @@ export async function imageToDataUrl(file: File, opts: { side: number; maxChars:
 
 export const toAvatar = (file: File): Promise<string> => imageToDataUrl(file, { side: 320, maxChars: AVATAR_MAX_CHARS, square: true });
 export const toWorkPhoto = (file: File): Promise<string> => imageToDataUrl(file, { side: 1000, maxChars: PHOTO_MAX_CHARS - 20_000 });
+
+/**
+ * Reduz uma imagem que já é data URL (logo, foto do PDF) para JPEG pequeno, com fundo branco.
+ * Devolve undefined se não der para ler ou não couber no limite.
+ */
+export async function shrinkDataUrl(src: string, opts: { side: number; maxChars: number }): Promise<string | undefined> {
+  try {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    if (!img.naturalWidth || !img.naturalHeight) return undefined;
+    let side = opts.side;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const scale = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      for (const q of [0.78, 0.68, 0.58, 0.48]) {
+        const url = await toDataUrl(canvas, q);
+        if (url.length <= opts.maxChars) return url;
+      }
+      side = Math.round(side * 0.8);
+    }
+  } catch { /* imagem ilegível: o link sai sem ela */ }
+  return undefined;
+}
