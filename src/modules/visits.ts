@@ -110,6 +110,13 @@ export type PhotoMeta = NonNullable<Visit["photoMeta"]>[string];
 export const setPhotoMarks = (visitId: string, photoId: string, marks: PhotoMark[]) =>
   patch(visitId, (v) => ({ ...v, photoMeta: { ...(v.photoMeta ?? {}), [photoId]: { ...(v.photoMeta ?? {})[photoId], marks: marks.length ? marks : undefined } } }));
 
+/** Soma o que foi ditado ao fim da legenda da foto, sobre o texto mais recente (não apaga o que a pessoa digitou enquanto era escrito). */
+export const appendPhotoCaption = (visitId: string, photoId: string, said: string) =>
+  patch(visitId, (v) => {
+    const all = v.photoMeta ?? {};
+    return { ...v, photoMeta: { ...all, [photoId]: { ...all[photoId], caption: appendDictation(all[photoId]?.caption ?? "", said) } } };
+  });
+
 export function setPhotoMeta(visitId: string, photoId: string, meta: Partial<PhotoMeta>, maxInPdf: number): boolean {
   let ok = true;
   patch(visitId, (v) => {

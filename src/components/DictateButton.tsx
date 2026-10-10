@@ -9,7 +9,7 @@ import { dictationFailureText, MAX_DICTATION_SECONDS, transcribeDictation } from
  * Botão de ditar: toque para falar, toque de novo para parar. O que foi dito vira texto e chega em `onText`.
  * Só aparece com conta (precisa de internet e do servidor). `round` = só o círculo do microfone (para dentro de cartões).
  */
-export function DictateButton({ onText, round = false, label = "Ditar" }: { onText: (text: string) => void; round?: boolean; label?: string }) {
+export function DictateButton({ onText, round = false, label = "Ditar", maxSeconds = MAX_DICTATION_SECONDS, what }: { onText: (text: string) => void; round?: boolean; label?: string; /** Para leitor de tela: o que será ditado (ex.: "legenda da foto 2"). */ what?: string; /** Para sozinho depois disto (legenda de foto: 30 s). */ maxSeconds?: number }) {
   const { state, seconds, start, stop } = useRecorder();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -38,7 +38,7 @@ export function DictateButton({ onText, round = false, label = "Ditar" }: { onTe
     setMsg("");
     if (state === "recording") return finish();
     await start();
-    auto.current = setTimeout(() => void finishRef.current(), MAX_DICTATION_SECONDS * 1000);
+    auto.current = setTimeout(() => void finishRef.current(), maxSeconds * 1000);
   };
 
   if (!cloudEnabled || state === "unsupported") return null;
@@ -53,7 +53,7 @@ export function DictateButton({ onText, round = false, label = "Ditar" }: { onTe
         type="button"
         disabled={busy}
         onClick={() => void toggle()}
-        aria-label={recording ? "Parar de ditar e escrever o texto" : busy ? "Escrevendo o que você falou" : "Ditar por voz"}
+        aria-label={recording ? "Parar de ditar e escrever o texto" : busy ? "Escrevendo o que você falou" : what ? `Ditar ${what}` : "Ditar por voz"}
         className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full font-display font-semibold ${cls} ${circle ? "h-12 w-12 !p-0" : "px-4"}`}
       >
         <Icon size={22} strokeWidth={2.4} aria-hidden className={busy ? "animate-spin" : ""} />

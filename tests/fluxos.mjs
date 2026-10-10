@@ -69,6 +69,21 @@ await page.getByRole("button", { name: /Parar e guardar/ }).click();
 await page.getByText("Áudio guardado e escrito nas Observações.").waitFor();
 check((await page.getByPlaceholder(/Cliente quer cor branco gelo/).inputValue()).includes("janela. Parede com mofo"), "um segundo áudio soma ao fim, sem apagar o que já estava");
 
+// 1b) foto com legenda ditada
+await page.getByTestId("photo-input").setInputFiles("tests/foto-teste.png");
+await page.getByRole("button", { name: "Pôr no PDF" }).first().click();
+await page.getByLabel("Legenda da foto 1", { exact: true }).fill("Teto");
+const before = calls.dictation;
+await page.getByRole("button", { name: "Ditar legenda da foto 1" }).click();
+await page.getByRole("button", { name: /Parar de ditar/ }).waitFor();
+await page.waitForTimeout(1200);
+await page.getByRole("button", { name: /Parar de ditar/ }).click();
+await page.waitForFunction(() => document.querySelector('textarea[aria-label="Legenda da foto 1"]')?.value.includes("mofo"), null, { timeout: 15000 }).catch(() => undefined);
+const cap = await page.getByLabel("Legenda da foto 1", { exact: true }).inputValue();
+check(calls.dictation === before + 1 && cap === "Teto. Parede com mofo perto da janela", "legenda da foto: o que foi dito entra no fim do texto: " + cap);
+const stored = await page.evaluate(() => { const k = Object.keys(localStorage).find((x) => x.startsWith("pintorpro:v1")); const d = JSON.parse(localStorage.getItem(k)); return Object.values(d.visits[0].photoMeta ?? {}).map((m) => m.caption).filter(Boolean); });
+check(stored.includes("Teto. Parede com mofo perto da janela"), "a legenda fica guardada na visita (vai no PDF com a foto)");
+
 // 2) endereço com localização em outras telas
 await page.goto(base + "/visitas/agendar");
 await page.getByRole("button", { name: "Usar minha localização" }).click();

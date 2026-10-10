@@ -31,7 +31,7 @@ export interface VoiceDraft {
 export const MAX_AUDIO_BYTES = 6 * 1024 * 1024;
 export const DAILY_LIMIT = 40;
 /** Ditado de texto (só transcrever): bem mais barato que o orçamento por voz, por isso o limite é maior. */
-export const DICTATION_DAILY_LIMIT = 150;
+export const DICTATION_DAILY_LIMIT = 300;
 /** Ditado de um campo de texto: áudio curto. */
 export const MAX_DICTATION_BYTES = 3 * 1024 * 1024;
 

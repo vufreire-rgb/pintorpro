@@ -1,4 +1,5 @@
 "use client";
+import { DictateButton } from "@/components/DictateButton";
 import { useRouter } from "next/navigation";
 import { use, useRef, useState } from "react";
 import { AudioRecorder } from "@/components/AudioRecorder";
@@ -17,7 +18,7 @@ import { blankRoom, cloneSurfaces, legacyToSurfaces, measuresSummary, surfacesSu
 import { downloadVisitIcs } from "@/modules/share";
 import { useAppDb } from "@/modules/useApp";
 import { isSimpleMode } from "@/modules/settings";
-import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit, appendVisitNotes } from "@/modules/visits";
+import { addVisitPhotos, createClientForVisit, deleteVisit, removeVisitPhoto, removeVisitRoom, rescheduleVisit, setPhotoMarks, setPhotoMeta, setVisitAddress, setVisitLocation, setVisitClient, saveVisitRoom, setVisitNotes, startVisit, appendVisitNotes, appendPhotoCaption } from "@/modules/visits";
 import { confirmationText, fromLocalInput, mapsUrl, toLocalInput, visitState, waUrl, whenLabel } from "@/modules/visitList";
 import { fmtDate, fmtNum, plural } from "@/shared/format";
 
@@ -175,7 +176,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             {v.photoIds.filter((pid) => v.photoMeta?.[pid]?.inPdf).map((pid, i) => (
               <div key={pid} className="flex flex-col gap-2">
                 <TextInput placeholder={`Foto ${i + 1}: ambiente`} value={v.photoMeta?.[pid]?.room ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { room: e.target.value }, MAX_PDF_PHOTOS)} />
-                <TextArea2 placeholder="Legenda" value={v.photoMeta?.[pid]?.caption ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { caption: e.target.value }, MAX_PDF_PHOTOS)} />
+                <TextArea2 placeholder="Legenda" aria-label={`Legenda da foto ${i + 1}`} value={v.photoMeta?.[pid]?.caption ?? ""} onChange={(e) => setPhotoMeta(v.id, pid, { caption: e.target.value }, MAX_PDF_PHOTOS)} />
+                <div className="self-end"><DictateButton maxSeconds={30} label="Ditar legenda" what={`legenda da foto ${i + 1}`} onText={(t) => appendPhotoCaption(v.id, pid, t)} /></div>
               </div>
             ))}
           </div>
