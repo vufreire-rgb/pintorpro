@@ -292,6 +292,18 @@ function Terms({ d }: { d: QuotePdfData }) {
         </View>
       ) : null}
 
+      {d.materialsList.length > 0 ? (
+        <View wrap={false} style={{ backgroundColor: d.tint, borderRadius: 20, padding: 18, marginBottom: 20 }}>
+          <Text style={[s.caps, { color: c, marginBottom: 6 }]}>Lista de materiais</Text>
+          {d.materialsList.map((m, i) => (
+            <View key={i} style={{ flexDirection: "row", marginBottom: 2 }}>
+              <Text style={{ fontSize: 15, lineHeight: 1.4, width: 14 }}>•</Text>
+              <Text style={{ flex: 1, fontSize: 15, lineHeight: 1.4 }}>{m}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       {d.notes ? (
         <View wrap={false} style={{ backgroundColor: d.tint, borderRadius: 20, padding: 18, flexDirection: "row", marginBottom: 20 }}>
           <Svg viewBox="0 0 24 24" width={24} height={24} style={{ marginRight: 12 }}>

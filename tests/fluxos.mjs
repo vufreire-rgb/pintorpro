@@ -78,14 +78,24 @@ await page.getByRole("button", { name: "Usar minha localização" }).click();
 await page.getByText(/Endereço preenchido/).waitFor();
 check((await page.getByLabel("Endereço", { exact: true }).inputValue()).includes("Taubaté"), "cliente: localização preenche o endereço");
 
-// 3) orçamento só com preço, por ambientes
-await page.goto(base + "/orcamentos/novo");
-await page.getByRole("button", { name: /Só falar o valor/ }).click();
-await page.getByLabel("Nome do cliente").fill("Dona Maria");
+// 3) visita sem cliente: define o cliente ali mesmo, sem sair da tela
+await page.goto(visitUrl);
+await page.getByRole("button", { name: "Definir cliente" }).click();
+await page.getByLabel("Nome do cliente").fill("Ana Lima");
+await page.getByLabel(/Telefone/).fill("12991122596");
+await page.getByRole("button", { name: "Salvar cliente" }).click();
+await page.getByText("Ana Lima").first().waitFor();
+check(page.url() === visitUrl && (await page.getByRole("button", { name: "Definir cliente" }).count()) === 0, "cliente definido na própria visita (sem terminar a visita)");
+
+// 4) orçamento a partir da visita: observações vêm da visita; ambientes por padrão; materiais; localização
+await page.getByRole("link", { name: "Montar orçamento" }).click();
+await page.waitForURL(/\/orcamentos\/novo\?visita=/);
+await page.getByRole("button", { name: /Só falar o valor/ }).click().catch(() => undefined);
+check((await page.getByLabel("Observações para o cliente (opcional)").inputValue()).includes("mofo"), "observações da visita já vêm preenchidas no orçamento");
+check((await page.getByText("Ambientes e valores").count()) === 1, "orçamento simples já começa separado por ambientes");
 await page.getByRole("button", { name: "Usar minha localização" }).click();
 await page.getByText(/Endereço preenchido/).waitFor();
 check((await page.getByLabel("Endereço da obra").inputValue()).includes("Taubaté - SP"), "orçamento: localização preenche o endereço da obra");
-await page.getByRole("button", { name: /Separar por ambientes/ }).click();
 const names = page.getByPlaceholder("Ex.: Sala");
 await names.nth(0).fill("Sala");
 await names.nth(1).fill("Quarto");
@@ -95,14 +105,32 @@ await page.getByRole("button", { name: "Adicionar ambiente" }).click();
 await page.getByPlaceholder("Ex.: Sala").nth(2).fill("Cozinha");
 await page.getByLabel("Valor do ambiente 3").fill("800");
 check((await page.getByTestId("total").textContent()).replace(/\s/g, "").includes("3.500,00"), "total é a soma dos ambientes: R$ 3.500,00");
+await page.getByLabel("Lista de materiais da obra (opcional)").fill("2 latas de tinta acrílica 18 L\n1 massa corrida 25 kg");
+check((await page.getByRole("button", { name: "Não", exact: true }).count()) >= 1, "lista de materiais começa escondida do cliente (Não)");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();
 await page.waitForURL(/\/orcamentos\/[^/]+$/);
 await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(String(u)); return null; }; });
 await page.getByRole("button", { name: "Enviar pelo WhatsApp" }).click();
 await page.waitForFunction(() => window.__opened.length > 0);
-const snap = calls.publish.at(-1);
+let snap = calls.publish.at(-1);
 check(snap.rooms.length === 3 && snap.rooms.map((r) => r.name).join() === "Sala,Quarto,Cozinha" && snap.rooms.map((r) => r.priceCents).join() === "120000,150000,80000", "o link leva os 3 ambientes com os valores: " + snap.rooms.map((r) => `${r.name} ${r.price}`).join(" | "));
 check(snap.showRoomPrices === true, "o link sempre mostra o valor por ambiente");
+check(!snap.materialsList, "materiais escondidos: não vão no link");
+
+// 5) materiais na tela do orçamento: mostrar no link, salvar e enviar à loja
+await page.getByText("Materiais da obra").first().click();
+await page.locator("section", { hasText: "Materiais da obra" }).getByRole("button", { name: "Não", exact: true }).click();
+await page.getByRole("button", { name: "Salvar lista" }).click();
+await page.getByText("Lista salva.").waitFor();
+await page.evaluate(() => { window.__opened.length = 0; });
+await page.getByRole("button", { name: "Enviar para a loja de tintas" }).click();
+await page.waitForFunction(() => window.__opened.length > 0);
+const shop = decodeURIComponent(await page.evaluate(() => window.__opened[0]));
+check(shop.includes("Lista de materiais — obra de Ana Lima") && shop.includes("• 2 latas de tinta acrílica 18 L") && shop.includes("• 1 massa corrida 25 kg"), "mensagem para a loja traz a obra e os itens");
+await page.getByRole("button", { name: "Enviar pelo WhatsApp" }).click();
+await page.waitForTimeout(800);
+snap = calls.publish.at(-1);
+check(JSON.stringify(snap.materialsList) === JSON.stringify(["2 latas de tinta acrílica 18 L", "1 massa corrida 25 kg"]), "com 'mostrar' ligado, a lista vai no link: " + JSON.stringify(snap.materialsList));
 
 console.log(errors.length ? "ERROS DE CONSOLE: " + errors.join("; ") : "erros de console: nenhum");
 await browser.close();

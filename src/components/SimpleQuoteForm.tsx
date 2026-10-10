@@ -1,4 +1,6 @@
 "use client";
+import { VisitSuggestion, openVisitFor } from "./VisitSuggestion";
+import { MaterialsField } from "./MaterialsField";
 import { DictationField } from "./DictationField";
 import { AddressInput } from "./AddressInput";
 import { Check, Plus, X } from "lucide-react";
@@ -24,12 +26,17 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
   const [description, setDescription] = useState(quote?.input.extras[0]?.description ?? "");
   const [price, setPrice] = useState(quote ? quote.result.totals.totalCents / 100 : 0);
   const [payment, setPayment] = useState(quote?.paymentTerms ?? db.company?.paymentTerms ?? "");
-  const [notes, setNotes] = useState(quote?.notes ?? "");
+  const [notes, setNotes] = useState(quote?.notes ?? visit?.notes ?? "");
+  const [usedVisit, setUsedVisit] = useState<Visit | null>(null);
+  const [materials, setMaterials] = useState(quote?.materialsText ?? "");
+  const [showMaterials, setShowMaterials] = useState(quote?.showMaterials ?? false);
 
   // Separar por ambientes: cada ambiente com o seu valor (o total é a soma). O cliente escolhe quais fechar pelo link.
   const savedAreas = quote && quote.input.rooms.length === 0 && quote.input.extras.length >= 2 ? quote.input.extras.map((e) => ({ id: uid(), name: e.description, price: e.priceCents / 100 })) : [];
-  const [byArea, setByArea] = useState(savedAreas.length > 0);
-  const [areas, setAreas] = useState<{ id: string; name: string; price: number }[]>(savedAreas.length ? savedAreas : [{ id: uid(), name: "", price: 0 }, { id: uid(), name: "", price: 0 }]);
+  // Novo orçamento começa por ambientes (cada um com o seu valor); quem tem um preço só pode voltar. Ambientes medidos na visita já vêm com o nome.
+  const visitNames = (visit?.rooms ?? []).map((r) => r.name).filter(Boolean);
+  const [byArea, setByArea] = useState(!quote || savedAreas.length > 0);
+  const [areas, setAreas] = useState<{ id: string; name: string; price: number }[]>(savedAreas.length ? savedAreas : visitNames.length >= 2 ? visitNames.map((name) => ({ id: uid(), name, price: 0 })) : [{ id: uid(), name: "", price: 0 }, { id: uid(), name: "", price: 0 }]);
   const setArea = (id: string, patch: Partial<{ name: string; price: number }>) => setAreas((a) => a.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   const areaRows = areas.filter((a) => a.price > 0);
   const total = byArea ? areaRows.reduce((sum, a) => sum + Math.round(a.price * 100), 0) / 100 : price;
@@ -38,6 +45,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
   const hasClient = !!chosen || !!newClient.name.trim();
   const canSave = hasClient && total > 0;
   const siteValue = address || chosen?.address || "";
+  const suggestion = !visit && !quote && !usedVisit && chosen ? openVisitFor(db, chosen.id) : undefined;
 
   const save = () => {
     const built = quoteFromVoice(db, { ...EMPTY_DRAFT, closedPriceReais: price }, { simple: true, description: description || DEFAULT_DESCRIPTION });
@@ -45,12 +53,12 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
       ? { rooms: [], extras: areaRows.map((a, i) => ({ description: a.name.trim() || `Ambiente ${i + 1}`, priceCents: Math.round(a.price * 100), costCents: 0 })), adjustment: undefined }
       : { rooms: built.rooms, extras: built.extras, adjustment: built.adjustment };
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ name: newClient.name.trim(), phone: newClient.phone.trim(), address: siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input, paymentTerms: payment, notes, materialsText: materials, showMaterials });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -71,6 +79,7 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
               <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
             </>
           )}
+          <VisitSuggestion visit={suggestion} onUse={(v) => { setUsedVisit(v); if (!siteValue && v.siteAddress) setAddress(v.siteAddress); if (!notes.trim() && v.notes) setNotes(v.notes); }} />
           <AddressInput label="Endereço da obra" value={siteValue} onChange={setAddress} />
         </Card>
         <Card className="flex flex-col gap-3">
@@ -96,7 +105,8 @@ export function SimpleQuoteForm({ db, quote, visit }: { db: Db; quote?: Quote; v
             </>
           )}
           <Field label="Forma de pagamento"><TextInput value={payment} onChange={(e) => setPayment(e.target.value)} /></Field>
-          <DictationField label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados." value={notes} onChange={setNotes} />
+          <DictationField label="Observações para o cliente (opcional)" hint="Só deste orçamento: a cor escolhida, o que ficou combinado a mais. Aparecem no PDF e no link. Garantia e o que não está incluso você ajusta uma vez em Ajustes." value={notes} onChange={setNotes} />
+          <MaterialsField text={materials} onText={setMaterials} show={showMaterials} onShow={setShowMaterials} />
         </Card>
       </div>
       <div className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-md items-center gap-3 border-t border-line bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

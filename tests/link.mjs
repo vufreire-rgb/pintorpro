@@ -71,6 +71,7 @@ await page.waitForURL(base + "/visitas");
 await page.goto(base + "/orcamentos/novo");
 await page.getByRole("button", { name: /Só falar o valor/ }).click();
 await page.getByLabel("Nome do cliente").fill("Dona Maria");
+await page.getByRole("button", { name: /Voltar para um preço só/ }).click();
 await page.getByLabel("O que será feito").fill("Pintura completa da sala e dos quartos");
 await page.getByLabel("Preço fechado").fill("2800");
 await page.getByRole("button", { name: "Salvar orçamento" }).click();

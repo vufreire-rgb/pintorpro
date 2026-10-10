@@ -31,6 +31,7 @@ interface SharedQuote {
   showRoomPrices: boolean;
   terms: { exclusions: string[]; before: string[]; warranty: string };
   notes: string;
+  materialsList?: string[];
 }
 
 const MAX_JSON = 80_000;
@@ -84,6 +85,7 @@ function sanitizeSnapshot(raw: unknown): SharedQuote | null {
     showRoomPrices: o.showRoomPrices === true,
     terms: { exclusions: list(t.exclusions, 30, 200), before: list(t.before, 30, 200), warranty: s(t.warranty, 400) },
     notes: s(o.notes, 800),
+    ...(list(o.materialsList, 60, 120).length ? { materialsList: list(o.materialsList, 60, 120) } : {}),
   };
   return out.painter.company && out.total && out.number ? out : null;
 }

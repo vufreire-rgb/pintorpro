@@ -18,6 +18,8 @@ interface NewQuote {
   paymentTerms: string;
   notes: string;
   showRoomPrices?: boolean;
+  materialsText?: string;
+  showMaterials?: boolean;
   paymentLink?: string;
   depositPct?: number;
 }
@@ -50,7 +52,7 @@ export function saveQuote(db: Db, data: NewQuote): string {
 const DAY = 86400000;
 
 /** Edita um orçamento ainda não fechado. Recalcula com os valores ATUAIS dos Ajustes. */
-export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes" | "showRoomPrices" | "paymentLink" | "depositPct">): void {
+export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" | "input" | "paymentTerms" | "notes" | "showRoomPrices" | "paymentLink" | "depositPct"> & Partial<Pick<Quote, "materialsText" | "showMaterials">>): void {
   const config = buildEngineConfig(db);
   const result = calculateQuote(data.input, config);
   const now = new Date();
@@ -73,6 +75,15 @@ export function updateQuote(db: Db, id: string, data: Pick<Quote, "siteAddress" 
   }));
 }
 
+/** Guarda a lista de materiais direto no orçamento (mesmo depois de enviado ou fechado). Só conta como edição quando ela aparece para o cliente. */
+export function setQuoteMaterials(id: string, text: string, show: boolean): void {
+  const now = new Date().toISOString();
+  updateDb((d) => ({
+    ...d,
+    quotes: d.quotes.map((q) => (q.id !== id ? q : { ...q, materialsText: text, showMaterials: show, ...(show || q.showMaterials ? { revisedAt: now } : {}) })),
+  }));
+}
+
 /** Cria uma cópia (novo número, status Aberto, validade nova), recalculada com os valores atuais. */
 export function duplicateQuote(db: Db, id: string): string | null {
   const q = db.quotes.find((x) => x.id === id);
@@ -84,6 +95,8 @@ export function duplicateQuote(db: Db, id: string): string | null {
     paymentTerms: q.paymentTerms,
     notes: q.notes,
     showRoomPrices: q.showRoomPrices,
+    materialsText: q.materialsText,
+    showMaterials: q.showMaterials,
     paymentLink: q.paymentLink,
     depositPct: q.depositPct,
   });

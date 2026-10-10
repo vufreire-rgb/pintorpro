@@ -142,3 +142,16 @@ describe("orçamento só com preço, por ambientes", () => {
     expect(d.summary).toBe("Pintura completa.");
   });
 });
+
+describe("lista de materiais no PDF", () => {
+  it("separa itens por linha ou ponto e vírgula e tira marcadores", async () => {
+    const { materialLines } = await import("./pdfData");
+    expect(materialLines("2 latas de tinta\n- 1 massa corrida; • 3 rolos\n\n")).toEqual(["2 latas de tinta", "1 massa corrida", "3 rolos"]);
+    expect(materialLines(undefined)).toEqual([]);
+  });
+  it("só aparece quando o pintor escolhe mostrar", () => {
+    const { db, q } = make({ materialsText: "2 latas de tinta\n1 massa corrida" });
+    expect(buildPdfData(db, q).materialsList).toEqual([]);
+    expect(buildPdfData(db, { ...q, showMaterials: true }).materialsList).toEqual(["2 latas de tinta", "1 massa corrida"]);
+  });
+});

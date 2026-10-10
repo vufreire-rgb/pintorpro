@@ -65,6 +65,10 @@ export interface Quote {
   revisedAt?: string;
   /** PDF: mostrar o valor de cada ambiente. */
   showRoomPrices?: boolean;
+  /** Lista de materiais da obra, escrita ou ditada pelo pintor (um item por linha). Serve para o pintor e para a loja de tintas. */
+  materialsText?: string;
+  /** Mostrar a lista de materiais no PDF e no link do cliente (padrão: não). */
+  showMaterials?: boolean;
   /** PDF: link para o cliente pagar a entrada (Pix/cartão do próprio pintor). Sem link, o bloco não aparece. */
   paymentLink?: string;
   depositPct?: number;

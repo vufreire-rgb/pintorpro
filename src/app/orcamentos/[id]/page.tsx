@@ -1,4 +1,5 @@
 "use client";
+import { QuoteMaterials } from "@/components/QuoteMaterials";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
@@ -170,6 +171,7 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
           </div>
         ))}
       </BlocoRecolhivel>
+      <QuoteMaterials key={q.id} db={db} q={q} client={client} />
       <BlocoRecolhivel title="Mais opções" icon={MoreHorizontal}>
         {q.status === "won" ? (
           <p className="text-base text-support">Orçamento fechado não pode ser editado. Para alterar, volte para aberto antes.</p>

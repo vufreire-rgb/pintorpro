@@ -6,7 +6,7 @@ const exe = process.env.CHROME ?? "/opt/pw-browsers/chromium-1194/chrome-linux/c
 const OUT = process.env.OUT ?? "/tmp";
 const browser = await chromium.launch({ executablePath: exe });
 
-async function gerar({ nome, cor, comValores, comLink }) {
+async function gerar({ nome, cor, comValores, comLink, materiais = false }) {
   const ctx = await browser.newContext({ ...devices["Pixel 7"], acceptDownloads: true });
   const page = await ctx.newPage();
 await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
@@ -43,8 +43,12 @@ await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   await room("Sala", "6", "5");
   await room("Quarto", "4", "3,5");
   await page.getByText("Ajustes do orçamento").click();
-  await page.getByPlaceholder("Observações").or(page.getByText("Observações (opcional)").locator("..").locator("input")).first().fill("Cliente prefere branco neve nas paredes e no teto. Início a combinar depois do pagamento da entrada.");
-  if (comValores) await page.getByRole("button", { name: "Não", exact: true }).click();
+  await page.getByLabel("Observações para o cliente (opcional)").fill("Cliente prefere branco neve nas paredes e no teto. Início a combinar depois do pagamento da entrada.");
+  if (materiais) {
+    await page.getByLabel("Lista de materiais da obra (opcional)").fill("2 latas de tinta acrílica branco neve 18 L\n1 massa corrida 25 kg\n3 rolos de lã 23 cm\nFita crepe 48 mm");
+    await page.getByRole("button", { name: "Não", exact: true }).first().click(); // mostrar a lista no PDF
+  }
+  if (comValores) await page.getByRole("button", { name: "Não", exact: true }).last().click();
   if (comLink) await page.getByPlaceholder("https://").fill("https://pague.exemplo.com.br/0042");
   await page.getByRole("button", { name: "Salvar orçamento" }).click();
   await page.waitForURL(/orcamentos\/[0-9a-f-]{36}/);
@@ -55,6 +59,6 @@ await page.addInitScript(() => localStorage.setItem("pintorpro:no-tours", "1"));
   await ctx.close();
 }
 
-await gerar({ nome: "a-azul-com-link", cor: "#0F3B7A", comValores: false, comLink: true });
+await gerar({ nome: "a-azul-com-link", cor: "#0F3B7A", comValores: false, comLink: true, materiais: true });
 await gerar({ nome: "b-verde-valores", cor: "#0B7F44", comValores: true, comLink: false });
 await browser.close();

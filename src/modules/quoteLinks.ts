@@ -28,6 +28,8 @@ export interface SharedQuote {
   showRoomPrices: boolean;
   terms: { exclusions: string[]; before: string[]; warranty: string };
   notes: string;
+  /** Lista de materiais (só vai quando o pintor escolheu mostrar). */
+  materialsList?: string[];
 }
 
 /** Monta o que vai para o link, a partir dos mesmos dados do PDF (sem fotos e sem logo). */
@@ -62,6 +64,7 @@ export function buildShareSnapshot(db: Db, q: Quote): SharedQuote {
     showRoomPrices: true,
     terms: d.terms,
     notes: d.notes,
+    ...(d.materialsList.length ? { materialsList: d.materialsList } : {}),
   };
 }
 

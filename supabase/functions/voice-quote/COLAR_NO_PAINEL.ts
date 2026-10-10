@@ -131,6 +131,20 @@ const DRAFT_SCHEMA = {
     },
   },
 } as const;
+
+/**
+ * Quando o áudio é silêncio ou barulho, o serviço de transcrição pode devolver o próprio texto de dica que enviamos.
+ * Se a transcrição for (quase) só isso, tratamos como "não entendi nada".
+ */
+function echoesHint(transcript: string, hint: string): boolean {
+  const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  const t = norm(transcript), h = norm(hint);
+  if (!t) return false;
+  if (h.includes(t) && t.length > 12) return true;
+  const hw = new Set(h.split(" "));
+  const tw = t.split(" ");
+  return tw.length >= 6 && tw.filter((w) => hw.has(w)).length / tw.length >= 0.8;
+}
 // ---- fim de logic.ts ----
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
@@ -191,10 +205,12 @@ Deno.serve(async (req: Request) => {
       form.append("file", audio, audio.name || "audio.wav");
       form.append("model", TRANSCRIBE_MODEL);
       form.append("language", "pt");
-      form.append("prompt", "Observações de uma visita de pintura: parede, teto, mofo, infiltração, massa corrida, cor, demão, cliente pediu.");
+      const hint = "Observações de uma visita de pintura: parede, teto, mofo, infiltração, massa corrida, cor, demão, cliente pediu.";
+      form.append("prompt", hint);
       const t = await fetch("https://api.openai.com/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form });
       if (!t.ok) throw new Error(`transcribe ${t.status}`);
-      const text = String((await t.json()).text ?? "").trim();
+      let text = String((await t.json()).text ?? "").trim();
+      if (echoesHint(text, hint)) text = ""; // silêncio ou barulho: o serviço devolveu o próprio texto de dica
       if (!usedD.error) await admin.from("dictation_usage").upsert({ user_id: data.user.id, day, count: (usedD.data?.count ?? 0) + 1 });
       return reply(200, { transcript: text });
     } catch (e) {
@@ -215,10 +231,12 @@ Deno.serve(async (req: Request) => {
     form.append("file", audio, audio.name || "audio.wav");
     form.append("model", TRANSCRIBE_MODEL);
     form.append("language", "pt");
-    form.append("prompt", "Orçamento de pintura: parede, teto, massa corrida, acrílica, esmalte, demão, metros quadrados, pé direito.");
+    const quoteHint = "Orçamento de pintura: parede, teto, massa corrida, acrílica, esmalte, demão, metros quadrados, pé direito.";
+    form.append("prompt", quoteHint);
     const t = await fetch("https://api.openai.com/v1/audio/transcriptions", { method: "POST", headers: { Authorization: `Bearer ${apiKey}` }, body: form });
     if (!t.ok) throw new Error(`transcribe ${t.status}`);
-    const transcript = String((await t.json()).text ?? "").trim();
+    let transcript = String((await t.json()).text ?? "").trim();
+    if (echoesHint(transcript, quoteHint)) transcript = "";
     if (!transcript) return reply(200, { transcript: "", draft: normalizeDraft({}) });
 
     const c = await fetch("https://api.openai.com/v1/chat/completions", {

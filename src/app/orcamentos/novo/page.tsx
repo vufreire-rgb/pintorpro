@@ -1,4 +1,6 @@
 "use client";
+import { MaterialsField } from "@/components/MaterialsField";
+import { openVisitFor, VisitSuggestion } from "@/components/VisitSuggestion";
 import { DictationField } from "@/components/DictationField";
 import { AddressInput } from "@/components/AddressInput";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -57,7 +59,10 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
   const [yields, setYields] = useState<Record<string, number>>(quote?.input.yieldOverrides ?? {});
   const [adj, setAdj] = useState<Adjustment>((quote && !isPriceOnly(quote) ? quote.input.adjustment : undefined) ?? { type: "discount", mode: "percent", value: 0 });
   const [payment, setPayment] = useState<string | null>(quote?.paymentTerms ?? null);
-  const [notes, setNotes] = useState(quote?.notes ?? "");
+  const [notes, setNotes] = useState(quote?.notes ?? visit?.notes ?? "");
+  const [materials, setMaterials] = useState(quote?.materialsText ?? "");
+  const [showMaterials, setShowMaterials] = useState(quote?.showMaterials ?? false);
+  const [usedVisit, setUsedVisit] = useState<Visit | null>(null);
   const [showRoomPrices, setShowRoomPrices] = useState(quote?.showRoomPrices ?? false);
   const [paymentLink, setPaymentLink] = useState(quote?.paymentLink ?? "");
   const [depositPct, setDepositPct] = useState(quote?.depositPct ?? db.company?.depositPct ?? 50);
@@ -96,6 +101,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
 
   const chosenClient = db.clients.find((c) => c.id === clientId);
   const siteValue = site || visit?.siteAddress || chosenClient?.address || newClient.address || "";
+  const suggestion = !visit && !quote && !usedVisit && chosenClient ? openVisitFor(db, chosenClient.id) : undefined;
   const hasClient = !!clientId || !!newClient.name.trim();
   const hasServices = (result?.serviceLines.length ?? 0) > 0;
   const canSave = hasClient && allRooms.length > 0 && hasServices;
@@ -105,12 +111,12 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
     const paymentTerms = payment ?? db.company!.paymentTerms;
     const finalInput: QuoteInput = pending ? { ...input, rooms: [...rooms, { ...pending, id: crypto.randomUUID() }] } : input;
     if (quote) {
-      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
+      updateQuote(db, quote.id, { siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: paymentLink.trim() || undefined, depositPct });
       router.replace(`/orcamentos/${quote.id}`);
       return;
     }
     const cid = clientId || addClient({ ...newClient, address: newClient.address || siteValue }).id;
-    const id = saveQuote(db, { clientId: cid, visitId: visit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, paymentLink: paymentLink.trim() || undefined, depositPct });
+    const id = saveQuote(db, { clientId: cid, visitId: visit?.id ?? usedVisit?.id, siteAddress: siteValue, input: finalInput, paymentTerms, notes, showRoomPrices, materialsText: materials, showMaterials, paymentLink: paymentLink.trim() || undefined, depositPct });
     router.replace(`/orcamentos/${id}`);
   };
 
@@ -153,6 +159,7 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
             </>
           )}
+          <VisitSuggestion visit={suggestion} onUse={(v) => { setUsedVisit(v); if (!siteValue && v.siteAddress) setSite(v.siteAddress); if (!notes.trim() && v.notes) setNotes(v.notes); }} />
           <AddressInput label="Endereço da obra" value={siteValue} onChange={(t) => { setSite(t); setNewClient((n) => ({ ...n, address: t })); }} />
         </Card>
         </div>
@@ -244,7 +251,8 @@ function Wizard({ db, quote, visit }: { db: Db; quote?: Quote; visit?: Visit }) 
               <NumberInput value={adj.mode === "cents" ? adj.value / 100 : adj.value} onChange={(n) => setAdj({ ...adj, value: adj.mode === "cents" ? Math.round(n * 100) : n })} />
             </div>
             <Field label="Condição de pagamento"><TextInput value={payment ?? db.company!.paymentTerms} onChange={(e) => setPayment(e.target.value)} /></Field>
-            <DictationField label="Observações (opcional)" hint="Aparecem no PDF, na página de combinados." value={notes} onChange={setNotes} />
+            <DictationField label="Observações para o cliente (opcional)" hint="Só deste orçamento: a cor escolhida, o que ficou combinado a mais. Aparecem no PDF e no link. Garantia e o que não está incluso você ajusta uma vez em Ajustes." value={notes} onChange={setNotes} />
+            <MaterialsField text={materials} onText={setMaterials} show={showMaterials} onShow={setShowMaterials} />
             <div className="flex flex-col gap-3">
               <b>No PDF do cliente</b>
               <div className="flex items-center justify-between gap-3">

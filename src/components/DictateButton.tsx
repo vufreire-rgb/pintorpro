@@ -43,7 +43,8 @@ export function DictateButton({ onText, round = false, label = "Ditar" }: { onTe
 
   if (!cloudEnabled || state === "unsupported") return null;
   const recording = state === "recording";
-  const text = busy ? "Escrevendo…" : recording ? `Parar (${fmtClock(seconds)})` : label;
+  const text = busy ? "Escrevendo…" : recording ? `Parar ${fmtClock(seconds)}` : label;
+  const circle = round && !recording && !busy;
   const Icon = busy ? Loader2 : recording ? Square : Mic;
   const cls = recording ? "bg-err text-white" : "bg-brand-soft text-brand";
   return (
@@ -53,10 +54,10 @@ export function DictateButton({ onText, round = false, label = "Ditar" }: { onTe
         disabled={busy}
         onClick={() => void toggle()}
         aria-label={recording ? "Parar de ditar e escrever o texto" : busy ? "Escrevendo o que você falou" : "Ditar por voz"}
-        className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full font-display font-semibold ${cls} ${round ? "h-12 w-12 !p-0" : "px-4"}`}
+        className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full font-display font-semibold ${cls} ${circle ? "h-12 w-12 !p-0" : "px-4"}`}
       >
         <Icon size={22} strokeWidth={2.4} aria-hidden className={busy ? "animate-spin" : ""} />
-        {round && !recording ? null : <span className="text-[17px]">{text}</span>}
+        {circle ? null : <span className="whitespace-nowrap text-[17px]">{text}</span>}
       </button>
       {state === "denied" ? <p role="alert" className="max-w-[16rem] text-right text-base text-err">O celular não deixou o app usar o microfone. Libere nas configurações do navegador.</p> : null}
       {msg ? <p role="alert" className="max-w-[16rem] text-right text-base text-err">{msg}</p> : null}

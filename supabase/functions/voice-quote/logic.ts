@@ -125,3 +125,17 @@ export const DRAFT_SCHEMA = {
     },
   },
 } as const;
+
+/**
+ * Quando o áudio é silêncio ou barulho, o serviço de transcrição pode devolver o próprio texto de dica que enviamos.
+ * Se a transcrição for (quase) só isso, tratamos como "não entendi nada".
+ */
+export function echoesHint(transcript: string, hint: string): boolean {
+  const norm = (t: string) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  const t = norm(transcript), h = norm(hint);
+  if (!t) return false;
+  if (h.includes(t) && t.length > 12) return true;
+  const hw = new Set(h.split(" "));
+  const tw = t.split(" ");
+  return tw.length >= 6 && tw.filter((w) => hw.has(w)).length / tw.length >= 0.8;
+}

@@ -90,6 +90,8 @@ export default function Orcamento() {
         </section>
       ))}
 
+      {q.materialsList?.length ? <section className="rounded-2xl border border-line p-4"><b className="font-display text-lg">Lista de materiais</b><ul className="mt-1 list-disc pl-5 text-base leading-6">{q.materialsList.map((m, i) => <li key={i}>{m}</li>)}</ul></section> : null}
+
       {q.notes ? <section className="rounded-2xl border border-line p-4"><b className="font-display text-lg">Observações</b><p className="mt-1 whitespace-pre-wrap text-base">{q.notes}</p></section> : null}
 
       {done ? (

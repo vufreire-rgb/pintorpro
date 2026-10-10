@@ -35,6 +35,7 @@ check((await page.getByText("Serviços e preços").count()) === 0 && (await page
 await page.goto(base + "/orcamentos/novo");
 await page.getByLabel("Nome do cliente").fill("Dona Maria");
 await page.getByLabel("Endereço da obra").fill("Rua das Flores, 10");
+await page.getByRole("button", { name: /Voltar para um preço só/ }).click();
 await page.getByLabel("O que será feito").fill("Pintura da sala e dos quartos, tinta inclusa");
 check((await page.getByText("Primeiro ambiente").count()) === 0, "sem tela de medidas");
 await page.getByLabel("Preço fechado").fill("2800");

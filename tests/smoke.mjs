@@ -85,7 +85,7 @@ const hrefs = await page.locator("a").evaluateAll((as) => as.map((a) => a.getAtt
 if (!hrefs.some((h) => h === "tel:11977776666") || !hrefs.some((h) => h?.startsWith("https://wa.me/5511977776666")) || !hrefs.some((h) => h?.includes("google.com/maps"))) throw new Error("atalhos de contato ausentes: " + hrefs);
 await page.getByRole("link", { name: "Montar orçamento" }).click();
 await page.getByText("Suas anotações da visita").click();
-await page.getByText("Sala 4x5, mofo perto da janela").waitFor();
+await page.getByText("Sala 4x5, mofo perto da janela").first().waitFor();
 await page.getByRole("button", { name: /m² · \d+ serviço/ }).first().click();
 await page.getByText(/Paredes \d/).first().waitFor();                   // as paredes anotadas na visita já vieram, sem digitar de novo
 await shot("03-orcamento-uma-tela");

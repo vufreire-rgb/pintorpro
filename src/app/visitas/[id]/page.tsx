@@ -10,7 +10,7 @@ import { PhotoMarker } from "@/components/PhotoMarker";
 import { PhotoGrid, PhotoStrip } from "@/components/PhotoGrid";
 import { RoomEditor } from "@/components/RoomEditor";
 import { BlocoRecolhivel, bareTextCls, Button, buttonCls, CartaoDeObservacao, Card, CardTitle, Chip, ConfirmDialog, Field, LinhaDeDado, LinkButton, Loading, Screen, TextArea2, TextInput } from "@/components/ui";
-import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, Copy, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, X } from "lucide-react";
+import { AlarmClock, ArrowLeft, CalendarDays, CalendarPlus, Camera, Check, Copy, FilePlus2, FileText, Image as ImageIcon, MapPin, MessageCircle, Mic, Play, Ruler, Trash2, UserPlus, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { GEO_MESSAGE, GeoError, getPosition, reverseGeocode } from "@/modules/geo";
 import { MAX_PDF_PHOTOS } from "@/modules/pdfData";
@@ -40,6 +40,8 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
   const [marking, setMarking] = useState<string | null>(null);
   const [changing, setChanging] = useState(false);
   const [saving, setSaving] = useState(false);
+  /** O diálogo "Quem é o cliente?" foi aberto só para definir o cliente (sem terminar a visita). */
+  const [clientOnly, setClientOnly] = useState(false);
   /** Depois de salvar: pergunta se quer montar o orçamento agora (o passo mais importante do app). */
   const [savedAsk, setSavedAsk] = useState(false);
   const [newClient, setNewClient] = useState({ name: "", phone: "", address: "" });
@@ -101,6 +103,13 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
       ) : (
         <div className="text-base leading-[22px] text-support">{fmtDate(v.startedAt ?? v.createdAt)} · guardada automaticamente</div>
       )}
+
+      {!client ? (
+        <Card className="flex items-center justify-between gap-3">
+          <div className="min-w-0"><div className="text-base text-support">Cliente</div><div className="text-lg font-bold">A definir</div></div>
+          <Button variant="ghost" size="sm" icon={UserPlus} className="!w-auto shrink-0" onClick={() => { setClientOnly(true); setSaving(true); }}>Definir cliente</Button>
+        </Card>
+      ) : null}
 
       {client ? (
         <Card className="flex flex-col gap-3">
@@ -241,13 +250,13 @@ export default function Visita({ params }: { params: Promise<{ id: string }> }) 
             <h2 className="text-xl font-bold">Quem é o cliente?</h2>
             {db.clients.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => { setVisitClient(v.id, c.id); finish(); }}>{c.name}</Chip>)}
+                {db.clients.map((c) => <Chip key={c.id} active={false} onClick={() => { setVisitClient(v.id, c.id); setSaving(false); if (!clientOnly) finish(); setClientOnly(false); }}>{c.name}</Chip>)}
               </div>
             ) : null}
             <Field label={db.clients.length > 0 ? "Ou cadastre um novo: nome" : "Nome do cliente"}><TextInput value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} /></Field>
             <Field label="Telefone (WhatsApp)"><TextInput type="tel" value={newClient.phone} onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })} /></Field>
-            <Button icon={Check} disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); setSaving(false); finish(); }}>Salvar visita</Button>
-            <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => setSaving(false)}>Voltar</Button>
+            <Button icon={Check} disabled={!newClient.name.trim()} onClick={() => { createClientForVisit(v.id, { ...newClient, address: v.siteAddress }); setSaving(false); if (!clientOnly) finish(); setClientOnly(false); }}>{clientOnly ? "Salvar cliente" : "Salvar visita"}</Button>
+            <Button variant="ghost" size="sm" icon={ArrowLeft} onClick={() => { setSaving(false); setClientOnly(false); }}>Voltar</Button>
           </div>
         </div>
       ) : null}

@@ -27,10 +27,17 @@ export interface QuotePdfData {
   showRoomPrices: boolean;
   terms: { exclusions: string[]; before: string[]; warranty: string };
   notes: string;
+  /** Itens da lista de materiais. Vazio quando o pintor escolheu não mostrar. */
+  materialsList: string[];
   photos: { src: string; room: string; caption: string }[];
 }
 
 export const MAX_PDF_PHOTOS = 6;
+
+/** Lista de materiais escrita pelo pintor: um item por linha (ou separado por ponto e vírgula). Até 60 itens. */
+export function materialLines(text?: string): string[] {
+  return (text ?? "").split(/[\n;]+/).map((l) => l.replace(/^[\s•\-–*]+/, "").trim()).filter(Boolean).slice(0, 60);
+}
 
 /** "Silva Pinturas" -> "SP"; "joão" -> "J". */
 export function initialsOf(name: string): string {
@@ -174,6 +181,7 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
       warranty: (c?.warrantyText ?? DEFAULT_PDF_TEXTS.warrantyText).trim(),
     },
     notes: q.notes.trim(),
+    materialsList: q.showMaterials ? materialLines(q.materialsText) : [],
     photos: photos.slice(0, MAX_PDF_PHOTOS),
   };
 }
