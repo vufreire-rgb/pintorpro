@@ -1,10 +1,11 @@
 // Edge Function "quote-link": link público do orçamento, com aviso de quando o cliente abriu.
 //  - POST (com login): o pintor publica/atualiza o link do orçamento dele ({ quoteId, snapshot }) ou o apaga ({ quoteId, revoke: true }).
 //  - GET ?t=TOKEN (público): devolve o orçamento do link e conta a visualização.
+//  - POST { token, action: "accept", rooms } (público): o cliente tocou em "Fechar agora". Guarda a escolha e avisa o pintor no celular.
 //  - GET ?t=TOKEN&peek=1 (público): só quem fez, número e total, para a prévia do link. NÃO conta visualização nem avisa o pintor.
 // Só esta função escreve na tabela shared_quotes (chave de administrador, que fica só no servidor).
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { isToken, newToken, peekSnapshot, sanitizeSnapshot, shouldCountView, shouldNotifyView } from "./logic.ts";
+import { isRepeatedAccept, isToken, newToken, peekSnapshot, pickRooms, sanitizeSnapshot, shouldCountView, shouldNotifyView } from "./logic.ts";
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
 const MAX_LINKS_PER_USER = 2000;
@@ -63,6 +64,33 @@ Deno.serve(async (req: Request) => {
 
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
+  // ---- Público: o cliente pede para fechar ----
+  let body: Record<string, unknown>;
+  try { body = await req.json(); } catch { return reply(400, { error: "bad_request" }); }
+  if (body.action === "accept") {
+    if (!isToken(body.token)) return reply(404, { error: "not_found" });
+    // accepted_at só existe depois da migração 0012: sem ela, ainda avisa o pintor (sem registrar no app).
+    let row = await admin.from("shared_quotes").select("snapshot, user_id, quote_id, accepted_at").eq("token", body.token).maybeSingle();
+    let hasCols = true;
+    if (row.error) {
+      hasCols = false;
+      row = await admin.from("shared_quotes").select("snapshot, user_id, quote_id").eq("token", body.token).maybeSingle() as typeof row;
+    }
+    if (row.error) { console.error("quote-link accept read", row.error.message); return reply(500, { error: "failed" }); }
+    if (!row.data) return reply(404, { error: "not_found" });
+    const snap = row.data.snapshot as { rooms?: { name: string; priceCents?: number }[]; total?: string; clientName?: string; number?: string };
+    const pick = pickRooms({ rooms: snap.rooms ?? [], total: snap.total ?? "" }, body.rooms);
+    if (!pick) return reply(400, { error: "bad_rooms" });
+    if (isRepeatedAccept((row.data as { accepted_at?: string | null }).accepted_at)) return reply(200, { ok: true });
+    if (hasCols) {
+      const upd = await admin.from("shared_quotes").update({ accepted_at: new Date().toISOString(), accepted_rooms: pick.names, accepted_total_cents: pick.totalCents }).eq("token", body.token);
+      if (upd.error) console.error("quote-link accept save", upd.error.message);
+    }
+    const what = pick.names.length === 0 ? "o orçamento inteiro" : pick.all ? "todos os ambientes" : pick.names.join(", ");
+    notifyUser(row.data.user_id as string, { title: "O cliente quer fechar!", body: `${snap.clientName || "Seu cliente"} quer fechar o orçamento nº ${snap.number ?? ""}: ${what}${pick.totalLabel ? ` (${pick.totalLabel})` : ""}.`.slice(0, 160), url: `/orcamentos/${row.data.quote_id}` });
+    return reply(200, { ok: true });
+  }
+
   // ---- Pintor (com login) ----
   const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!jwt) return reply(401, { error: "unauthorized" });
@@ -70,8 +98,6 @@ Deno.serve(async (req: Request) => {
   if (ue || !u.user) return reply(401, { error: "unauthorized" });
   const userId = u.user.id;
 
-  let body: Record<string, unknown>;
-  try { body = await req.json(); } catch { return reply(400, { error: "bad_request" }); }
   const quoteId = typeof body.quoteId === "string" ? body.quoteId.slice(0, 80) : "";
   if (!quoteId) return reply(400, { error: "bad_request" });
 

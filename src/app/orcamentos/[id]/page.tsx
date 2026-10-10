@@ -10,7 +10,7 @@ import { waUrl } from "@/modules/visitList";
 import { Bell, Copy, Eye, Hammer, Link2Off, ListChecks, MessageCircle, MoreHorizontal, PartyPopper, Pencil, RotateCcw, Send, Trash2, X } from "lucide-react";
 import { cloudEnabled } from "@/modules/auth";
 import { enablePush, shouldAskPush, usePushState } from "@/modules/push";
-import { linkIsStale, publishLinkFor, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
+import { acceptedLabel, linkIsStale, publishLinkFor, shareLinkOnWhatsApp, unpublishLinkFor, useQuoteLinks, viewedLabel } from "@/modules/quoteLinks";
 import { isSimpleMode, saveCompany } from "@/modules/settings";
 import { deleteQuote, duplicateQuote, isExpired, isPriceOnly, loseQuote, quoteWorkHasData, reopenQuote, setQuoteStatus } from "@/modules/quotes";
 import { sharePdfOnWhatsApp } from "@/modules/share";
@@ -82,6 +82,13 @@ export default function Detalhe({ params }: { params: Promise<{ id: string }> })
             {copied ? <p role="status" className="text-base font-bold text-accent-dark">Link copiado!</p> : null}
             {links[q.id] ? (
               <div data-testid="link-status" className="flex flex-col gap-1 text-base text-support">
+                {links[q.id]?.acceptedAt ? (
+                  <div data-testid="pediu-fechar" className="flex flex-col gap-2 rounded-2xl border-2 border-accent-dark bg-[#E8F6EE] p-3 text-ink">
+                    <b className="inline-flex items-center gap-1.5 text-accent-dark"><PartyPopper size={20} aria-hidden />{acceptedLabel(links[q.id])}</b>
+                    <span className="text-base">Confirme preço, prazo e data com o cliente antes de começar. O orçamento continua aberto até você marcar como fechado.</span>
+                    {client?.phone ? <a href={waUrl(client.phone, `Olá${client.name ? `, ${client.name.trim().split(/\s+/)[0]}` : ""}! Recebi seu pedido para fechar o orçamento nº ${q.number}. Vamos combinar a data de início?`)} target="_blank" rel="noreferrer" className={buttonCls("ghost")}><MessageCircle size={20} aria-hidden />Responder no WhatsApp</a> : null}
+                  </div>
+                ) : null}
                 <span className="inline-flex items-center gap-1.5 font-semibold text-brand"><Eye size={18} aria-hidden />{viewedLabel(links[q.id])}</span>
                 {linkIsStale(q, links[q.id]) ? <span className="text-[#8A4B00]">Você editou o orçamento. Ao enviar de novo, o cliente vê a versão nova.</span> : null}
               </div>

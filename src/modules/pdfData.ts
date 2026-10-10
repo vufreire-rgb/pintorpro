@@ -23,7 +23,7 @@ export interface QuotePdfData {
   deposit: null | { amount: string; pct: string; link: string };
   /** Pix da entrada: QR (imagem) e o código "copia e cola". */
   pix?: { qr: string; code: string; amount: string; pct: string; receiver: string };
-  rooms: { name: string; facts: string; items: string[]; materials: string; price?: string }[];
+  rooms: { name: string; facts: string; items: string[]; materials: string; price?: string; /** Valor do ambiente em centavos, sempre calculado (o PDF só mostra se showRoomPrices). */ priceCents?: number }[];
   showRoomPrices: boolean;
   terms: { exclusions: string[]; before: string[]; warranty: string };
   notes: string;
@@ -161,7 +161,7 @@ export function buildPdfData(db: Db, q: Quote, photos: QuotePdfData["photos"] = 
     payment: q.paymentTerms,
     validity: `7 dias, até ${fmtDate(q.validUntil)}`,
     deposit: q.paymentLink?.trim() ? { amount: formatBRL(Math.round((total * pct) / 100)), pct: `${pct}% do valor total.`, link: q.paymentLink.trim() } : null,
-    rooms: rooms.map((r, i) => ({ name: r.name, facts: r.facts, items: r.items, materials: r.materials, price: q.showRoomPrices ? formatBRL(prices[i]!) : undefined })),
+    rooms: rooms.map((r, i) => ({ name: r.name, facts: r.facts, items: r.items, materials: r.materials, price: q.showRoomPrices ? formatBRL(prices[i]!) : undefined, priceCents: prices[i]! })),
     showRoomPrices: !!q.showRoomPrices,
     terms: {
       exclusions: listFromText(c?.exclusionsText, DEFAULT_PDF_TEXTS.exclusionsText),

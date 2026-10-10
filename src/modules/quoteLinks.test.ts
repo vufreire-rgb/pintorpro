@@ -49,5 +49,7 @@ describe("textos do link", () => {
   });
   it("mensagem de WhatsApp", () => {
     expect(linkMessage("Maria Souza", "Silva Pinturas", "0042", "https://medde.com.br/o/abc")).toContain("Olá, Maria!");
+    const m = linkMessage("Maria Souza", "Silva Pinturas", "0042", "https://medde.com.br/o/abc", "R$ 3.500,00").split("\n");
+    expect(m.indexOf("https://medde.com.br/o/abc") + 1).toBe(m.indexOf("Valor total: R$ 3.500,00"));
   });
 });

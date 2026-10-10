@@ -1,8 +1,9 @@
 "use client";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Copy, MessageCircle } from "lucide-react";
+import { Copy, HandCoins, MessageCircle } from "lucide-react";
 import { loadSharedQuote, type SharedQuote } from "@/modules/quoteLinks";
+import { closeChoice, closeMessage, notifyClose } from "@/modules/quoteAccept";
 import { qrDataUrl } from "@/modules/qr";
 import { tintOf } from "@/modules/pdfData";
 import { APP_NAME } from "@/shared/brand";
@@ -16,6 +17,9 @@ export default function Orcamento() {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
   const [now] = useState(() => Date.now());
+  const [closing, setClosing] = useState(false);
+  const [picked, setPicked] = useState<Set<number> | null>(null);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -25,7 +29,7 @@ export default function Orcamento() {
     return () => { alive = false; };
   }, [token]);
 
-  const code = state.name === "ok" ? state.q.pix?.code : undefined;
+  const code = state.name === "ok" && done ? state.q.pix?.code : undefined;
   useEffect(() => {
     if (!code) return;
     let alive = true;
@@ -41,6 +45,9 @@ export default function Orcamento() {
   const brand = q.color;
   const expired = !!q.validUntil && Date.parse(q.validUntil) < now;
   const wa = q.painter.whatsapp.replace(/\D/g, "");
+  const allRooms = new Set(q.rooms.map((_, i) => i));
+  const selected = picked ?? allRooms;
+  const choice = closeChoice(q, selected);
   const copy = async () => {
     try { await navigator.clipboard.writeText(q.pix!.code); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* sem permissão: o código fica visível para copiar à mão */ }
   };
@@ -76,7 +83,7 @@ export default function Orcamento() {
 
       {q.rooms.map((r, i) => (
         <section key={i} className="rounded-2xl border border-line p-4">
-          <div className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">{r.name}</b>{q.showRoomPrices && r.price ? <b>{r.price}</b> : null}</div>
+          <div className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">{r.name}</b>{r.price ? <b>{r.price}</b> : null}</div>
           {r.facts ? <div className="text-base text-support">{r.facts}</div> : null}
           <ul className="mt-2 list-disc pl-5 text-base leading-6">{r.items.map((it, j) => <li key={j}>{it}</li>)}</ul>
           {r.materials ? <p className="mt-2 text-base text-support"><b>Materiais:</b> {r.materials}</p> : null}
@@ -85,19 +92,62 @@ export default function Orcamento() {
 
       {q.notes ? <section className="rounded-2xl border border-line p-4"><b className="font-display text-lg">Observações</b><p className="mt-1 whitespace-pre-wrap text-base">{q.notes}</p></section> : null}
 
-      {q.pix ? (
-        <section className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-center">
-          <b className="font-display text-lg">Pagar a entrada por Pix</b>
-          <div className="text-base text-support">{q.pix.amount} · {q.pix.pct}</div>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {qr ? <img src={qr} alt="QR Code do Pix" className="h-52 w-52" /> : null}
-          <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-semibold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
-          {q.pix.receiver ? <div className="text-base text-support">Recebedor: {q.pix.receiver}</div> : null}
+      {done ? (
+        <section role="status" className="flex flex-col gap-3 rounded-2xl border-2 p-4 text-center" style={{ borderColor: brand }}>
+          <b className="font-display text-xl">Pedido enviado!</b>
+          <p className="text-lg">{q.painter.company.split(" ")[0]} vai confirmar com você o preço, o prazo e o dia de começar.</p>
+          {choice.all && q.pix ? (
+            <div className="flex flex-col items-center gap-2 border-t border-line pt-3">
+              <b className="font-display text-lg">Se quiser, já pague a entrada por Pix</b>
+              <div className="text-base text-support">{q.pix.amount} · {q.pix.pct}</div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {qr ? <img src={qr} alt="QR Code do Pix" className="h-52 w-52" /> : null}
+              <button onClick={copy} className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border-2 px-4 font-display text-lg font-semibold" style={{ borderColor: brand, color: brand }}><Copy size={20} aria-hidden />{copied ? "Código copiado!" : "Copiar código Pix"}</button>
+              {q.pix.receiver ? <div className="text-base text-support">Recebedor: {q.pix.receiver}</div> : null}
+            </div>
+          ) : q.pix ? <p className="border-t border-line pt-3 text-base text-support">Como você escolheu só alguns ambientes, o pintor vai te mandar o Pix com o valor certo da entrada.</p> : null}
+          {choice.all && q.deposit ? (
+            <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 font-display text-lg font-semibold text-white" style={{ background: brand }}>Pagar a entrada ({q.deposit.amount})</a>
+          ) : null}
         </section>
-      ) : null}
-      {q.deposit ? (
-        <a href={q.deposit.link} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-14 items-center justify-center rounded-2xl px-4 font-display text-lg font-semibold text-white" style={{ background: brand }}>Pagar a entrada ({q.deposit.amount})</a>
-      ) : null}
+      ) : closing ? (
+        <section className="flex flex-col gap-3 rounded-2xl border-2 p-4" style={{ borderColor: brand }} aria-label="Fechar o orçamento">
+          <b className="font-display text-xl">Fechar o orçamento</b>
+          {q.rooms.length > 0 ? (
+            <>
+              <p className="text-base text-support">Marque os ambientes que você quer fechar. Todos já vêm marcados.</p>
+              <ul className="flex flex-col gap-2">
+                {q.rooms.map((r, i) => (
+                  <li key={i}>
+                    <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-2xl border border-line px-3 py-2">
+                      <input type="checkbox" className="h-6 w-6 shrink-0" style={{ accentColor: brand }} checked={selected.has(i)} onChange={() => setPicked((cur) => { const n = new Set(cur ?? allRooms); if (n.has(i)) n.delete(i); else n.add(i); return n; })} />
+                      <span className="min-w-0 flex-1 text-lg font-semibold">{r.name}</span>
+                      {r.price ? <b className="shrink-0">{r.price}</b> : null}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : <p className="text-lg">{q.summary || "Orçamento completo."}</p>}
+          <div className="flex items-baseline justify-between gap-2 rounded-2xl p-3" style={{ background: tintOf(brand) }}>
+            <span className="text-base text-support">{choice.all ? "Total" : "Total dos ambientes escolhidos"}</span>
+            <b className="font-display text-2xl" style={{ color: brand }} data-testid="fechar-total">{choice.totalLabel || "—"}</b>
+          </div>
+          {!choice.all && selected.size > 0 ? <p className="text-base text-support">Você escolheu {selected.size} de {q.rooms.length} ambientes. O pintor confirma o valor final com você.</p> : null}
+          {wa && (selected.size > 0 || q.rooms.length === 0) ? (
+            <a
+              href={`https://wa.me/55${wa.replace(/^55/, "")}?text=${encodeURIComponent(closeMessage(q, choice))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => { void notifyClose(token, selected); setDone(true); }}
+              className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl bg-[#0A8545] px-4 text-center font-display text-xl font-semibold text-white"
+            ><MessageCircle size={24} aria-hidden />Confirmar e enviar para {q.painter.company.split(" ")[0]}</a>
+          ) : <p role="alert" className="text-base text-err">{selected.size === 0 && q.rooms.length > 0 ? "Marque pelo menos um ambiente." : "Este orçamento não tem WhatsApp para receber o pedido. Fale com o pintor pelo contato acima."}</p>}
+          <button type="button" onClick={() => setClosing(false)} className="min-h-12 font-display text-lg font-semibold text-support">Voltar</button>
+        </section>
+      ) : (
+        <button type="button" onClick={() => setClosing(true)} className="inline-flex min-h-16 items-center justify-center gap-2 rounded-2xl px-4 font-display text-xl font-semibold text-white" style={{ background: brand }}><HandCoins size={24} aria-hidden />Fechar agora</button>
+      )}
 
       {q.terms.exclusions.length || q.terms.before.length || q.terms.warranty ? (
         <details className="rounded-2xl border border-line p-4">

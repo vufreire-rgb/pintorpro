@@ -1,6 +1,6 @@
 // Lógica pura da função "quote-link": token do link, limpeza do orçamento publicado e contagem de visualizações.
 
-export interface SharedRoom { name: string; facts: string; items: string[]; materials: string; price: string }
+export interface SharedRoom { name: string; facts: string; items: string[]; materials: string; price: string; /** Valor do ambiente em centavos (o link sempre mostra o preço por ambiente). */ priceCents?: number }
 export interface SharedQuote {
   v: 1;
   color: string;
@@ -71,7 +71,7 @@ export function sanitizeSnapshot(raw: unknown): SharedQuote | null {
     validUntil: Number.isNaN(Date.parse(validUntil)) ? "" : validUntil,
     deposit: dep && httpsUrl(dep.link) ? { amount: s(dep.amount, 30), pct: s(dep.pct, 60), link: httpsUrl(dep.link) } : null,
     pix: pix && s(pix.code, 600) ? { code: s(pix.code, 600), amount: s(pix.amount, 30), pct: s(pix.pct, 60), receiver: s(pix.receiver, 60) } : null,
-    rooms: (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 30).map((r: Record<string, unknown>) => ({ name: s(r?.name, 60), facts: s(r?.facts, 200), items: list(r?.items, 30, 200), materials: s(r?.materials, 300), price: s(r?.price, 30) })),
+    rooms: (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 30).map((r: Record<string, unknown>) => ({ name: s(r?.name, 60), facts: s(r?.facts, 200), items: list(r?.items, 30, 200), materials: s(r?.materials, 300), price: s(r?.price, 30), ...(typeof r?.priceCents === "number" && Number.isInteger(r.priceCents) && r.priceCents >= 0 && r.priceCents <= 10_000_000_000 ? { priceCents: r.priceCents } : {}) })),
     showRoomPrices: o.showRoomPrices === true,
     terms: { exclusions: list(t.exclusions, 30, 200), before: list(t.before, 30, 200), warranty: s(t.warranty, 400) },
     notes: s(o.notes, 800),
@@ -97,3 +97,34 @@ export function peekSnapshot(raw: unknown): { color: string; company: string; nu
   if (!company) return null;
   return { color: typeof o.color === "string" && /^#[0-9a-fA-F]{6}$/.test(o.color) ? o.color : "#0F3B7A", company, number: str(o.number, 12), total: str(o.total, 30) };
 }
+
+/** "R$ 1.234,50" (sem depender de Intl no servidor). */
+export function brl(cents: number): string {
+  const c = Math.max(0, Math.round(cents));
+  const int = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `R$ ${int},${String(c % 100).padStart(2, "0")}`;
+}
+
+export interface Acceptance { names: string[]; all: boolean; totalLabel: string; totalCents: number | null }
+
+/**
+ * O que o cliente escolheu ao fechar. `raw` = posições dos ambientes marcados. Os nomes e os valores vêm SEMPRE do orçamento publicado:
+ * nada que o cliente escreva passa. Orçamento sem ambientes = o orçamento inteiro. Devolve null se a escolha for inválida (nenhum ambiente, posição fora da lista).
+ */
+export function pickRooms(snap: { rooms: { name: string; priceCents?: number }[]; total: string }, raw: unknown): Acceptance | null {
+  const n = snap.rooms.length;
+  if (n === 0) return { names: [], all: true, totalLabel: snap.total, totalCents: null };
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > n) return null;
+  const idx = [...new Set(raw)];
+  if (idx.some((i) => !Number.isInteger(i) || i < 0 || i >= n) || idx.length !== raw.length) return null;
+  idx.sort((a, b) => a - b);
+  const all = idx.length === n;
+  const priced = idx.every((i) => typeof snap.rooms[i]!.priceCents === "number");
+  const totalCents = priced ? idx.reduce((sum, i) => sum + snap.rooms[i]!.priceCents!, 0) : null;
+  return { names: idx.map((i) => snap.rooms[i]!.name), all, totalCents, totalLabel: all ? snap.total : totalCents === null ? "" : brl(totalCents) };
+}
+
+/** Pedidos de fechar repetidos em poucos minutos (o cliente tocou duas vezes) contam como um só: o pintor recebe um aviso só. */
+export const ACCEPT_WINDOW_MS = 10 * 60 * 1000;
+export const isRepeatedAccept = (acceptedAt: string | null | undefined, now: number = Date.now()): boolean =>
+  !!acceptedAt && now - Date.parse(acceptedAt) < ACCEPT_WINDOW_MS;

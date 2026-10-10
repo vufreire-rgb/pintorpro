@@ -1,6 +1,7 @@
 // Edge Function "quote-link": link público do orçamento, com aviso de quando o cliente abriu.
 //  - POST (com login): o pintor publica/atualiza o link do orçamento dele ({ quoteId, snapshot }) ou o apaga ({ quoteId, revoke: true }).
 //  - GET ?t=TOKEN (público): devolve o orçamento do link e conta a visualização.
+//  - POST { token, action: "accept", rooms } (público): o cliente tocou em "Fechar agora". Guarda a escolha e avisa o pintor no celular.
 //  - GET ?t=TOKEN&peek=1 (público): só quem fez, número e total, para a prévia do link. NÃO conta visualização nem avisa o pintor.
 // Só esta função escreve na tabela shared_quotes (chave de administrador, que fica só no servidor).
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -8,7 +9,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // ---- logic.ts (junto aqui para colar no painel) ----
 // Lógica pura da função "quote-link": token do link, limpeza do orçamento publicado e contagem de visualizações.
 
-interface SharedRoom { name: string; facts: string; items: string[]; materials: string; price: string }
+interface SharedRoom { name: string; facts: string; items: string[]; materials: string; price: string; /** Valor do ambiente em centavos (o link sempre mostra o preço por ambiente). */ priceCents?: number }
 interface SharedQuote {
   v: 1;
   color: string;
@@ -79,7 +80,7 @@ function sanitizeSnapshot(raw: unknown): SharedQuote | null {
     validUntil: Number.isNaN(Date.parse(validUntil)) ? "" : validUntil,
     deposit: dep && httpsUrl(dep.link) ? { amount: s(dep.amount, 30), pct: s(dep.pct, 60), link: httpsUrl(dep.link) } : null,
     pix: pix && s(pix.code, 600) ? { code: s(pix.code, 600), amount: s(pix.amount, 30), pct: s(pix.pct, 60), receiver: s(pix.receiver, 60) } : null,
-    rooms: (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 30).map((r: Record<string, unknown>) => ({ name: s(r?.name, 60), facts: s(r?.facts, 200), items: list(r?.items, 30, 200), materials: s(r?.materials, 300), price: s(r?.price, 30) })),
+    rooms: (Array.isArray(o.rooms) ? o.rooms : []).slice(0, 30).map((r: Record<string, unknown>) => ({ name: s(r?.name, 60), facts: s(r?.facts, 200), items: list(r?.items, 30, 200), materials: s(r?.materials, 300), price: s(r?.price, 30), ...(typeof r?.priceCents === "number" && Number.isInteger(r.priceCents) && r.priceCents >= 0 && r.priceCents <= 10_000_000_000 ? { priceCents: r.priceCents } : {}) })),
     showRoomPrices: o.showRoomPrices === true,
     terms: { exclusions: list(t.exclusions, 30, 200), before: list(t.before, 30, 200), warranty: s(t.warranty, 400) },
     notes: s(o.notes, 800),
@@ -105,6 +106,37 @@ function peekSnapshot(raw: unknown): { color: string; company: string; number: s
   if (!company) return null;
   return { color: typeof o.color === "string" && /^#[0-9a-fA-F]{6}$/.test(o.color) ? o.color : "#0F3B7A", company, number: str(o.number, 12), total: str(o.total, 30) };
 }
+
+/** "R$ 1.234,50" (sem depender de Intl no servidor). */
+function brl(cents: number): string {
+  const c = Math.max(0, Math.round(cents));
+  const int = String(Math.floor(c / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `R$ ${int},${String(c % 100).padStart(2, "0")}`;
+}
+
+interface Acceptance { names: string[]; all: boolean; totalLabel: string; totalCents: number | null }
+
+/**
+ * O que o cliente escolheu ao fechar. `raw` = posições dos ambientes marcados. Os nomes e os valores vêm SEMPRE do orçamento publicado:
+ * nada que o cliente escreva passa. Orçamento sem ambientes = o orçamento inteiro. Devolve null se a escolha for inválida (nenhum ambiente, posição fora da lista).
+ */
+function pickRooms(snap: { rooms: { name: string; priceCents?: number }[]; total: string }, raw: unknown): Acceptance | null {
+  const n = snap.rooms.length;
+  if (n === 0) return { names: [], all: true, totalLabel: snap.total, totalCents: null };
+  if (!Array.isArray(raw) || raw.length === 0 || raw.length > n) return null;
+  const idx = [...new Set(raw)];
+  if (idx.some((i) => !Number.isInteger(i) || i < 0 || i >= n) || idx.length !== raw.length) return null;
+  idx.sort((a, b) => a - b);
+  const all = idx.length === n;
+  const priced = idx.every((i) => typeof snap.rooms[i]!.priceCents === "number");
+  const totalCents = priced ? idx.reduce((sum, i) => sum + snap.rooms[i]!.priceCents!, 0) : null;
+  return { names: idx.map((i) => snap.rooms[i]!.name), all, totalCents, totalLabel: all ? snap.total : totalCents === null ? "" : brl(totalCents) };
+}
+
+/** Pedidos de fechar repetidos em poucos minutos (o cliente tocou duas vezes) contam como um só: o pintor recebe um aviso só. */
+const ACCEPT_WINDOW_MS = 10 * 60 * 1000;
+const isRepeatedAccept = (acceptedAt: string | null | undefined, now: number = Date.now()): boolean =>
+  !!acceptedAt && now - Date.parse(acceptedAt) < ACCEPT_WINDOW_MS;
 // ---- fim de logic.ts ----
 
 const ALLOWED = ["https://medde.com.br", "https://www.medde.com.br", "https://pintorpro-gules.vercel.app", "http://localhost:3000"];
@@ -164,6 +196,33 @@ Deno.serve(async (req: Request) => {
 
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
+  // ---- Público: o cliente pede para fechar ----
+  let body: Record<string, unknown>;
+  try { body = await req.json(); } catch { return reply(400, { error: "bad_request" }); }
+  if (body.action === "accept") {
+    if (!isToken(body.token)) return reply(404, { error: "not_found" });
+    // accepted_at só existe depois da migração 0012: sem ela, ainda avisa o pintor (sem registrar no app).
+    let row = await admin.from("shared_quotes").select("snapshot, user_id, quote_id, accepted_at").eq("token", body.token).maybeSingle();
+    let hasCols = true;
+    if (row.error) {
+      hasCols = false;
+      row = await admin.from("shared_quotes").select("snapshot, user_id, quote_id").eq("token", body.token).maybeSingle() as typeof row;
+    }
+    if (row.error) { console.error("quote-link accept read", row.error.message); return reply(500, { error: "failed" }); }
+    if (!row.data) return reply(404, { error: "not_found" });
+    const snap = row.data.snapshot as { rooms?: { name: string; priceCents?: number }[]; total?: string; clientName?: string; number?: string };
+    const pick = pickRooms({ rooms: snap.rooms ?? [], total: snap.total ?? "" }, body.rooms);
+    if (!pick) return reply(400, { error: "bad_rooms" });
+    if (isRepeatedAccept((row.data as { accepted_at?: string | null }).accepted_at)) return reply(200, { ok: true });
+    if (hasCols) {
+      const upd = await admin.from("shared_quotes").update({ accepted_at: new Date().toISOString(), accepted_rooms: pick.names, accepted_total_cents: pick.totalCents }).eq("token", body.token);
+      if (upd.error) console.error("quote-link accept save", upd.error.message);
+    }
+    const what = pick.names.length === 0 ? "o orçamento inteiro" : pick.all ? "todos os ambientes" : pick.names.join(", ");
+    notifyUser(row.data.user_id as string, { title: "O cliente quer fechar!", body: `${snap.clientName || "Seu cliente"} quer fechar o orçamento nº ${snap.number ?? ""}: ${what}${pick.totalLabel ? ` (${pick.totalLabel})` : ""}.`.slice(0, 160), url: `/orcamentos/${row.data.quote_id}` });
+    return reply(200, { ok: true });
+  }
+
   // ---- Pintor (com login) ----
   const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   if (!jwt) return reply(401, { error: "unauthorized" });
@@ -171,8 +230,6 @@ Deno.serve(async (req: Request) => {
   if (ue || !u.user) return reply(401, { error: "unauthorized" });
   const userId = u.user.id;
 
-  let body: Record<string, unknown>;
-  try { body = await req.json(); } catch { return reply(400, { error: "bad_request" }); }
   const quoteId = typeof body.quoteId === "string" ? body.quoteId.slice(0, 80) : "";
   if (!quoteId) return reply(400, { error: "bad_request" });
 

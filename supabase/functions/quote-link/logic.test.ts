@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isToken, peekSnapshot, newToken, sanitizeSnapshot, shouldCountView, shouldNotifyView, SIX_HOURS_MS, VIEW_WINDOW_MS } from "./logic";
+import { brl, isRepeatedAccept, isToken, peekSnapshot, pickRooms, newToken, sanitizeSnapshot, shouldCountView, shouldNotifyView, SIX_HOURS_MS, VIEW_WINDOW_MS } from "./logic";
 
 const ok = { painter: { company: "Silva Pinturas", initials: "SP", contact: "", whatsapp: "11999990000" }, number: "0042", total: "R$ 2.800,00", clientName: "Maria", rooms: [{ name: "Sala", items: ["Pintar paredes"] }], color: "#B3261E" };
 
@@ -61,5 +61,35 @@ describe("peekSnapshot", () => {
   it("sem empresa não gera prévia; cor inválida volta ao azul", () => {
     expect(peekSnapshot({})).toBeNull();
     expect(peekSnapshot({ color: "azul", painter: { company: "X" } })!.color).toBe("#0F3B7A");
+  });
+});
+
+describe("fechar agora", () => {
+  const snap = { total: "R$ 3.500,00", rooms: [{ name: "Sala", priceCents: 120000 }, { name: "Quarto", priceCents: 150000 }, { name: "Cozinha", priceCents: 80000 }] };
+  it("brl formata como o app", () => {
+    expect(brl(350000)).toBe("R$ 3.500,00");
+    expect(brl(5)).toBe("R$ 0,05");
+    expect(brl(123456789)).toBe("R$ 1.234.567,89");
+  });
+  it("todos os ambientes: usa o total do orçamento", () => {
+    expect(pickRooms(snap, [0, 1, 2])).toEqual({ names: ["Sala", "Quarto", "Cozinha"], all: true, totalCents: 350000, totalLabel: "R$ 3.500,00" });
+  });
+  it("só alguns: soma os valores dos ambientes escolhidos, na ordem do orçamento", () => {
+    expect(pickRooms(snap, [2, 0])).toEqual({ names: ["Sala", "Cozinha"], all: false, totalCents: 200000, totalLabel: "R$ 2.000,00" });
+  });
+  it("recusa escolha vazia, repetida, fora da lista ou que não seja número", () => {
+    for (const bad of [[], [5], [-1], [0, 0], ["0"], [1.5], "x", null, undefined, [0, 1, 2, 3]]) expect(pickRooms(snap, bad)).toBeNull();
+  });
+  it("sem ambientes (só preço fechado): é o orçamento inteiro", () => {
+    expect(pickRooms({ rooms: [], total: "R$ 2.800,00" }, undefined)).toEqual({ names: [], all: true, totalCents: null, totalLabel: "R$ 2.800,00" });
+  });
+  it("sem valor por ambiente: não inventa total parcial", () => {
+    expect(pickRooms({ total: "R$ 1,00", rooms: [{ name: "A" }, { name: "B" }] }, [0])!.totalLabel).toBe("");
+  });
+  it("dois toques seguidos contam como um só aviso", () => {
+    const now = Date.parse("2026-10-10T12:00:00Z");
+    expect(isRepeatedAccept("2026-10-10T11:55:00Z", now)).toBe(true);
+    expect(isRepeatedAccept("2026-10-10T11:40:00Z", now)).toBe(false);
+    expect(isRepeatedAccept(null, now)).toBe(false);
   });
 });

@@ -92,7 +92,7 @@ export const sendVoice = (audio: Blob): Promise<unknown> =>
 export const sendReceipt = (image: Blob): Promise<unknown> => invokeAi("receipt-scan", "image", image, "recibo.jpg");
 
 /** Linha de um link público de orçamento (só leitura: quem escreve é a função quote-link). */
-export interface QuoteLinkRow { quote_id: string; token: string; views_count: number; first_viewed_at: string | null; last_viewed_at: string | null; updated_at: string }
+export interface QuoteLinkRow { quote_id: string; token: string; views_count: number; first_viewed_at: string | null; last_viewed_at: string | null; updated_at: string; accepted_at?: string | null; accepted_rooms?: string[] | null; accepted_total_cents?: number | null }
 
 /** Publica (ou atualiza) o link do orçamento. Devolve o token. */
 export async function publishQuoteLink(quoteId: string, snapshot: unknown): Promise<string> {
@@ -109,9 +109,21 @@ export async function revokeQuoteLink(quoteId: string): Promise<void> {
 
 /** Links do pintor com as visualizações (leitura protegida pelo RLS: só as linhas dele). */
 export async function listQuoteLinks(): Promise<QuoteLinkRow[]> {
-  const { data, error } = await c().from("shared_quotes").select("quote_id, token, views_count, first_viewed_at, last_viewed_at, updated_at");
+  const base = "quote_id, token, views_count, first_viewed_at, last_viewed_at, updated_at";
+  // As colunas do "Fechar agora" só existem depois da migração 0012: sem ela, mostra o resto normalmente.
+  const full = await c().from("shared_quotes").select(`${base}, accepted_at, accepted_rooms, accepted_total_cents`);
+  if (!full.error) return (full.data ?? []) as unknown as QuoteLinkRow[];
+  const { data, error } = await c().from("shared_quotes").select(base);
   if (error) throw error;
   return (data ?? []) as QuoteLinkRow[];
+}
+
+/** Cliente tocou em "Fechar agora": avisa o pintor (guarda a escolha e manda notificação). Não falha para quem chama: o WhatsApp é o caminho principal. */
+export async function acceptQuoteLink(token: string, rooms: number[]): Promise<void> {
+  if (!url) return;
+  try {
+    await fetch(`${url}/functions/v1/quote-link`, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json", ...(anonKey ? { apikey: anonKey } : {}) }, body: JSON.stringify({ action: "accept", token, rooms }) });
+  } catch { /* sem internet: a mensagem do WhatsApp segue valendo */ }
 }
 
 /** Página pública do cliente: busca o orçamento do link (sem login). Falha com "not_found" ou "network". */
